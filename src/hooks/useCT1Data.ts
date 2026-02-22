@@ -31,8 +31,9 @@ export interface CT1Data {
   rctPrepayment: number; // Total RCT deducted from invoices — current asset / CT credit
   travelAllowance: number; // Total Revenue mileage + subsistence across all trips
   directorsLoanTravel: number; // Net owed to director (Revenue allowance - CSV expenses)
+  movedFromPersonalCredits: number; // Business expenses paid from director's personal pocket
   directorsLoanDebits: number; // Total DLA debits (money taken by director from company)
-  netDirectorsLoan: number; // directorsLoanTravel - directorsLoanDebits (positive = company owes director)
+  netDirectorsLoan: number; // directorsLoanTravel + movedFromPersonalCredits - directorsLoanDebits (positive = company owes director)
   isConstructionTrade: boolean;
   isCloseCompany: boolean;
   isLoading: boolean;
@@ -148,10 +149,16 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
     let origAllowable = 0;
     let origDisallowed = 0;
     let totalDLADebits = 0;
+    let totalMovedFromPersonal = 0;
     const disallowedByCategoryMap = new Map<string, number>();
     for (const t of expenseTransactions ?? []) {
       const amt = Math.abs(Number(t.amount) || 0);
       const catName = (t.category as { id: string; name: string } | null)?.name ?? null;
+      // Track business expenses paid from director's personal pocket
+      const txNotes = (t as Record<string, unknown>).notes as string | null;
+      if (txNotes?.includes("[MOVED_FROM_PERSONAL]")) {
+        totalMovedFromPersonal += amt;
+      }
       // Director's Loan Account debits excluded from P&L — they're balance sheet items
       if (isDLA(catName)) {
         totalDLADebits += amt;
@@ -320,11 +327,14 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
         ) * 100,
       ) / 100;
 
+    // Business expenses paid from director's personal pocket — company owes director
+    const movedFromPersonalCredits = Math.round(totalMovedFromPersonal * 100) / 100;
+
     // DLA debits offset the director's loan balance
     // Positive netDirectorsLoan = company still owes director (liability)
     // Negative = director owes company (becomes a debtor/asset)
     const directorsLoanDebits = Math.round(totalDLADebits * 100) / 100;
-    const netDirectorsLoan = Math.round((directorsLoanTravel - directorsLoanDebits) * 100) / 100;
+    const netDirectorsLoan = Math.round((directorsLoanTravel + movedFromPersonalCredits - directorsLoanDebits) * 100) / 100;
 
     return {
       detectedIncome,
@@ -339,6 +349,7 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
       rctPrepayment,
       travelAllowance,
       directorsLoanTravel,
+      movedFromPersonalCredits,
       directorsLoanDebits,
       netDirectorsLoan,
       isConstructionTrade,

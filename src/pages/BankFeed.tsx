@@ -68,6 +68,7 @@ import { useBulkRecategorize } from "@/hooks/useBulkRecategorize";
 import { matchAllUnmatched, matchSingleTransaction } from "@/services/matchingServices";
 import { toast } from "sonner";
 import CSVImportDialog from "@/components/bank/CSVImportDialog";
+import BusinessExpenseReviewDialog from "@/components/bank/BusinessExpenseReviewDialog";
 import ImportBatchesPanel from "@/components/bank/ImportBatchesPanel";
 import AccountLedgerSection from "@/components/bank/AccountLedgerSection";
 import CategoryLedgerSection from "@/components/bank/CategoryLedgerSection";
@@ -266,6 +267,7 @@ const BankFeed = () => {
   const [showBusinessQuestionnaire, setShowBusinessQuestionnaire] = useState(false);
   const [showDirectorQuestionnaire, setShowDirectorQuestionnaire] = useState(false);
   const [showVATQuestionnaire, setShowVATQuestionnaire] = useState(false);
+
   const [pendingExportType, setPendingExportType] = useState<"excel" | "pdf" | null>(null);
   const [pendingVATExportType, setPendingVATExportType] = useState<"excel" | "pdf" | null>(null);
   const [showBusinessReview, setShowBusinessReview] = useState(false);
@@ -771,6 +773,11 @@ const BankFeed = () => {
     setTimeout(() => {
       refetch();
       refetchUnmatched();
+      // After data refreshes, check for flagged business expenses on personal accounts
+      if (selectedAccount?.account_type === "directors_personal_tax") {
+        // Small delay to let refetch complete before showing dialog
+        setTimeout(() => setShowBusinessReview(true), 600);
+      }
     }, 500);
   };
 
@@ -2713,6 +2720,13 @@ const BankFeed = () => {
                                   </div>
                                 </details>
                               )}
+                              {ct1.movedFromPersonalCredits > 0 && (
+                                <DetailRow
+                                  label="Less: Personal expenses paid for company"
+                                  amount={-ct1.movedFromPersonalCredits}
+                                  indent
+                                />
+                              )}
                               <div className="text-[10px] text-muted-foreground mt-1 pl-3">
                                 Director has drawn more than the company owes — net debtor.
                               </div>
@@ -2766,6 +2780,13 @@ const BankFeed = () => {
                                   </div>
                                 </details>
                               )}
+                              {ct1.movedFromPersonalCredits > 0 && (
+                                <DetailRow
+                                  label="Personal expenses paid for company"
+                                  amount={ct1.movedFromPersonalCredits}
+                                  indent
+                                />
+                              )}
                               <DetailRow
                                 label="Less: DLA debits (taken by director)"
                                 amount={-ct1.directorsLoanDebits}
@@ -2794,7 +2815,8 @@ const BankFeed = () => {
                                 </details>
                               )}
                               <div className="text-[10px] text-muted-foreground mt-1 pl-3">
-                                Company owes director this amount — net of travel owed minus drawings already taken.
+                                Company owes director this amount — net of travel, personal expenses paid, minus
+                                drawings.
                               </div>
                             </ExpandableRow>
                           )}
@@ -3228,11 +3250,14 @@ const BankFeed = () => {
 
       {companyAccountId && (
         <BusinessExpenseReviewDialog
-          open={showBusinessReview}
+          open={showBusinessReview && flaggedBusinessExpenses.length > 0}
           onOpenChange={setShowBusinessReview}
           flaggedTransactions={flaggedBusinessExpenses}
           companyAccountId={companyAccountId}
-          onComplete={() => refetch()}
+          onComplete={() => {
+            refetch();
+            refetchUnmatched();
+          }}
         />
       )}
 

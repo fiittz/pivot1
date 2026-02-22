@@ -144,7 +144,11 @@ export default function BusinessExpenseReviewDialog({
                       disabled={isProcessing || bulkProcessing}
                       className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950/30"
                     >
-                      {isProcessing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Building2 className="w-3 h-3 mr-1" />}
+                      {isProcessing ? (
+                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      ) : (
+                        <Building2 className="w-3 h-3 mr-1" />
+                      )}
                       Business
                     </Button>
                     <Button

@@ -676,6 +676,9 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
       return "standard_23";
     };
 
+    // Determine account type for personal-vs-business detection
+    const importAccountType = accounts.find((a) => a.id === accountIdToAssign)?.account_type ?? undefined;
+
     // Auto-categorize imported transactions using local engine
     if (createdTransactions.length > 0) {
       setIsCategorizing(true);
@@ -756,6 +759,9 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
                 const vatCalc =
                   vatRateNum > 0 ? calculateVATFromGross(Math.abs(txn.amount), vatRateNum) : { vatAmount: 0 };
 
+                // Flag business expenses on personal accounts for review
+                const pendingReviewTag = engineResult.looks_like_business_expense ? " [PENDING_BUSINESS_REVIEW]" : "";
+
                 if (matchedCategory && engineResult.confidence_score >= 50) {
                   // Build explanation with VAT info
                   let explanation = engineResult.business_purpose;
@@ -765,9 +771,6 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
                   if (engineResult.notes) {
                     explanation += ` ${engineResult.notes}`;
                   }
-                  if (engineResult.looks_like_business_expense) {
-                    explanation += " [PENDING_BUSINESS_REVIEW]";
-                  }
 
                   // Only update category, VAT, and notes — do NOT overwrite account_id
                   // (account_id is the bank account set during import, not chart of accounts)
@@ -776,7 +779,7 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
                     category_id: matchedCategory.id,
                     vat_rate: vatRateNum,
                     vat_amount: vatCalc.vatAmount,
-                    notes: explanation.trim(),
+                    notes: (explanation.trim() + pendingReviewTag).trim(),
                     is_reconciled: false,
                   });
                   return true;
@@ -784,11 +787,11 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
 
                 // Even without a category match, still set vat_rate and vat_amount
                 // so the VAT summary can pick up deductible transactions
-                if (vatRateNum > 0) {
+                if (vatRateNum > 0 || pendingReviewTag) {
                   await updateTransaction.mutateAsync({
                     id: txn.id,
-                    vat_rate: vatRateNum,
-                    vat_amount: vatCalc.vatAmount,
+                    ...(vatRateNum > 0 ? { vat_rate: vatRateNum, vat_amount: vatCalc.vatAmount } : {}),
+                    ...(pendingReviewTag ? { notes: pendingReviewTag.trim() } : {}),
                     is_reconciled: false,
                   });
                 }
