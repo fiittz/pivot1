@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -457,6 +457,12 @@ export default function OnboardingWizard() {
   const step = STEPS[stepIndex];
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
 
+  // Auto-scroll active step tab into view
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [stepIndex]);
+
   // Current business data helper
   const currentBusiness = state.businesses[selectedBusinessIndex] || state.businesses[0];
 
@@ -803,6 +809,7 @@ export default function OnboardingWizard() {
                 return (
                   <button
                     key={s}
+                    ref={isActive ? activeTabRef : undefined}
                     onClick={() => (import.meta.env.DEV || idx < stepIndex) && setStepIndex(idx)}
                     disabled={!import.meta.env.DEV && idx > stepIndex}
                     className={cn(
@@ -849,9 +856,8 @@ export default function OnboardingWizard() {
                 <Label htmlFor="business_count">How many businesses do you have?</Label>
                 <Input
                   id="business_count"
-                  type="number"
-                  min="1"
-                  max="99"
+                  type="text"
+                  inputMode="numeric"
                   value={state.business_count}
                   onChange={(e) => {
                     const newCount = Math.max(1, parseInt(e.target.value) || 1);
@@ -977,9 +983,8 @@ export default function OnboardingWizard() {
                         <Label htmlFor={`director_count_${index}`}>How many directors does this company have? *</Label>
                         <Input
                           id={`director_count_${index}`}
-                          type="number"
-                          min="1"
-                          max="99"
+                          type="text"
+                          inputMode="numeric"
                           value={business.director_count || ""}
                           onChange={(e) => {
                             const newBusinesses = [...state.businesses];
@@ -1133,9 +1138,8 @@ export default function OnboardingWizard() {
                     <Label htmlFor={`subsistence_radius_${index}`}>Subsistence radius (km)</Label>
                     <Input
                       id={`subsistence_radius_${index}`}
-                      type="number"
-                      min={1}
-                      max={100}
+                      type="text"
+                      inputMode="numeric"
                       value={business.subsistence_radius_km || ""}
                       onChange={(e) => {
                         const newBusinesses = [...state.businesses];
@@ -1921,9 +1925,8 @@ export default function OnboardingWizard() {
                 <div className="relative mt-1.5">
                   <Input
                     id="business_use_percentage"
-                    type="number"
-                    min={0}
-                    max={100}
+                    type="text"
+                    inputMode="numeric"
                     value={currentBusiness.business_use_percentage || ""}
                     onChange={(e) => updateBusiness("business_use_percentage", parseInt(e.target.value) || 0)}
                     className="pr-8"
@@ -1982,11 +1985,11 @@ export default function OnboardingWizard() {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">EUR</span>
                     <Input
                       id="capitalisation_threshold"
-                      type="number"
-                      value={currentBusiness.capitalisation_threshold}
+                      type="text"
+                      inputMode="decimal"
+                      value={currentBusiness.capitalisation_threshold || ""}
                       onChange={(e) => updateBusiness("capitalisation_threshold", parseInt(e.target.value) || 0)}
                       className="pl-12"
-                      min={0}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground mt-1.5">
@@ -2039,11 +2042,11 @@ export default function OnboardingWizard() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">EUR</span>
                       <Input
                         id="opening_asset_value"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={currentBusiness.opening_asset_value || ""}
                         onChange={(e) => updateBusiness("opening_asset_value", parseInt(e.target.value) || 0)}
                         className="pl-12"
-                        min={0}
                       />
                     </div>
                   </div>
@@ -2076,7 +2079,13 @@ export default function OnboardingWizard() {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-semibold mb-2">Payments Setup</h2>
-              <p className="text-muted-foreground">Will this account be used to make any of the following payments?</p>
+              <p className="text-muted-foreground">
+                {currentBusiness.structure === "limited_company" && currentBusiness.name
+                  ? `Will ${currentBusiness.name} make any of the following payments?`
+                  : currentBusiness.structure === "sole_trader"
+                    ? "Will the sole trading business make any of the following payments?"
+                    : "Will this account be used to make any of the following payments?"}
+              </p>
             </div>
 
             <BusinessTabs />
@@ -2203,8 +2212,8 @@ export default function OnboardingWizard() {
                     <Label htmlFor="employee_count">Number of employees</Label>
                     <Input
                       id="employee_count"
-                      type="number"
-                      min={1}
+                      type="text"
+                      inputMode="numeric"
                       value={currentBusiness.employee_count || ""}
                       onChange={(e) => updateBusiness("employee_count", parseInt(e.target.value) || 0)}
                       className="mt-1.5 w-32"
@@ -2447,9 +2456,16 @@ export default function OnboardingWizard() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">EUR</span>
                       <Input
                         id="opening_bank_balance"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={currentBusiness.opening_bank_balance || ""}
-                        onChange={(e) => updateBusiness("opening_bank_balance", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "-" || raw === "." || raw === "-.") return;
+                          if (raw === "") { updateBusiness("opening_bank_balance", 0); return; }
+                          const num = parseFloat(raw);
+                          if (!isNaN(num)) updateBusiness("opening_bank_balance", num);
+                        }}
                         className="pl-12"
                       />
                     </div>
@@ -2461,9 +2477,16 @@ export default function OnboardingWizard() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">EUR</span>
                       <Input
                         id="opening_debtors"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={currentBusiness.opening_debtors || ""}
-                        onChange={(e) => updateBusiness("opening_debtors", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "-" || raw === "." || raw === "-.") return;
+                          if (raw === "") { updateBusiness("opening_debtors", 0); return; }
+                          const num = parseFloat(raw);
+                          if (!isNaN(num)) updateBusiness("opening_debtors", num);
+                        }}
                         className="pl-12"
                       />
                     </div>
@@ -2475,9 +2498,16 @@ export default function OnboardingWizard() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">EUR</span>
                       <Input
                         id="opening_creditors"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={currentBusiness.opening_creditors || ""}
-                        onChange={(e) => updateBusiness("opening_creditors", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "-" || raw === "." || raw === "-.") return;
+                          if (raw === "") { updateBusiness("opening_creditors", 0); return; }
+                          const num = parseFloat(raw);
+                          if (!isNaN(num)) updateBusiness("opening_creditors", num);
+                        }}
                         className="pl-12"
                       />
                     </div>
@@ -2489,9 +2519,16 @@ export default function OnboardingWizard() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">EUR</span>
                       <Input
                         id="opening_vat_liability"
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={currentBusiness.opening_vat_liability || ""}
-                        onChange={(e) => updateBusiness("opening_vat_liability", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "-" || raw === "." || raw === "-.") return;
+                          if (raw === "") { updateBusiness("opening_vat_liability", 0); return; }
+                          const num = parseFloat(raw);
+                          if (!isNaN(num)) updateBusiness("opening_vat_liability", num);
+                        }}
                         className="pl-12"
                       />
                     </div>

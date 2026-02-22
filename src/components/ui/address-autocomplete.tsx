@@ -24,7 +24,24 @@ interface GooglePrediction {
   description: string;
 }
 
-/** Strip "County " / "Co. " prefix from Google's administrative_area_level_1 */
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  address: {
+    road?: string;
+    house_number?: string;
+    suburb?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    county?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  };
+}
+
+/** Strip "County " / "Co. " prefix from county strings */
 function normalizeCounty(raw: string): string {
   return raw.replace(/^(County|Co\.?)\s+/i, "");
 }
@@ -35,6 +52,33 @@ function lookupDistance(townName: string, county: string): number {
     (t) => t.name.toLowerCase() === townName.toLowerCase() && t.county.toLowerCase() === county.toLowerCase(),
   );
   return match?.distanceFromDublin ?? 0;
+}
+
+/** Build a display-friendly main text from a Nominatim result */
+function nominatimMainText(r: NominatimResult): string {
+  const a = r.address;
+  const parts: string[] = [];
+  if (a.house_number && a.road) parts.push(`${a.house_number} ${a.road}`);
+  else if (a.road) parts.push(a.road);
+  else if (a.suburb) parts.push(a.suburb);
+  else if (a.town || a.village) parts.push(a.town || a.village || "");
+  return parts.join(", ") || r.display_name.split(",")[0];
+}
+
+/** Build secondary text (area, county) from a Nominatim result */
+function nominatimSecondaryText(r: NominatimResult): string {
+  const a = r.address;
+  const parts: string[] = [];
+  if (a.suburb && a.road) parts.push(a.suburb);
+  const city = a.city || a.town || a.village || "";
+  if (city) parts.push(city);
+  if (a.county) parts.push(normalizeCounty(a.county));
+  return parts.join(", ");
+}
+
+/** Extract the town name from a Nominatim result for onTownSelect */
+function nominatimTownName(r: NominatimResult): string {
+  return r.address.city || r.address.town || r.address.village || r.address.suburb || "";
 }
 
 export function AddressAutocomplete({
@@ -63,30 +107,11 @@ export function AddressAutocomplete({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attrDivRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isFocusedRef = useRef(false);
 
-  // --- Static fallback state ---
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Extract the last segment of the input for static matching
-  function getSearchSegment(text: string): string {
-    const parts = text.split(/[,\s]+/).filter(Boolean);
-    return (parts[parts.length - 1] || "").toLowerCase();
-  }
-
-  // Update search term when value changes (for static fallback)
-  useEffect(() => {
-    if (!useGoogle) {
-      setSearchTerm(getSearchSegment(value));
-    }
-  }, [value, useGoogle]);
-
-  // Static filtered towns (fallback mode only)
-  const filteredTowns =
-    !useGoogle && searchTerm.length >= 2
-      ? IRISH_TOWNS.filter(
-          (town) => town.name.toLowerCase().includes(searchTerm) || town.county.toLowerCase().includes(searchTerm),
-        ).slice(0, 15)
-      : [];
+  // --- Nominatim fallback state ---
+  const [nominatimResults, setNominatimResults] = useState<NominatimResult[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
 
   // ---- Google autocomplete fetch ----
   const fetchPredictions = useCallback(
@@ -123,6 +148,48 @@ export function AddressAutocomplete({
     [getAutocompleteService, getSessionToken],
   );
 
+  // ---- Nominatim fetch ----
+  const fetchNominatim = useCallback((input: string) => {
+    if (input.length < 3) {
+      setNominatimResults([]);
+      return;
+    }
+
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    fetch(
+      `https://nominatim.openstreetmap.org/search?` +
+        new URLSearchParams({
+          q: input,
+          format: "json",
+          countrycodes: "ie",
+          limit: "8",
+          addressdetails: "1",
+        }),
+      {
+        signal: controller.signal,
+        headers: { "User-Agent": "BalnceApp/1.0" },
+      },
+    )
+      .then((res) => res.json())
+      .then((data: NominatimResult[]) => {
+        if (!controller.signal.aborted) {
+          setNominatimResults(data);
+          if (isFocusedRef.current && data.length > 0) {
+            setOpen(true);
+          } else if (data.length === 0) {
+            setOpen(false);
+          }
+        }
+      })
+      .catch(() => {
+        // Aborted or network error — ignore
+      });
+  }, []);
+
   // ---- Google place selection ----
   const handleGoogleSelect = useCallback(
     (prediction: GooglePrediction) => {
@@ -150,7 +217,7 @@ export function AddressAutocomplete({
           sessionToken: getSessionToken(),
         },
         (place, detailStatus) => {
-          resetSessionToken(); // end billing session
+          resetSessionToken();
 
           if (detailStatus !== google.maps.places.PlacesServiceStatus.OK || !place?.address_components) {
             return;
@@ -183,18 +250,32 @@ export function AddressAutocomplete({
     [onChange, onTownSelect, getPlacesService, getSessionToken, resetSessionToken],
   );
 
-  // ---- Static fallback selection ----
-  function handleStaticSelect(town: IrishTown) {
-    const formatted = formatTownDisplay(town);
-    onChange(formatted);
-    onTownSelect?.(town);
-    setOpen(false);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }
+  // ---- Nominatim selection ----
+  const handleNominatimSelect = useCallback(
+    (result: NominatimResult) => {
+      onChange(result.display_name);
+      setOpen(false);
+
+      if (onTownSelect) {
+        const county = result.address.county ? normalizeCounty(result.address.county) : "";
+        const town = nominatimTownName(result);
+        if (county || town) {
+          onTownSelect({
+            name: town,
+            county,
+            distanceFromDublin: lookupDistance(town, county),
+          });
+        }
+      }
+
+      setTimeout(() => inputRef.current?.focus(), 0);
+    },
+    [onChange, onTownSelect],
+  );
 
   // Open/close popover when Google predictions change
   useEffect(() => {
-    if (useGoogle) {
+    if (useGoogle && isFocusedRef.current) {
       setOpen(predictions.length > 0);
     }
   }, [predictions, useGoogle]);
@@ -204,31 +285,34 @@ export function AddressAutocomplete({
     const newValue = e.target.value;
     onChange(newValue);
 
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
     if (useGoogle) {
-      // Debounce Google requests (300ms)
-      if (debounceRef.current) clearTimeout(debounceRef.current);
       if (newValue.length >= 3) {
         debounceRef.current = setTimeout(() => fetchPredictions(newValue), 300);
       } else {
         setPredictions([]);
       }
     } else {
-      // Static fallback
-      const segment = getSearchSegment(newValue);
-      if (segment.length >= 2) {
-        setOpen(true);
+      // Nominatim fallback — debounce at 400ms to respect rate limits
+      if (newValue.length >= 3) {
+        debounceRef.current = setTimeout(() => fetchNominatim(newValue), 400);
       } else {
+        setNominatimResults([]);
         setOpen(false);
       }
     }
   }
 
-  // Cleanup debounce on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
     };
   }, []);
+
+  const hasResults = useGoogle ? predictions.length > 0 : nominatimResults.length > 0;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -240,14 +324,11 @@ export function AddressAutocomplete({
             value={value}
             onChange={handleInputChange}
             onFocus={() => {
-              if (useGoogle) {
-                if (predictions.length > 0) setOpen(true);
-              } else {
-                const segment = getSearchSegment(value);
-                if (segment.length >= 2 && filteredTowns.length > 0) {
-                  setOpen(true);
-                }
-              }
+              isFocusedRef.current = true;
+              if (hasResults) setOpen(true);
+            }}
+            onBlur={() => {
+              isFocusedRef.current = false;
             }}
             placeholder={placeholder}
             className={cn(className)}
@@ -280,16 +361,18 @@ export function AddressAutocomplete({
                         <span className="ml-auto text-sm text-muted-foreground truncate">{pred.secondaryText}</span>
                       </CommandItem>
                     ))
-                  : filteredTowns.map((town) => (
+                  : nominatimResults.map((result) => (
                       <CommandItem
-                        key={`${town.name}-${town.county}`}
-                        value={`${town.name}-${town.county}`}
-                        onSelect={() => handleStaticSelect(town)}
+                        key={result.place_id}
+                        value={String(result.place_id)}
+                        onSelect={() => handleNominatimSelect(result)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span>{town.name}</span>
-                        <span className="ml-auto text-sm text-muted-foreground">Co. {town.county}</span>
+                        <span className="font-medium">{nominatimMainText(result)}</span>
+                        <span className="ml-auto text-sm text-muted-foreground truncate">
+                          {nominatimSecondaryText(result)}
+                        </span>
                       </CommandItem>
                     ))}
               </CommandGroup>
