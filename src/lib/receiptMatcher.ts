@@ -16,7 +16,7 @@ export interface MatchResult {
   autoMatched: boolean;
 }
 
-const AUTO_MATCH_THRESHOLD = 0.95;
+const AUTO_MATCH_THRESHOLD = 0.85;
 
 /**
  * Score a single candidate transaction against a receipt.
@@ -93,6 +93,7 @@ export async function matchReceiptToTransaction(
   receiptAmount: number,
   receiptVendor: string | null,
   receiptDate: string | null,
+  accountId?: string | null,
 ): Promise<MatchResult> {
   // Build query for unlinked transactions (no receipt attached)
   let query = supabase
@@ -100,6 +101,11 @@ export async function matchReceiptToTransaction(
     .select("id, amount, description, transaction_date, receipt_url")
     .eq("user_id", userId)
     .is("receipt_url", null);
+
+  // Scope to a specific bank account if provided
+  if (accountId) {
+    query = query.eq("account_id", accountId);
+  }
 
   // Narrow by date window if we have a receipt date (+/-2 days for query, score handles tighter check)
   if (receiptDate) {

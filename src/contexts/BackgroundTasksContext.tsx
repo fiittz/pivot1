@@ -321,8 +321,7 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
       try {
         updateFile(entry.id, { status: "processing" });
         const imageUrl = await uploadToStorage(entry.file, userId);
-        const path = `${userId}/${entry.file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        filePaths.push(path);
+        filePaths.push(imageUrl);
         updateFile(entry.id, { status: "done", imageUrl });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Upload failed";

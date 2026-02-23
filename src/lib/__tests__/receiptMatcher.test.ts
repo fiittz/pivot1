@@ -514,7 +514,7 @@ describe("matchReceiptToTransaction — combined scoring", () => {
     expect(result.autoMatched).toBe(false);
   });
 
-  it("amount + vendor but no date = 0.80 and NOT autoMatched", async () => {
+  it("amount + vendor but no date = 0.80 and NOT autoMatched (below 0.85 threshold)", async () => {
     setCandidates([
       candidate({
         amount: -42.5,
@@ -595,10 +595,10 @@ describe("matchReceiptToTransaction — best candidate selection", () => {
 });
 
 // ==============================================================
-// matchReceiptToTransaction — autoMatched threshold
+// matchReceiptToTransaction — autoMatched threshold (0.85)
 // ==============================================================
 describe("matchReceiptToTransaction — autoMatched threshold", () => {
-  it("autoMatched is true when score >= 0.95", async () => {
+  it("autoMatched is true when score >= 0.85 (amount + vendor + near day = 0.95)", async () => {
     setCandidates([
       candidate({
         amount: -42.5,
@@ -614,7 +614,29 @@ describe("matchReceiptToTransaction — autoMatched threshold", () => {
     expect(result.autoMatched).toBe(true);
   });
 
-  it("autoMatched is false when score < 0.95", async () => {
+  it("autoMatched is false when score < 0.85 (amount + vendor only = 0.80)", async () => {
+    setCandidates([
+      candidate({
+        amount: -42.5,
+        description: "POS SCREWFIX IRELAND",
+        transaction_date: "2024-01-01", // far date, no date score
+      }),
+    ]);
+
+    const result = await matchReceiptToTransaction(
+      USER_ID,
+      RECEIPT_ID,
+      42.5,
+      "Screwfix",
+      "2024-06-15",
+    );
+
+    // 0.50 + 0.30 + 0 = 0.80 (date too far away)
+    expect(result.score).toBe(0.8);
+    expect(result.autoMatched).toBe(false);
+  });
+
+  it("autoMatched is false when score = 0.70 (amount + date only)", async () => {
     setCandidates([
       candidate({
         amount: -42.5,
