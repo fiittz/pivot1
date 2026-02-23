@@ -29,6 +29,8 @@ export function useBulkRecategorize() {
   const { userCorrections } = useUserCorrections();
   const queryClient = useQueryClient();
 
+  const directorNames = directorRows.map((d) => d.director_name).filter((n): n is string => !!n);
+
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stats, setStats] = useState<RecategorizeResult | null>(null);
@@ -121,6 +123,7 @@ export function useBulkRecategorize() {
                     (onboarding as Record<string, unknown>)?.business_type || profile?.business_type || "",
                   receipt_text: undefined,
                   account_type: txnAccount?.account_type,
+                  director_names: directorNames.length > 0 ? directorNames : undefined,
                   director_reliefs: isPersonalAccount ? (director1Data?.reliefs as string[] | undefined) : undefined,
                   director_income_sources: isPersonalAccount ? (director1Data?.income_sources as string[] | undefined) : undefined,
                 },
@@ -336,6 +339,7 @@ export function useBulkRecategorize() {
                     (onboarding as Record<string, unknown>)?.business_type || profile?.business_type || "",
                   receipt_text: undefined,
                   account_type: txnAccount?.account_type,
+                  director_names: directorNames.length > 0 ? directorNames : undefined,
                   director_reliefs: isPersonalAccount ? (director1DataMisc?.reliefs as string[] | undefined) : undefined,
                   director_income_sources: isPersonalAccount ? (director1DataMisc?.income_sources as string[] | undefined) : undefined,
                 },
@@ -489,6 +493,7 @@ export function useBulkRecategorize() {
                     (onboarding as Record<string, unknown>)?.business_type || profile?.business_type || "",
                   receipt_text: undefined,
                   account_type: txnAccount?.account_type,
+                  director_names: directorNames.length > 0 ? directorNames : undefined,
                   director_reliefs: isPersonalAccount ? (director1DataAll?.reliefs as string[] | undefined) : undefined,
                   director_income_sources: isPersonalAccount ? (director1DataAll?.income_sources as string[] | undefined) : undefined,
                 },
