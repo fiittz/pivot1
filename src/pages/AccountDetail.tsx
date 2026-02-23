@@ -333,7 +333,16 @@ const AccountDetail = () => {
     const debtors = q?.currentAssetsDebtors ?? q?.tradeDebtorsTotal ?? 0;
     if (debtors > 0) assets.push({ label: "Debtors", amount: debtors });
     if (q?.currentAssetsCash) assets.push({ label: "Cash in Hand", amount: q.currentAssetsCash });
-    const bankBal = q?.currentAssetsBankBalance ?? ct1.closingBalance ?? 0;
+    // Calculate actual bank balance from all imported transactions (not just P&L profit)
+    const companyAcct = supabaseAccounts?.find((a) => a.account_type === "limited_company");
+    const companyTxns = companyAcct
+      ? transactions.filter((t) => t.account_id === companyAcct.id)
+      : [];
+    const netCashFlow = companyTxns.reduce((sum, t) => {
+      const amt = Math.abs(Number(t.amount) || 0);
+      return sum + (t.type === "income" ? amt : -amt);
+    }, 0);
+    const bankBal = q?.currentAssetsBankBalance ?? ((companyAcct?.balance ?? 0) + netCashFlow);
     if (bankBal > 0) assets.push({ label: "Bank Balance", amount: bankBal });
     if (ct1.rctPrepayment > 0) assets.push({ label: "RCT Prepayment", amount: ct1.rctPrepayment });
     const totalAssets = assets.reduce((s, a) => s + a.amount, 0);
@@ -362,7 +371,7 @@ const AccountDetail = () => {
     const totalCapital = capital.reduce((s, c) => s + c.amount, 0);
 
     return { assets, totalAssets, liabilities, totalLiabilities, capital, totalCapital };
-  }, [user?.id, ct1]);
+  }, [user?.id, ct1, supabaseAccounts, transactions]);
 
   // Calculate VAT data — output VAT skipped (stored invoice vat_amount is
   // unreliable due to previous 23% default). Input VAT from expenses only.

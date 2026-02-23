@@ -622,7 +622,18 @@ const BankFeed = () => {
       const debtors = q?.currentAssetsDebtors ?? q?.tradeDebtorsTotal ?? 0;
       if (debtors > 0) assets.push({ label: "Debtors", amount: debtors });
       if (q?.currentAssetsCash) assets.push({ label: "Cash in Hand", amount: q.currentAssetsCash });
-      const bankBal = q?.currentAssetsBankBalance ?? ct1.closingBalance ?? 0;
+      // Calculate actual bank balance from all imported transactions (not just P&L profit)
+      const companyAcct = accounts?.find((a) => a.account_type === "limited_company");
+      const companyTxns = companyAcct
+        ? (transactions || []).filter((t) => t.account_id === companyAcct.id)
+        : [];
+      const netCashFlow = companyTxns.reduce((sum, t) => {
+        const amt = Math.abs(Number(t.amount) || 0);
+        return sum + (t.type === "income" ? amt : -amt);
+      }, 0);
+      // Prefer computed balance from transactions; only fall back to questionnaire when no txns exist
+      const computedBal = (companyAcct?.balance ?? 0) + netCashFlow;
+      const bankBal = companyTxns.length > 0 ? computedBal : (q?.currentAssetsBankBalance ?? computedBal);
       if (bankBal > 0) assets.push({ label: "Bank Balance", amount: bankBal });
       if (ct1.rctPrepayment > 0) assets.push({ label: "RCT Prepayment", amount: ct1.rctPrepayment });
 
@@ -655,7 +666,7 @@ const BankFeed = () => {
     const totalCapital = capital.reduce((s, c) => s + c.amount, 0);
 
     return { assets, totalAssets, liabilities, totalLiabilities, capital, totalCapital };
-  }, [user?.id, ct1, selectedAccount?.account_type]);
+  }, [user?.id, ct1, selectedAccount?.account_type, accounts, transactions]);
 
   const filteredTransactions =
     accountFilteredTransactions?.filter((t) => {

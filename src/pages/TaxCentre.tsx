@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useReliefScan } from "@/hooks/useReliefScan";
 import { useCT1Data } from "@/hooks/useCT1Data";
 import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
@@ -46,6 +47,8 @@ const TaxCentre = () => {
   const { user, profile, directorCount, directorsCompleted, onboardingComplete, directorOnboardingComplete } =
     useAuth();
   const { data: personalAccounts } = useAccounts("directors_personal_tax");
+  const { data: allAccounts } = useAccounts();
+  const { data: allTransactions } = useTransactions();
   const hasPersonalAccounts = (personalAccounts?.length ?? 0) > 0;
   const { reliefs } = useReliefScan(hasPersonalAccounts ? { accountType: "directors_personal_tax" } : undefined);
   const { getDirector, isLoading: directorsLoading } = useDirectorOnboarding();
@@ -151,7 +154,17 @@ const TaxCentre = () => {
       wip: savedCT1?.wipValue ?? 0,
       debtors: savedCT1?.currentAssetsDebtors ?? savedCT1?.tradeDebtorsTotal ?? 0,
       prepayments: savedCT1?.prepaymentsAmount ?? 0,
-      cashAtBank: savedCT1?.currentAssetsBankBalance ?? ct1.closingBalance ?? 0,
+      cashAtBank: savedCT1?.currentAssetsBankBalance ?? (() => {
+        const companyAcct = allAccounts?.find((a) => a.account_type === "limited_company");
+        const companyTxns = companyAcct
+          ? (allTransactions || []).filter((t) => t.account_id === companyAcct.id)
+          : [];
+        const netCash = companyTxns.reduce((sum, t) => {
+          const amt = Math.abs(Number(t.amount) || 0);
+          return sum + (t.type === "income" ? amt : -amt);
+        }, 0);
+        return (companyAcct?.balance ?? 0) + netCash;
+      })(),
       creditors: savedCT1?.liabilitiesCreditors ?? savedCT1?.tradeCreditorsTotal ?? 0,
       accruals: savedCT1?.accrualsAmount ?? 0,
       taxation: ctLiability,

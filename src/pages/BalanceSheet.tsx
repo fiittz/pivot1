@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useCT1Data } from "@/hooks/useCT1Data";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useInvoiceTripMatcher } from "@/hooks/useInvoiceTripMatcher";
 import { ExportButtons } from "@/components/reports/ExportButtons";
 import { assembleBalanceSheetData, type BalanceSheetInput } from "@/lib/reports/balanceSheetData";
@@ -38,6 +40,8 @@ const BalanceSheet = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const ct1 = useCT1Data();
+  const { data: allTransactions } = useTransactions();
+  const { data: allAccounts } = useAccounts();
   const { invoiceTrips } = useInvoiceTripMatcher();
   const [travelExpanded, setTravelExpanded] = useState(false);
 
@@ -84,7 +88,17 @@ const BalanceSheet = () => {
       stock: savedCT1.currentAssetsStock ?? 0,
       debtors: savedCT1.currentAssetsDebtors ?? savedCT1.tradeDebtorsTotal ?? 0,
       cash: savedCT1.currentAssetsCash ?? 0,
-      bankBalance: savedCT1.currentAssetsBankBalance ?? ct1.closingBalance ?? 0,
+      bankBalance: savedCT1.currentAssetsBankBalance ?? (() => {
+        const companyAcct = allAccounts?.find((a) => a.account_type === "limited_company");
+        const companyTxns = companyAcct
+          ? (allTransactions || []).filter((t) => t.account_id === companyAcct.id)
+          : [];
+        const netCash = companyTxns.reduce((sum, t) => {
+          const amt = Math.abs(Number(t.amount) || 0);
+          return sum + (t.type === "income" ? amt : -amt);
+        }, 0);
+        return (companyAcct?.balance ?? 0) + netCash;
+      })(),
       rctPrepayment: ct1.rctPrepayment,
       directorsLoanTravel: ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0,
       creditors: savedCT1.liabilitiesCreditors ?? savedCT1.tradeCreditorsTotal ?? 0,
@@ -95,7 +109,7 @@ const BalanceSheet = () => {
       shareCapital: savedCT1.shareCapital ?? 100,
       retainedProfits,
     };
-  }, [savedCT1, ct1]);
+  }, [savedCT1, ct1, allAccounts, allTransactions]);
 
   const getReportMeta = (): ReportMeta => ({
     companyName: profile?.business_name || "Company",
