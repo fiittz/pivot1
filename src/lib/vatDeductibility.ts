@@ -237,6 +237,18 @@ export function isCTDeductible(
   if (catLower.includes("depreciation")) {
     return { isDeductible: false, reason: "Depreciation — replaced by capital allowances" };
   }
+  // Dividends — appropriation of profit, never deductible for CT
+  if (catLower.includes("dividend")) {
+    return { isDeductible: false, reason: "Dividends — profit distribution, not deductible for CT" };
+  }
+  // Corporation tax / tax payments to Revenue — not a deductible expense
+  if (
+    catLower.includes("corporation tax") ||
+    catLower.includes("tax payment") ||
+    /\b(revenue commissioners?|collector.?general)\b/.test(descLower)
+  ) {
+    return { isDeductible: false, reason: "Tax payment to Revenue — not deductible for CT" };
+  }
   // Uncategorised — conservative, flag for review
   if (!categoryName || catLower === "uncategorised" || catLower === "uncategorized") {
     return { isDeductible: false, reason: "Uncategorised — needs review" };

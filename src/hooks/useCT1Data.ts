@@ -5,7 +5,7 @@ import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
 import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useInvoiceTripMatcher } from "@/hooks/useInvoiceTripMatcher";
-import { isVATDeductible, isCTDeductible } from "@/lib/vatDeductibility";
+import { isCTDeductible } from "@/lib/vatDeductibility";
 import { calculateVehicleDepreciation, type VehicleDepreciation } from "@/lib/vehicleDepreciation";
 
 export interface CT1ReEvalOptions {
@@ -191,8 +191,8 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
     const reEvaluationWarnings: string[] = [];
 
     if (hasVATSplit && options?.vatStatusBefore === "not_registered") {
-      // Pre-change: all expenses are non-deductible for VAT purposes
-      // Post-change: apply normal deductibility rules
+      // Re-evaluate using CT deductibility (not VAT) — expenseSummary feeds trading profit
+      // VAT recoverability is tracked separately via vatPosition
       let splitAllowable = 0;
       let splitDisallowed = 0;
       const changeDate = options.vatChangeDate!;
@@ -201,8 +201,7 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
         const catName = (t.category as { id: string; name: string } | null)?.name ?? null;
         // Skip drawings — not P&L items
         if (isDLA(catName)) continue;
-        const txDate = t.transaction_date ?? "";
-        const result = isVATDeductible(t.description ?? "", catName);
+        const result = isCTDeductible(t.description ?? "", catName);
         if (result.isDeductible) {
           splitAllowable += amt;
         } else {

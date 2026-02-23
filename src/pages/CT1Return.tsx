@@ -20,7 +20,7 @@ import { ExportButtons } from "@/components/reports/ExportButtons";
 import { assembleCT1ReportData } from "@/lib/reports/ct1ReportData";
 import { generateCT1Pdf } from "@/lib/reports/pdf/ct1Pdf";
 import { generateCT1Excel } from "@/lib/reports/excel/ct1Excel";
-import { buildCT1Xml, generateCT1Xml } from "@/lib/reports/xml/ct1Xml";
+import { generateCT1Xml } from "@/lib/reports/xml/ct1Xml";
 import type { ReportMeta } from "@/lib/reports/types";
 
 const eur = (n: number) =>
