@@ -311,7 +311,7 @@ describe("exportToExcel", () => {
     exportToExcel([makeTx()], undefined, undefined, makePnlCt1());
     const content = (blobInstances[0].parts as string[])[0];
     expect(content).toContain("PROFIT & LOSS");
-    expect(content).toContain("INCOME");
+    expect(content).toContain("TURNOVER");
   });
 
   it("includes questionnaire section when provided", () => {
@@ -578,11 +578,11 @@ describe("exportToExcel — P&L/CT1 text section coverage", () => {
     expect(content).toContain("Total CT Liability");
   });
 
-  it("includes Direct Costs section when totalDirectCosts > 0", () => {
+  it("includes Cost of Sales section when totalDirectCosts > 0", () => {
     exportToExcel([makeTx()], undefined, undefined, makeFullPnlCt1());
     const content = (blobInstances[0].parts as string[])[0];
-    expect(content).toContain("DIRECT COSTS");
-    expect(content).toContain("Total Direct Costs");
+    expect(content).toContain("COST OF SALES");
+    expect(content).toContain("Total Cost of Sales");
   });
 
   it("includes Revenue Refund when revenueRefunds > 0", () => {
@@ -1007,14 +1007,14 @@ describe("exportToPDF — expanded branch coverage", () => {
     expect(mockDoc.text).toHaveBeenCalledWith("Directors Current Account", 14, expect.any(Number), expect.anything());
   });
 
-  it("renders Direct Costs in P&L PDF when totalDirectCosts > 0", () => {
+  it("renders Cost of Sales in P&L PDF when totalDirectCosts > 0", () => {
     const pnl = makeFullPnlCt1();
     exportToPDF([makeTx()], undefined, undefined, pnl);
-    // Direct costs rows are part of the P&L autoTable call
+    // Cost of Sales rows are part of the P&L autoTable call
     const pnlCall = mockAutoTable.mock.calls[0];
     const body = pnlCall[1].body;
-    const hasDirectCosts = body.some((row: string[]) => row[0] === "Total Direct Costs");
-    expect(hasDirectCosts).toBe(true);
+    const hasCostOfSales = body.some((row: string[]) => row[0] === "Total Cost of Sales");
+    expect(hasCostOfSales).toBe(true);
   });
 
   it("renders revenue refunds in P&L PDF when revenueRefunds > 0", () => {
@@ -1510,10 +1510,10 @@ describe("exportToPDF — didParseCell callbacks coverage", () => {
     });
     expect(pnlCall).toBeDefined();
     const opts = pnlCall![1] as { didParseCell: (data: unknown) => void };
-    // Test with "Total Income" label (should make bold)
+    // Test with "Total Turnover" label (should make bold)
     const mockCellStyles = { fontStyle: "normal", halign: "left" };
     opts.didParseCell({
-      cell: { raw: "Total Income", styles: mockCellStyles },
+      cell: { raw: "Total Turnover", styles: mockCellStyles },
       column: { index: 0 },
       row: { index: 0 },
     });

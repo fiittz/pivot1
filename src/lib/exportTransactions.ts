@@ -59,28 +59,28 @@ const formatPnlCt1Section = (s: PnlCt1Summary): string => {
   lines.push("=".repeat(60));
   lines.push("");
 
-  lines.push("INCOME");
+  lines.push("TURNOVER");
   lines.push("-".repeat(40));
   for (const [cat, amt] of Object.entries(s.incomeByCategory).sort((a, b) => b[1] - a[1])) {
     lines.push(`  ${cat}: ${fmtEur(amt)}`);
   }
-  lines.push(`  Total Income: ${fmtEur(s.totalIncome)}`);
+  lines.push(`  Total Turnover: ${fmtEur(s.totalIncome)}`);
   lines.push("");
 
   if (s.totalDirectCosts > 0) {
-    lines.push("DIRECT COSTS");
+    lines.push("COST OF SALES");
     lines.push("-".repeat(40));
     for (const [cat, amt] of Object.entries(s.directCostsByCategory).sort((a, b) => b[1] - a[1])) {
       lines.push(`  ${cat}: ${fmtEur(amt)}`);
     }
-    lines.push(`  Total Direct Costs: ${fmtEur(s.totalDirectCosts)}`);
+    lines.push(`  Total Cost of Sales: ${fmtEur(s.totalDirectCosts)}`);
     lines.push("");
   }
 
   lines.push(`GROSS PROFIT: ${fmtEur(s.grossProfit)}`);
   lines.push("");
 
-  lines.push("EXPENSES");
+  lines.push("ADMINISTRATIVE EXPENSES");
   lines.push("-".repeat(40));
   for (const [cat, amt] of Object.entries(s.expensesByCategory).sort((a, b) => b[1] - a[1])) {
     lines.push(`  ${cat}: ${fmtEur(amt)}`);
@@ -88,7 +88,7 @@ const formatPnlCt1Section = (s: PnlCt1Summary): string => {
   if (s.revenueRefunds > 0) {
     lines.push(`  Less: Revenue Refund: (${fmtEur(s.revenueRefunds)})`);
   }
-  lines.push(`  Net Expenses: ${fmtEur(s.netExpenses)}`);
+  lines.push(`  Total Administrative Expenses: ${fmtEur(s.netExpenses)}`);
   lines.push("");
   lines.push(`NET PROFIT: ${fmtEur(s.netProfit)}`);
   lines.push("");
@@ -515,19 +515,19 @@ export const exportToPDF = (
     for (const [cat, amt] of Object.entries(pnlCt1.incomeByCategory).sort((a, b) => b[1] - a[1])) {
       pnlRows.push([`  ${cat}`, fmtEur(amt)]);
     }
-    pnlRows.push(["Total Income", fmtEur(pnlCt1.totalIncome)]);
+    pnlRows.push(["Total Turnover", fmtEur(pnlCt1.totalIncome)]);
     if (pnlCt1.totalDirectCosts > 0) {
       for (const [cat, amt] of Object.entries(pnlCt1.directCostsByCategory).sort((a, b) => b[1] - a[1])) {
         pnlRows.push([`  ${cat}`, fmtEur(amt)]);
       }
-      pnlRows.push(["Total Direct Costs", fmtEur(pnlCt1.totalDirectCosts)]);
+      pnlRows.push(["Total Cost of Sales", fmtEur(pnlCt1.totalDirectCosts)]);
     }
     pnlRows.push(["Gross Profit", fmtEur(pnlCt1.grossProfit)]);
     for (const [cat, amt] of Object.entries(pnlCt1.expensesByCategory).sort((a, b) => b[1] - a[1])) {
       pnlRows.push([`  ${cat}`, fmtEur(amt)]);
     }
     if (pnlCt1.revenueRefunds > 0) pnlRows.push(["  Less: Revenue Refund", `(${fmtEur(pnlCt1.revenueRefunds)})`]);
-    pnlRows.push(["Net Expenses", fmtEur(pnlCt1.netExpenses)]);
+    pnlRows.push(["Total Administrative Expenses", fmtEur(pnlCt1.netExpenses)]);
     pnlRows.push(["Net Profit", fmtEur(pnlCt1.netProfit)]);
 
     autoTable(doc, {
@@ -540,7 +540,7 @@ export const exportToPDF = (
       headStyles: { fillColor: [240, 240, 240], fontStyle: "bold" },
       didParseCell: (data) => {
         const label = String(data.cell.raw);
-        if (["Total Income", "Total Direct Costs", "Gross Profit", "Net Expenses", "Net Profit"].includes(label)) {
+        if (["Total Turnover", "Total Cost of Sales", "Gross Profit", "Total Administrative Expenses", "Net Profit"].includes(label)) {
           data.cell.styles.fontStyle = "bold";
         }
         if (data.column.index === 1) data.cell.styles.halign = "right";

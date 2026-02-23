@@ -858,8 +858,8 @@ const BankFeed = () => {
         ) * 100,
       ) / 100;
     if (travelNetOwed > 0) {
-      expensesByCategory["Travel & Accommodation (owed to director)"] =
-        (expensesByCategory["Travel & Accommodation (owed to director)"] || 0) + travelNetOwed;
+      expensesByCategory["Travel & Subsistence (owed to director)"] =
+        (expensesByCategory["Travel & Subsistence (owed to director)"] || 0) + travelNetOwed;
       totalExpenses += travelNetOwed;
     }
 
@@ -2000,8 +2000,8 @@ const BankFeed = () => {
                         ) * 100,
                       ) / 100;
                     if (travelNetOwed > 0 && !isPersonal) {
-                      expensesByCategory["Travel & Accommodation (owed to director)"] =
-                        (expensesByCategory["Travel & Accommodation (owed to director)"] || 0) + travelNetOwed;
+                      expensesByCategory["Travel & Subsistence (owed to director)"] =
+                        (expensesByCategory["Travel & Subsistence (owed to director)"] || 0) + travelNetOwed;
                       totalExpenses += travelNetOwed;
                     }
 
@@ -2054,7 +2054,7 @@ const BankFeed = () => {
                         <div className="space-y-1 text-sm">
                           {/* Income */}
                           <div className="py-2 border-b-2 border-foreground/20">
-                            <p className="font-semibold text-base mb-1">{isPersonal ? "Personal Income" : "Income"}</p>
+                            <p className="font-semibold text-base mb-1">{isPersonal ? "Personal Income" : "Turnover"}</p>
                             {sortedEntries(incomeByCategory).map(([cat, amt]) => (
                               <div key={cat} className="flex justify-between py-0.5 pl-4">
                                 <span className="text-muted-foreground">{cat}</span>
@@ -2138,10 +2138,10 @@ const BankFeed = () => {
                             </>
                           ) : (
                             <>
-                          {/* Direct Costs */}
+                          {/* Cost of Sales */}
                           {totalDirectCosts > 0 && (
                             <div className="py-2 border-b border-border">
-                              <p className="font-semibold text-base mb-1">Direct Costs</p>
+                              <p className="font-semibold text-base mb-1">Cost of Sales</p>
                               {sortedEntries(directCostsByCategory).map(([cat, amt]) => (
                                 <div key={cat} className="flex justify-between py-0.5 pl-4">
                                   <span className="text-muted-foreground">{cat}</span>
@@ -2165,9 +2165,9 @@ const BankFeed = () => {
                             </span>
                           </div>
 
-                          {/* Expenses */}
+                          {/* Administrative Expenses */}
                           <div className="py-2 border-b border-border">
-                            <p className="font-semibold text-base mb-1">Expenses</p>
+                            <p className="font-semibold text-base mb-1">Administrative Expenses</p>
                             {sortedEntries(expensesByCategory).map(([cat, amt]) => (
                               <div key={cat} className="flex justify-between py-0.5 pl-4">
                                 <span className="text-muted-foreground">{cat}</span>

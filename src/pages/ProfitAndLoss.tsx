@@ -136,12 +136,12 @@ const ProfitAndLoss = () => {
         </header>
 
         <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-          {/* Revenue */}
+          {/* Turnover */}
           <Card className="border-0 shadow-lg rounded-3xl overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-green-600" />
-                Revenue
+                Turnover
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -149,16 +149,16 @@ const ProfitAndLoss = () => {
                 <Row key={i} label={item.category} amount={item.amount} />
               ))}
               <Divider />
-              <Row label="Total Revenue" amount={totalRevenue} bold />
+              <Row label="Total Turnover" amount={totalRevenue} bold />
             </CardContent>
           </Card>
 
-          {/* Operating Expenses */}
+          {/* Administrative Expenses */}
           <Card className="border-0 shadow-lg rounded-3xl overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingDown className="w-5 h-5 text-red-600" />
-                Operating Expenses
+                Administrative Expenses
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -166,7 +166,7 @@ const ProfitAndLoss = () => {
                 <Row key={i} label={item.category} amount={item.amount} />
               ))}
               <Divider />
-              <Row label="Total Expenses" amount={totalExpenses} bold />
+              <Row label="Total Administrative Expenses" amount={totalExpenses} bold />
             </CardContent>
           </Card>
 
@@ -195,7 +195,7 @@ const ProfitAndLoss = () => {
                 )}
               </div>
               <div className="mt-3 text-sm text-muted-foreground">
-                Revenue {eur(totalRevenue)} &minus; Expenses {eur(totalExpenses)}
+                Turnover {eur(totalRevenue)} &minus; Expenses {eur(totalExpenses)}
               </div>
             </CardContent>
           </Card>

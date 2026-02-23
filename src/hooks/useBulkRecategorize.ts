@@ -260,15 +260,24 @@ export function useBulkRecategorize() {
     setCurrentPhase("Finding Miscellaneous transactions...");
 
     try {
-      // Find the Miscellaneous Expenses category
-      const { data: miscCats } = await supabase
+      // Find the Sundry Expenses (or legacy Miscellaneous Expenses) category
+      let { data: miscCats } = await supabase
         .from("categories")
         .select("id")
         .eq("user_id", user.id)
-        .eq("name", "Miscellaneous Expenses");
+        .eq("name", "Sundry Expenses");
 
       if (!miscCats || miscCats.length === 0) {
-        toast.info("No Miscellaneous Expenses category found");
+        // Fallback to old name
+        ({ data: miscCats } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("name", "Miscellaneous Expenses"));
+      }
+
+      if (!miscCats || miscCats.length === 0) {
+        toast.info("No Sundry Expenses category found");
         setIsRunning(false);
         return { total: 0, categorized: 0, skipped: 0, failed: 0 };
       }
@@ -571,9 +580,9 @@ export function useBulkRecategorize() {
       const detectedTrips = detectTrips(tripInput, baseLocation);
 
       if (detectedTrips.length > 0) {
-        // Find the Travel & Accommodation / Vehicle Expenses categories
-        const travelCat = categories.find((c) => c.name === "Travel & Accommodation");
-        const motorCat = categories.find((c) => c.name === "Vehicle Expenses");
+        // Find the Travel & Subsistence / Motor & Travel categories (with legacy fallbacks)
+        const travelCat = categories.find((c) => c.name === "Travel & Subsistence") || categories.find((c) => c.name === "Travel & Accommodation");
+        const motorCat = categories.find((c) => c.name === "Motor & Travel") || categories.find((c) => c.name === "Vehicle Expenses");
 
         let tripUpdated = 0;
         for (const trip of detectedTrips) {
@@ -612,10 +621,10 @@ export function useBulkRecategorize() {
 
       // --- Phase 3: Invoice-based trip override ---
       // Transactions categorized as DLA/personal that fall within an invoice
-      // job period should be overridden to Travel & Accommodation (trip expense).
+      // job period should be overridden to Travel & Subsistence (trip expense).
       setCurrentPhase("Matching expenses to invoice trips...");
 
-      const travelCatForInvoice = categories.find((c) => c.name === "Travel & Accommodation");
+      const travelCatForInvoice = categories.find((c) => c.name === "Travel & Subsistence") || categories.find((c) => c.name === "Travel & Accommodation");
       if (travelCatForInvoice) {
         const { data: invoices } = await supabase
           .from("invoices")

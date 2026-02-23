@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import { seedDefaultCategories, ensureNewCategories } from "@/lib/seedCategories";
+import { seedDefaultCategories, ensureNewCategories, migrateCategoryNames } from "@/lib/seedCategories";
 
 export interface Category {
   id: string;
@@ -75,7 +75,8 @@ export function useCategories(type?: "income" | "expense", accountType?: string)
           data = refetchedData;
         }
       } else if (data && data.length > 0 && user?.id) {
-        // Ensure newer categories (Subsistence, personal categories, etc.) exist for existing users
+        // Migrate old category names to FRS 102 terminology + ensure newer categories exist
+        await migrateCategoryNames(user.id);
         await ensureNewCategories(user.id);
         // Re-fetch in case new categories were added
         let refetchQuery = supabase.from("categories").select("*").eq("user_id", user!.id).order("name");

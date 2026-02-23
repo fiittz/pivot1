@@ -45,30 +45,29 @@ const CONSTRUCTION_INCOME: CategoryDef[] = [
 
 const CONSTRUCTION_EXPENSES: CategoryDef[] = [
   { name: "Materials & Supplies", account_code: "5100", vat_rate: 23, account_type: "business" },
-  { name: "Subcontractor Payments", account_code: "5200", vat_rate: 23, account_type: "business" },
+  { name: "Subcontractor Costs", account_code: "5200", vat_rate: 23, account_type: "business" },
   { name: "Tools & Equipment", account_code: "5300", vat_rate: 23, account_type: "business" },
-  { name: "Vehicle Expenses", account_code: "5400", vat_rate: 23, account_type: "business" },
-  { name: "Fuel", account_code: "5410", vat_rate: 23, account_type: "business" },
+  { name: "Motor & Travel", account_code: "5400", vat_rate: 23, account_type: "business" },
+  { name: "Motor Fuel", account_code: "5410", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Training & Certifications", account_code: "6000", vat_rate: 0, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
-  { name: "Subsistence", account_code: "6250", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
   { name: "Meals & Entertainment", account_code: "6300", vat_rate: 0, account_type: "business" },
   { name: "Repairs & Maintenance", account_code: "6400", vat_rate: 23, account_type: "business" },
-  { name: "Protective Clothing & PPE", account_code: "6500", vat_rate: 23, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Protective Clothing", account_code: "6500", vat_rate: 23, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const TECHNOLOGY_INCOME: CategoryDef[] = [
@@ -81,27 +80,26 @@ const TECHNOLOGY_INCOME: CategoryDef[] = [
 const TECHNOLOGY_EXPENSES: CategoryDef[] = [
   { name: "Cloud Hosting & Infrastructure", account_code: "5100", vat_rate: 23, account_type: "business" },
   { name: "Software & Licenses", account_code: "5200", vat_rate: 23, account_type: "business" },
-  { name: "Contractor Payments", account_code: "5300", vat_rate: 23, account_type: "business" },
+  { name: "Subcontractor Costs", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Hardware & Equipment", account_code: "5400", vat_rate: 23, account_type: "business" },
   { name: "Payment Processing Fees", account_code: "5410", vat_rate: 0, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Co-working", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Training & Conferences", account_code: "6000", vat_rate: 0, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
-  { name: "Subsistence", account_code: "6250", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
   { name: "Meals & Entertainment", account_code: "6300", vat_rate: 0, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const HOSPITALITY_INCOME: CategoryDef[] = [
@@ -114,26 +112,26 @@ const HOSPITALITY_INCOME: CategoryDef[] = [
 const HOSPITALITY_EXPENSES: CategoryDef[] = [
   { name: "Food & Ingredients", account_code: "5100", vat_rate: 0, account_type: "business" },
   { name: "Beverages (Cost of Sales)", account_code: "5150", vat_rate: 23, account_type: "business" },
-  { name: "Staff Wages", account_code: "5200", vat_rate: 0, account_type: "business" },
+  { name: "Wages & Salaries", account_code: "5200", vat_rate: 0, account_type: "business" },
   { name: "Kitchen Equipment", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Packaging & Disposables", account_code: "5400", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Cleaning & Hygiene", account_code: "6000", vat_rate: 23, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
   { name: "Delivery Platform Fees", account_code: "6150", vat_rate: 23, account_type: "business" },
   { name: "Repairs & Maintenance", account_code: "6400", vat_rate: 23, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const RETAIL_INCOME: CategoryDef[] = [
@@ -146,25 +144,25 @@ const RETAIL_INCOME: CategoryDef[] = [
 const RETAIL_EXPENSES: CategoryDef[] = [
   { name: "Cost of Goods Sold", account_code: "5100", vat_rate: 23, account_type: "business" },
   { name: "Packaging & Shipping", account_code: "5200", vat_rate: 23, account_type: "business" },
-  { name: "Staff Wages", account_code: "5250", vat_rate: 0, account_type: "business" },
+  { name: "Wages & Salaries", account_code: "5250", vat_rate: 0, account_type: "business" },
   { name: "Shop Fittings & Equipment", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Payment Processing Fees", account_code: "5410", vat_rate: 0, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
   { name: "Repairs & Maintenance", account_code: "6400", vat_rate: 23, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const TRANSPORT_INCOME: CategoryDef[] = [
@@ -175,7 +173,7 @@ const TRANSPORT_INCOME: CategoryDef[] = [
 ];
 
 const TRANSPORT_EXPENSES: CategoryDef[] = [
-  { name: "Fuel", account_code: "5100", vat_rate: 23, account_type: "business" },
+  { name: "Motor Fuel", account_code: "5100", vat_rate: 23, account_type: "business" },
   { name: "Vehicle Maintenance & Repairs", account_code: "5200", vat_rate: 23, account_type: "business" },
   { name: "Vehicle Leasing", account_code: "5250", vat_rate: 23, account_type: "business" },
   { name: "Vehicle Insurance", account_code: "5300", vat_rate: 0, account_type: "business" },
@@ -183,18 +181,18 @@ const TRANSPORT_EXPENSES: CategoryDef[] = [
   { name: "Driver Wages", account_code: "5450", vat_rate: 0, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const HEALTH_INCOME: CategoryDef[] = [
@@ -206,24 +204,24 @@ const HEALTH_INCOME: CategoryDef[] = [
 
 const HEALTH_EXPENSES: CategoryDef[] = [
   { name: "Supplies & Products", account_code: "5100", vat_rate: 23, account_type: "business" },
-  { name: "Staff Wages", account_code: "5200", vat_rate: 0, account_type: "business" },
+  { name: "Wages & Salaries", account_code: "5200", vat_rate: 0, account_type: "business" },
   { name: "Equipment & Furniture", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Cleaning & Hygiene", account_code: "6000", vat_rate: 23, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
   { name: "Training & CPD", account_code: "6200", vat_rate: 0, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const PROPERTY_INCOME: CategoryDef[] = [
@@ -239,20 +237,20 @@ const PROPERTY_EXPENSES: CategoryDef[] = [
   { name: "Materials & Supplies", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Mortgage Interest", account_code: "5850", vat_rate: 0, account_type: "business" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const MANUFACTURING_INCOME: CategoryDef[] = [
@@ -264,25 +262,25 @@ const MANUFACTURING_INCOME: CategoryDef[] = [
 
 const MANUFACTURING_EXPENSES: CategoryDef[] = [
   { name: "Raw Materials", account_code: "5100", vat_rate: 23, account_type: "business" },
-  { name: "Staff Wages", account_code: "5200", vat_rate: 0, account_type: "business" },
+  { name: "Wages & Salaries", account_code: "5200", vat_rate: 0, account_type: "business" },
   { name: "Machinery & Equipment", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Packaging & Shipping", account_code: "5400", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Repairs & Maintenance", account_code: "6400", vat_rate: 23, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Protective Clothing & PPE", account_code: "6500", vat_rate: 23, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Protective Clothing", account_code: "6500", vat_rate: 23, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const SOFTWARE_DEV_INCOME: CategoryDef[] = [
@@ -296,28 +294,27 @@ const SOFTWARE_DEV_EXPENSES: CategoryDef[] = [
   { name: "Cloud Hosting & Infrastructure", account_code: "5100", vat_rate: 23, account_type: "business" },
   { name: "Software & Licenses", account_code: "5200", vat_rate: 23, account_type: "business" },
   { name: "API & Third-Party Services", account_code: "5250", vat_rate: 23, account_type: "business" },
-  { name: "Contractor Payments", account_code: "5300", vat_rate: 23, account_type: "business" },
+  { name: "Subcontractor Costs", account_code: "5300", vat_rate: 23, account_type: "business" },
   { name: "Hardware & Equipment", account_code: "5400", vat_rate: 23, account_type: "business" },
   { name: "Payment Processing Fees", account_code: "5410", vat_rate: 0, account_type: "business" },
   { name: "Domain & SSL Certificates", account_code: "5420", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Co-working", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Training & Conferences", account_code: "6000", vat_rate: 0, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
-  { name: "Subsistence", account_code: "6250", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
   { name: "Meals & Entertainment", account_code: "6300", vat_rate: 0, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const EVENTS_INCOME: CategoryDef[] = [
@@ -334,26 +331,26 @@ const EVENTS_EXPENSES: CategoryDef[] = [
   { name: "Audio/Visual Equipment", account_code: "5200", vat_rate: 23, account_type: "business" },
   { name: "Staging & Decor", account_code: "5250", vat_rate: 23, account_type: "business" },
   { name: "Entertainment & Artists", account_code: "5300", vat_rate: 23, account_type: "business" },
-  { name: "Staff Wages", account_code: "5400", vat_rate: 0, account_type: "business" },
+  { name: "Wages & Salaries", account_code: "5400", vat_rate: 0, account_type: "business" },
   { name: "Security", account_code: "5450", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
   { name: "Licensing & Permits", account_code: "5650", vat_rate: 0, account_type: "business" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Printing & Signage", account_code: "5750", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
   { name: "Transport & Logistics", account_code: "6250", vat_rate: 23, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 const PROFESSIONAL_INCOME: CategoryDef[] = [
@@ -364,25 +361,24 @@ const PROFESSIONAL_INCOME: CategoryDef[] = [
 ];
 
 const PROFESSIONAL_EXPENSES: CategoryDef[] = [
-  { name: "Contractor Payments", account_code: "5100", vat_rate: 23, account_type: "business" },
+  { name: "Subcontractor Costs", account_code: "5100", vat_rate: 23, account_type: "business" },
   { name: "Insurance", account_code: "5500", vat_rate: 0, account_type: "both" },
   { name: "Professional Fees", account_code: "5600", vat_rate: 23, account_type: "both" },
-  { name: "Office Expenses", account_code: "5700", vat_rate: 23, account_type: "business" },
-  { name: "Telephone & Internet", account_code: "5710", vat_rate: 23, account_type: "business" },
+  { name: "Printing, Postage & Stationery", account_code: "5700", vat_rate: 23, account_type: "business" },
+  { name: "Telephone & Communications", account_code: "5710", vat_rate: 23, account_type: "business" },
   { name: "Bank Charges", account_code: "5800", vat_rate: 0, account_type: "both" },
   { name: "Rent & Rates", account_code: "5900", vat_rate: 0, account_type: "business" },
-  { name: "Utilities", account_code: "5910", vat_rate: 13.5, account_type: "business" },
+  { name: "Light, Heat & Power", account_code: "5910", vat_rate: 13.5, account_type: "business" },
   { name: "Training & CPD", account_code: "6000", vat_rate: 0, account_type: "business" },
   { name: "Advertising & Marketing", account_code: "6100", vat_rate: 23, account_type: "business" },
-  { name: "Travel & Accommodation", account_code: "6200", vat_rate: 0, account_type: "business" },
-  { name: "Subsistence", account_code: "6250", vat_rate: 0, account_type: "business" },
+  { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, account_type: "business" },
   { name: "Meals & Entertainment", account_code: "6300", vat_rate: 0, account_type: "business" },
-  { name: "Subscriptions & Software", account_code: "6600", vat_rate: 23, account_type: "business" },
-  { name: "Director's Salary", account_code: "6710", vat_rate: 0, account_type: "business" },
+  { name: "Computer Costs", account_code: "6600", vat_rate: 23, account_type: "business" },
+  { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, account_type: "business" },
   { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, account_type: "business" },
   { name: "Dividends", account_code: "6720", vat_rate: 0, account_type: "business" },
   { name: "Medical Expenses", account_code: "6800", vat_rate: 0, account_type: "both" },
-  { name: "Miscellaneous Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
+  { name: "Sundry Expenses", account_code: "6900", vat_rate: 23, account_type: "business" },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -484,11 +480,11 @@ export async function seedDefaultCategories(userId: string, businessType?: strin
  */
 export async function ensureNewCategories(userId: string): Promise<void> {
   const needed = [
-    { name: "Director's Salary", account_code: "6710", vat_rate: 0, type: "expense", account_type: "business" },
+    { name: "Director's Remuneration", account_code: "6710", vat_rate: 0, type: "expense", account_type: "business" },
     { name: "Director's Loan Account", account_code: "6700", vat_rate: 0, type: "expense", account_type: "business" },
     { name: "Dividends", account_code: "6720", vat_rate: 0, type: "expense", account_type: "business" },
     { name: "Medical Expenses", account_code: "6800", vat_rate: 0, type: "expense", account_type: "both" },
-    { name: "Subsistence", account_code: "6250", vat_rate: 0, type: "expense", account_type: "business" },
+    { name: "Travel & Subsistence", account_code: "6200", vat_rate: 0, type: "expense", account_type: "business" },
     // Personal categories for existing users
     { name: "Groceries & Household", account_code: "7100", vat_rate: 0, type: "expense", account_type: "personal" },
     { name: "Rent / Mortgage", account_code: "7200", vat_rate: 0, type: "expense", account_type: "personal" },
@@ -510,6 +506,88 @@ export async function ensureNewCategories(userId: string): Promise<void> {
 
     if (!data || data.length === 0) {
       await supabase.from("categories").insert({ ...cat, user_id: userId });
+    }
+  }
+}
+
+/**
+ * Migrate existing category names to FRS 102 / standard Irish CoA terminology.
+ * Renames old names → new names in the database. Skips if user already has the new name.
+ * Also merges "Subsistence" into "Travel & Subsistence".
+ */
+export async function migrateCategoryNames(userId: string): Promise<void> {
+  const renames: [string, string][] = [
+    ["Director's Salary", "Director's Remuneration"],
+    ["Vehicle Expenses", "Motor & Travel"],
+    ["Fuel", "Motor Fuel"],
+    ["Office Expenses", "Printing, Postage & Stationery"],
+    ["Telephone & Internet", "Telephone & Communications"],
+    ["Subscriptions & Software", "Computer Costs"],
+    ["Utilities", "Light, Heat & Power"],
+    ["Miscellaneous Expenses", "Sundry Expenses"],
+    ["Subcontractor Payments", "Subcontractor Costs"],
+    ["Staff Wages", "Wages & Salaries"],
+    ["Contractor Payments", "Subcontractor Costs"],
+    ["Protective Clothing & PPE", "Protective Clothing"],
+    ["Travel & Accommodation", "Travel & Subsistence"],
+  ];
+
+  for (const [oldName, newName] of renames) {
+    // Skip if user already has the new name
+    const { data: existing } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("name", newName)
+      .limit(1);
+
+    if (existing && existing.length > 0) continue;
+
+    // Rename old → new
+    await supabase
+      .from("categories")
+      .update({ name: newName })
+      .eq("user_id", userId)
+      .eq("name", oldName);
+  }
+
+  // Merge "Subsistence" into "Travel & Subsistence":
+  // If user has both, move Subsistence transactions to Travel & Subsistence, then delete Subsistence.
+  // If user only has "Subsistence", rename it to "Travel & Subsistence".
+  const { data: subsistenceCat } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("name", "Subsistence")
+    .limit(1);
+
+  if (subsistenceCat && subsistenceCat.length > 0) {
+    const { data: travelCat } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("name", "Travel & Subsistence")
+      .limit(1);
+
+    if (travelCat && travelCat.length > 0) {
+      // Move transactions from Subsistence → Travel & Subsistence
+      await supabase
+        .from("transactions")
+        .update({ category_id: travelCat[0].id })
+        .eq("user_id", userId)
+        .eq("category_id", subsistenceCat[0].id);
+
+      // Delete the old Subsistence category
+      await supabase
+        .from("categories")
+        .delete()
+        .eq("id", subsistenceCat[0].id);
+    } else {
+      // No Travel & Subsistence exists — just rename Subsistence
+      await supabase
+        .from("categories")
+        .update({ name: "Travel & Subsistence" })
+        .eq("id", subsistenceCat[0].id);
     }
   }
 }
