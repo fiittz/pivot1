@@ -52,11 +52,14 @@ function scoreCandidate(
       score += 0.3;
       reasons.push(`Vendor full match: "${receiptVendor}"`);
     } else {
-      // Check first word of vendor (e.g. "Chadwicks" from "Chadwicks Dublin")
-      const firstWord = vendorLower.split(/\s+/)[0];
-      if (firstWord && firstWord.length >= 3 && descLower.includes(firstWord)) {
+      // Check ANY word of vendor name (>= 3 chars) found in description
+      // Handles cases like "TJ O Mahony" where first word "tj" is too short
+      // but "mahony" matches "Tj O Mahony Finglas"
+      const vendorWords = vendorLower.split(/[\s,.\-()]+/).filter((w) => w.length >= 3);
+      const matchedWord = vendorWords.find((word) => descLower.includes(word));
+      if (matchedWord) {
         score += 0.3;
-        reasons.push(`Vendor partial match: "${firstWord}"`);
+        reasons.push(`Vendor partial match: "${matchedWord}"`);
       }
     }
   }

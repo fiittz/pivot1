@@ -288,11 +288,11 @@ describe("matchReceiptToTransaction — vendor scoring", () => {
     expect(result.explanation).toMatch(/Vendor (full|partial) match/);
   });
 
-  it("scores 0 for vendor when first word is too short (< 3 chars)", async () => {
+  it("scores 0.30 when first word is short but a later word matches (>= 3 chars)", async () => {
     setCandidates([
       candidate({
         amount: -999.0,
-        description: "SOME DESCRIPTION AB COMPANY",
+        description: "TJ O MAHONY FINGLAS",
         transaction_date: "2024-01-01",
       }),
     ]);
@@ -301,7 +301,49 @@ describe("matchReceiptToTransaction — vendor scoring", () => {
       USER_ID,
       RECEIPT_ID,
       42.5,
-      "AB Something", // "ab" is only 2 chars
+      "TJ O MAHONY (KILSHANE)", // "tj" is 2 chars but "mahony" matches
+      null,
+    );
+
+    expect(result.score).toBe(0.3);
+    expect(result.explanation).toContain("Vendor partial match");
+  });
+
+  it("scores 0.30 for short-prefix vendor like M3 via later word match", async () => {
+    setCandidates([
+      candidate({
+        amount: -999.0,
+        description: "M3 MULHUDDART MAXOL SSTN",
+        transaction_date: "2024-01-01",
+      }),
+    ]);
+
+    const result = await matchReceiptToTransaction(
+      USER_ID,
+      RECEIPT_ID,
+      42.5,
+      "M3 Mulhuddart Services", // "m3" too short but "mulhuddart" matches
+      null,
+    );
+
+    expect(result.score).toBe(0.3);
+    expect(result.explanation).toContain("Vendor partial match");
+  });
+
+  it("scores 0 for vendor when ALL words are too short (< 3 chars)", async () => {
+    setCandidates([
+      candidate({
+        amount: -999.0,
+        description: "SOME RANDOM COMPANY",
+        transaction_date: "2024-01-01",
+      }),
+    ]);
+
+    const result = await matchReceiptToTransaction(
+      USER_ID,
+      RECEIPT_ID,
+      42.5,
+      "AB CD", // both words < 3 chars, neither appears as full match
       null,
     );
 
