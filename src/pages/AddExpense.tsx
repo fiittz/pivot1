@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Upload, Sparkles, Loader2, Paperclip, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Upload, Sparkles, Loader2, Paperclip, AlertTriangle, Camera, X } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import { useSuppliers, useCreateSupplier } from "@/hooks/useSuppliers";
 import { useCreateExpense } from "@/hooks/useExpenses";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateVat, VAT_RATES, categorizeTransaction } from "@/services/categorization";
+import { processReceipt, type ReceiptResult } from "@/services/aiServices";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 // VAT rate types for Irish system
 type VatRate = "standard_23" | "reduced_13_5" | "second_reduced_9" | "livestock_4_8" | "zero_rated" | "exempt";
@@ -87,6 +89,10 @@ const AddExpense = () => {
   const [aiConfidence, setAiConfidence] = useState<number | null>(null);
   const [showBusinessExpenseDialog, setShowBusinessExpenseDialog] = useState(false);
   const [isOnBehalfOfBusiness, setIsOnBehalfOfBusiness] = useState<boolean | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string>("");
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
   // Clear selected category when account type changes (categories reload)
   useEffect(() => {
@@ -184,6 +190,75 @@ const AddExpense = () => {
     return data.path;
   };
 
+  const handleReceiptFile = async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Receipt must be less than 10MB");
+      return;
+    }
+
+    setReceiptFile(file);
+
+    // Generate preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setReceiptPreviewUrl(previewUrl);
+
+    // Convert to base64 and run OCR
+    setIsOcrProcessing(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const mimeType = file.type || "image/jpeg";
+      const result: ReceiptResult = await processReceipt(base64, categories || undefined, mimeType);
+
+      if (result.success && result.data) {
+        const d = result.data;
+        // Only fill empty fields — don't overwrite user edits
+        if (!description && d.supplier_name) setDescription(d.supplier_name);
+        if (!amount && d.total_amount) setAmount(String(d.total_amount));
+        if (d.date && expenseDate === new Date().toISOString().split("T")[0]) setExpenseDate(d.date);
+        if (!invoiceNumber && d.invoice_number) setInvoiceNumber(d.invoice_number);
+        if (d.vat_rate) {
+          const rateMap: Record<string, VatRate> = {
+            "23": "standard_23",
+            "13.5": "reduced_13_5",
+            "9": "second_reduced_9",
+            "4.8": "livestock_4_8",
+            "0": "zero_rated",
+          };
+          const mapped = rateMap[d.vat_rate];
+          if (mapped) setSelectedVat(mapped);
+        }
+        if (d.suggested_category && categories) {
+          const match = categories.find(
+            (c) => c.name.toLowerCase() === d.suggested_category!.toLowerCase(),
+          );
+          if (match && !selectedCategory) setSelectedCategory(match.id);
+        }
+        toast.success("Receipt scanned successfully");
+      } else {
+        toast.error("Could not extract data from receipt");
+      }
+    } catch (error) {
+      console.error("OCR processing error:", error);
+      toast.error("Failed to process receipt");
+    } finally {
+      setIsOcrProcessing(false);
+    }
+  };
+
+  const removeReceipt = () => {
+    setReceiptFile(null);
+    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+    setReceiptPreviewUrl("");
+    setReceiptUrl("");
+    if (receiptInputRef.current) receiptInputRef.current.value = "";
+  };
+
   // Check if the selected category looks like a business expense on a personal account
   const looksLikeBusinessExpense = (() => {
     if (accountType !== "directors_personal_tax" || !selectedCategoryData) return false;
@@ -215,6 +290,12 @@ const AddExpense = () => {
   const doSave = async () => {
     try {
       let finalReceiptUrl = receiptUrl || null;
+
+      // Upload receipt file if provided
+      if (receiptFile && !receiptUrl) {
+        const url = await handleProofUpload(receiptFile);
+        if (url) finalReceiptUrl = url;
+      }
 
       // Upload proof file if provided
       if (proofFile) {
@@ -464,15 +545,59 @@ const AddExpense = () => {
 
           {/* Receipt Upload */}
           <div className="bg-card rounded-2xl p-6 card-shadow animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <Label className="font-medium mb-4 block">Receipt</Label>
-            <div
-              className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-foreground/40 transition-colors"
-              onClick={() => navigate("/scanner")}
-            >
-              <Upload className="w-10 h-10 text-muted-foreground mb-3" />
-              <p className="font-medium">Upload or scan receipt</p>
-              <p className="text-sm text-muted-foreground">Tap to capture or select file</p>
+            <div className="flex items-center justify-between mb-4">
+              <Label className="font-medium">Receipt</Label>
+              {isOcrProcessing && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Scanning receipt...</span>
+                </div>
+              )}
             </div>
+            {receiptFile && receiptPreviewUrl ? (
+              <div className="space-y-3">
+                <div className="relative inline-block">
+                  <img
+                    src={receiptPreviewUrl}
+                    alt="Receipt preview"
+                    className="max-h-48 rounded-xl border border-border object-contain"
+                  />
+                  <button
+                    onClick={removeReceipt}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">{receiptFile.name}</p>
+              </div>
+            ) : (
+              <label
+                className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-foreground/40 transition-colors"
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleReceiptFile(file);
+                }}
+              >
+                <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                <p className="font-medium">Upload or scan receipt</p>
+                <p className="text-sm text-muted-foreground">Drop image, click to browse, or use camera</p>
+                <input
+                  ref={receiptInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  capture="environment"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleReceiptFile(file);
+                  }}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
 
           {/* Notes / Business Purpose */}
@@ -554,7 +679,7 @@ const AddExpense = () => {
           <div className="max-w-2xl mx-auto">
             <Button
               onClick={handleSave}
-              disabled={createExpense.isPending || proofUploading || !amount}
+              disabled={createExpense.isPending || proofUploading || isOcrProcessing || !amount}
               className="w-full h-14 bg-foreground text-background hover:bg-foreground/90 rounded-xl text-lg font-semibold disabled:opacity-50"
             >
               {proofUploading ? "Uploading proof..." : createExpense.isPending ? "Saving..." : "Save Expense"}
