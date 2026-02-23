@@ -37,3 +37,9 @@ export { generateForm11Excel } from "./excel/form11Excel";
 export { generateVATExcel } from "./excel/vatExcel";
 export { generateBalanceSheetExcel } from "./excel/balanceSheetExcel";
 export { generateAbridgedAccountsExcel } from "./excel/abridgedAccountsExcel";
+
+// XML Generators (ROS Upload)
+export { generateVATXml, buildVATXml } from "./xml/vatXml";
+export { generateCT1Xml, buildCT1Xml } from "./xml/ct1Xml";
+export { generateForm11Xml, buildForm11Xml } from "./xml/form11Xml";
+export { generateRCTXml, buildRCTXml } from "./xml/rctXml";

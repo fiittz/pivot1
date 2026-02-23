@@ -23,6 +23,7 @@ import { ExportButtons } from "@/components/reports/ExportButtons";
 import { assembleForm11ReportData } from "@/lib/reports/form11ReportData";
 import { generateForm11Pdf } from "@/lib/reports/pdf/form11Pdf";
 import { generateForm11Excel } from "@/lib/reports/excel/form11Excel";
+import { generateForm11Xml } from "@/lib/reports/xml/form11Xml";
 import type { ReportMeta } from "@/lib/reports/types";
 import type { TaxBandLine, CreditLine } from "@/lib/form11Calculator";
 
@@ -100,6 +101,15 @@ const Form11Return = () => {
     await generateForm11Excel(data);
   };
 
+  const handleXml = () => {
+    if (!input || !result) return;
+    const data = assembleForm11ReportData(input, result, getReportMeta(), {
+      expenseByCategory: ct1.expenseByCategory,
+      incomeByCategory: ct1.detectedIncome,
+    });
+    generateForm11Xml(data);
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -147,7 +157,7 @@ const Form11Return = () => {
                   Tax Year {taxYear} &bull; PPS {input.ppsNumber || "Not provided"}
                 </p>
               </div>
-              <ExportButtons onPdf={handlePdf} onExcel={handleExcel} disabled={!result} />
+              <ExportButtons onPdf={handlePdf} onExcel={handleExcel} onXml={handleXml} disabled={!result} />
             </div>
           </div>
         </header>

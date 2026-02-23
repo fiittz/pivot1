@@ -20,6 +20,7 @@ import { ExportButtons } from "@/components/reports/ExportButtons";
 import { assembleCT1ReportData } from "@/lib/reports/ct1ReportData";
 import { generateCT1Pdf } from "@/lib/reports/pdf/ct1Pdf";
 import { generateCT1Excel } from "@/lib/reports/excel/ct1Excel";
+import { buildCT1Xml, generateCT1Xml } from "@/lib/reports/xml/ct1Xml";
 import type { ReportMeta } from "@/lib/reports/types";
 
 const eur = (n: number) =>
@@ -82,6 +83,19 @@ const CT1Return = () => {
   const handleExcel = async () => {
     const data = assembleCT1ReportData(ct1, savedCT1, getReportMeta());
     await generateCT1Excel(data);
+  };
+
+  const handleXml = () => {
+    const data = assembleCT1ReportData(ct1, savedCT1, getReportMeta());
+    generateCT1Xml(data, {
+      periodStart: `${taxYearStr}-01-01`,
+      periodEnd: `${taxYearStr}-12-31`,
+      companyRegNo: profile?.cro_number || "",
+      taxRefNo: profile?.tax_ref || "",
+      isCloseCompany: ct1.isCloseCompany,
+      rctCredit: ct1.rctPrepayment,
+      preliminaryCTPaid: savedCT1?.preliminaryCTPaid ?? 0,
+    });
   };
 
   // Computed values
@@ -148,7 +162,7 @@ const CT1Return = () => {
                 <h1 className="font-semibold text-xl">CT1 Return — {profile?.business_name || "Company"}</h1>
                 <p className="text-sm text-muted-foreground">Tax Year {taxYearStr} &bull; Corporation Tax</p>
               </div>
-              <ExportButtons onPdf={handlePdf} onExcel={handleExcel} />
+              <ExportButtons onPdf={handlePdf} onExcel={handleExcel} onXml={handleXml} />
             </div>
           </div>
         </header>

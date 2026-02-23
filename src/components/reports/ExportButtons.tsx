@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { FileText, FileSpreadsheet, Loader2 } from "lucide-react";
+import { FileText, FileSpreadsheet, FileCode, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExportButtonsProps {
   onPdf: () => void | Promise<void>;
   onExcel: () => void | Promise<void>;
+  onXml?: () => void | Promise<void>;
   disabled?: boolean;
   pdfLabel?: string;
   excelLabel?: string;
+  xmlLabel?: string;
 }
 
-export function ExportButtons({ onPdf, onExcel, disabled, pdfLabel, excelLabel }: ExportButtonsProps) {
+export function ExportButtons({ onPdf, onExcel, onXml, disabled, pdfLabel, excelLabel, xmlLabel }: ExportButtonsProps) {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
+  const [xmlLoading, setXmlLoading] = useState(false);
 
   const handlePdf = async () => {
     setPdfLoading(true);
@@ -29,6 +32,16 @@ export function ExportButtons({ onPdf, onExcel, disabled, pdfLabel, excelLabel }
       await onExcel();
     } finally {
       setExcelLoading(false);
+    }
+  };
+
+  const handleXml = async () => {
+    if (!onXml) return;
+    setXmlLoading(true);
+    try {
+      await onXml();
+    } finally {
+      setXmlLoading(false);
     }
   };
 
@@ -52,6 +65,22 @@ export function ExportButtons({ onPdf, onExcel, disabled, pdfLabel, excelLabel }
         )}
         {excelLabel ?? "Download Excel"}
       </Button>
+      {onXml && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleXml}
+          disabled={disabled || xmlLoading}
+          className="rounded-xl"
+        >
+          {xmlLoading ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <FileCode className="w-4 h-4 mr-2" />
+          )}
+          {xmlLabel ?? "ROS XML"}
+        </Button>
+      )}
     </div>
   );
 }
