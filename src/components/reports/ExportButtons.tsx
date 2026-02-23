@@ -46,7 +46,7 @@ export function ExportButtons({ onPdf, onExcel, onXml, disabled, pdfLabel, excel
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" onClick={handlePdf} disabled={disabled || pdfLoading} className="rounded-xl">
         {pdfLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
         {pdfLabel ?? "Download PDF"}

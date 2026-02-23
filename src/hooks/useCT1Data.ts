@@ -172,11 +172,12 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
       .sort((a, b) => b.amount - a.amount);
     const originalExpenseSummary = { allowable: origAllowable, disallowed: origDisallowed };
 
-    // 2b. Expense breakdown by category
+    // 2b. Expense breakdown by category (excluding DLA — balance sheet, not P&L)
     const expenseByCategoryMap = new Map<string, number>();
     for (const t of expenseTransactions ?? []) {
       const amt = Math.abs(Number(t.amount) || 0);
       const catName = (t.category as { id: string; name: string } | null)?.name ?? "Uncategorised";
+      if (isDLA(catName)) continue;
       const prev = expenseByCategoryMap.get(catName) ?? 0;
       expenseByCategoryMap.set(catName, prev + amt);
     }
