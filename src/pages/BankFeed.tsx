@@ -110,6 +110,7 @@ import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
 import { useInvoiceTripMatcher, type InvoiceTrip } from "@/hooks/useInvoiceTripMatcher";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useCT1Data } from "@/hooks/useCT1Data";
+import { isCTDeductible } from "@/lib/vatDeductibility";
 import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
 import { useAuth } from "@/hooks/useAuth";
 import { ChartOfAccountsButton } from "@/components/dashboard/ChartOfAccountsWidget";
@@ -796,6 +797,8 @@ const BankFeed = () => {
     const expensesByCategory: Record<string, number> = {};
     let totalExpenses = 0;
     let revenueRefunds = 0;
+    // Compute add-backs from the SAME transaction set (not from ct1 hook)
+    const localDisallowedMap = new Map<string, number>();
 
     const isRevRefund = (catName: string, desc: string) => {
       const d = (desc || "").toLowerCase();
@@ -818,6 +821,7 @@ const BankFeed = () => {
     txs.forEach((t) => {
       const catName =
         (t as unknown as { category?: { name: string }; description?: string }).category?.name || "Uncategorised";
+      const rawCatName = (t as unknown as { category?: { name: string } }).category?.name ?? null;
       const desc = (t as unknown as { description?: string }).description || "";
       const amount = Math.abs(t.amount);
       if (t.type === "income") {
@@ -836,6 +840,12 @@ const BankFeed = () => {
         } else {
           expensesByCategory[catName] = (expensesByCategory[catName] || 0) + amount;
           totalExpenses += amount;
+          // Check CT deductibility using same transaction
+          const ctResult = isCTDeductible(desc, rawCatName);
+          if (!ctResult.isDeductible) {
+            const dCat = rawCatName ?? "Uncategorised";
+            localDisallowedMap.set(dCat, (localDisallowedMap.get(dCat) ?? 0) + amount);
+          }
         }
       }
     });
@@ -891,7 +901,10 @@ const BankFeed = () => {
       const totalCT = ctAt125 + surcharge;
       const prelimPaid = q?.preliminaryCTPaid ?? 0;
       const rctCredit = ct1.rctPrepayment;
-      summary.disallowedByCategory = ct1.disallowedByCategory;
+      // Use add-backs computed from the same transaction set as the expense breakdown
+      summary.disallowedByCategory = Array.from(localDisallowedMap.entries())
+        .map(([category, amount]) => ({ category, amount: Math.round(amount * 100) / 100 }))
+        .sort((a, b) => b.amount - a.amount);
       summary.capitalAllowances = capitalAllowances;
       summary.travelDeduction = travelDeduction;
       summary.tradingProfit = tradingProfit;
