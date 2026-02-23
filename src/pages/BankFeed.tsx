@@ -1942,6 +1942,7 @@ const BankFeed = () => {
                       return lower.includes("drawing") || lower.includes("director's loan") || lower.includes("directors loan");
                     };
 
+                    const localDisallowedMap = new Map<string, number>();
                     txs.forEach((t) => {
                       const tRec = t as unknown as {
                         category?: { name: string };
@@ -1950,6 +1951,7 @@ const BankFeed = () => {
                         type: string;
                       };
                       const catName = tRec.category?.name || "Uncategorised";
+                      const rawCatName = tRec.category?.name ?? null;
                       const desc = tRec.description || "";
                       const amount = Math.abs(t.amount);
 
@@ -1979,6 +1981,12 @@ const BankFeed = () => {
                         } else {
                           expensesByCategory[catName] = (expensesByCategory[catName] || 0) + amount;
                           totalExpenses += amount;
+                          // Check CT deductibility from same transaction set
+                          const ctResult = isCTDeductible(desc, rawCatName);
+                          if (!ctResult.isDeductible) {
+                            const dCat = rawCatName ?? "Uncategorised";
+                            localDisallowedMap.set(dCat, (localDisallowedMap.get(dCat) ?? 0) + amount);
+                          }
                         }
                       }
                     });
@@ -2012,7 +2020,10 @@ const BankFeed = () => {
                     const raw = localStorage.getItem(`ct1_questionnaire_${user?.id}_${ty}`);
                     const q = raw ? JSON.parse(raw) : null;
 
-                    const disallowedTotal = ct1.disallowedByCategory.reduce((s, d) => s + d.amount, 0);
+                    const localDisallowedArr = Array.from(localDisallowedMap.entries())
+                      .map(([category, amount]) => ({ category, amount: Math.round(amount * 100) / 100 }))
+                      .sort((a, b) => b.amount - a.amount);
+                    const disallowedTotal = localDisallowedArr.reduce((s, d) => s + d.amount, 0);
                     const motorAllowance = ct1.vehicleAsset
                       ? ct1.vehicleAsset.depreciation.annualAllowance
                       : (q?.capitalAllowancesMotorVehicles ?? 0);
@@ -2212,12 +2223,12 @@ const BankFeed = () => {
                                 <span>Net Profit (per accounts)</span>
                                 <span className="tabular-nums">{fmt(netProfit)}</span>
                               </div>
-                              {ct1.disallowedByCategory.length > 0 && (
+                              {localDisallowedArr.length > 0 && (
                                 <>
                                   <p className="text-xs text-muted-foreground mt-1 mb-0.5">
                                     Add back: non-deductible expenses
                                   </p>
-                                  {ct1.disallowedByCategory.map(({ category, amount }) => (
+                                  {localDisallowedArr.map(({ category, amount }) => (
                                     <div
                                       key={category}
                                       className="flex justify-between py-0.5 pl-4 text-amber-600 dark:text-amber-400"
