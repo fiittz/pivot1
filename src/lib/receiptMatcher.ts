@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { autoCategorise, findMatchingCategory } from "@/lib/autocat";
 
 export interface MatchCandidate {
   id: string;
@@ -201,4 +202,57 @@ export async function linkReceiptToTransaction(
   if (txError) {
     throw new Error(`Failed to update transaction: ${txError.message}`);
   }
+}
+
+/**
+ * Auto-categorize a transaction using receipt data (vendor name, line items).
+ * Only updates transactions that have no category set (category_id IS NULL).
+ */
+export async function categorizeFromReceipt(
+  transactionId: string,
+  receiptData: {
+    supplier_name: string | null;
+    line_items?: { description: string }[];
+    total_amount: number;
+    date: string | null;
+  },
+  categories: { id: string; name: string; type: string; account_type: string }[],
+  businessType: string,
+  accountType?: string,
+): Promise<void> {
+  // Build a description from receipt data
+  const parts: string[] = [];
+  if (receiptData.supplier_name) parts.push(receiptData.supplier_name);
+  if (receiptData.line_items?.length) {
+    parts.push(receiptData.line_items.map((i) => i.description).join(", "));
+  }
+  const description = parts.join(" — ");
+  if (!description) return;
+
+  // Build receipt_text for the autocat receipt-refinement pass
+  const receiptText = JSON.stringify(receiptData);
+
+  // Run the sync autocat engine
+  const result = autoCategorise({
+    amount: -Math.abs(receiptData.total_amount),
+    date: receiptData.date || new Date().toISOString(),
+    currency: "EUR",
+    description,
+    direction: "expense",
+    user_industry: businessType,
+    user_business_type: businessType,
+    receipt_text: receiptText,
+    account_type: accountType,
+  });
+
+  // Resolve the autocat category string to a DB category
+  const matchedCategory = findMatchingCategory(result.category, categories, "expense", accountType);
+  if (!matchedCategory) return;
+
+  // Update only if the transaction has no category set
+  await supabase
+    .from("transactions")
+    .update({ category_id: matchedCategory.id })
+    .eq("id", transactionId)
+    .is("category_id", null);
 }

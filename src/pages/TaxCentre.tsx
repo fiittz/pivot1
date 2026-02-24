@@ -134,9 +134,10 @@ const TaxCentre = () => {
     const taxableProfit = Math.max(0, tradingProfit - lossesForward);
     const ctLiability = taxableProfit * 0.125 + (savedCT1?.closeCompanySurcharge ?? 0);
 
-    // Retained profits = income - ALL expenses (allowable + disallowed) - CT
+    // Retained profits = income - ALL expenses (allowable + disallowed) - CT - travel owed to director
     const totalExpensesAll = ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed;
-    const retainedProfits = totalIncome - totalExpensesAll - ctLiability;
+    const dlaTravel = ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0;
+    const retainedProfits = totalIncome - totalExpensesAll - ctLiability - dlaTravel;
 
     return {
       companyName: biz.company_name || profile?.business_name || "Company",

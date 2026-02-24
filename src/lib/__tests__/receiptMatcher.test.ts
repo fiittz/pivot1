@@ -69,7 +69,16 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 });
 
-import { matchReceiptToTransaction, linkReceiptToTransaction } from "../receiptMatcher";
+// ── Mock autocat module ──────────────────────────────────────
+const mockAutoCategorise = vi.fn();
+const mockFindMatchingCategory = vi.fn();
+
+vi.mock("@/lib/autocat", () => ({
+  autoCategorise: (...args: unknown[]) => mockAutoCategorise(...args),
+  findMatchingCategory: (...args: unknown[]) => mockFindMatchingCategory(...args),
+}));
+
+import { matchReceiptToTransaction, linkReceiptToTransaction, categorizeFromReceipt } from "../receiptMatcher";
 
 // ── Helpers ──────────────────────────────────────────────────
 const USER_ID = "user-123";
@@ -911,5 +920,128 @@ describe("linkReceiptToTransaction", () => {
     await expect(linkReceiptToTransaction("r-1", "t-1", "https://example.com/img.jpg")).rejects.toThrow(
       "Failed to update transaction: tx update failed",
     );
+  });
+});
+
+// ==============================================================
+// categorizeFromReceipt
+// ==============================================================
+describe("categorizeFromReceipt", () => {
+  const CATEGORIES = [
+    { id: "cat-fuel", name: "Fuel", type: "expense", account_type: "business" },
+    { id: "cat-materials", name: "Materials & Supplies", type: "expense", account_type: "business" },
+    { id: "cat-office", name: "Office Expenses", type: "expense", account_type: "business" },
+  ];
+
+  beforeEach(() => {
+    mockAutoCategorise.mockReset();
+    mockFindMatchingCategory.mockReset();
+  });
+
+  it("categorizes uncategorized transaction using receipt vendor name", async () => {
+    mockAutoCategorise.mockReturnValue({
+      category: "Motor Vehicle Expenses",
+      confidence_score: 85,
+    });
+    mockFindMatchingCategory.mockReturnValue({ id: "cat-fuel", name: "Fuel" });
+
+    await categorizeFromReceipt(
+      "tx-001",
+      { supplier_name: "Circle K", line_items: [{ description: "Diesel 40L" }], total_amount: 72.5, date: "2024-06-15" },
+      CATEGORIES,
+      "construction",
+    );
+
+    // autoCategorise should be called with a description built from receipt
+    expect(mockAutoCategorise).toHaveBeenCalledTimes(1);
+    const txInput = mockAutoCategorise.mock.calls[0][0];
+    expect(txInput.description).toContain("Circle K");
+    expect(txInput.description).toContain("Diesel 40L");
+    expect(txInput.receipt_text).toBeTruthy();
+
+    // findMatchingCategory should resolve to a DB category
+    expect(mockFindMatchingCategory).toHaveBeenCalledWith("Motor Vehicle Expenses", CATEGORIES, "expense", undefined);
+
+    // Should update the transaction with category_id WHERE category_id IS NULL
+    expect(mockFrom).toHaveBeenCalledWith("transactions");
+    expect(mockUpdate).toHaveBeenCalledWith({ category_id: "cat-fuel" });
+    expect(mockIs).toHaveBeenCalledWith("category_id", null);
+    expect(mockEq).toHaveBeenCalledWith("id", "tx-001");
+  });
+
+  it("does NOT overwrite existing category (uses IS NULL guard)", async () => {
+    mockAutoCategorise.mockReturnValue({ category: "Software", confidence_score: 80 });
+    mockFindMatchingCategory.mockReturnValue({ id: "cat-office", name: "Office Expenses" });
+
+    await categorizeFromReceipt(
+      "tx-002",
+      { supplier_name: "Microsoft", line_items: [], total_amount: 12.99, date: "2024-06-15" },
+      CATEGORIES,
+      "technology",
+    );
+
+    // The SQL WHERE clause includes `category_id IS NULL` — Supabase handles the guard
+    expect(mockIs).toHaveBeenCalledWith("category_id", null);
+  });
+
+  it("does nothing when receipt has no supplier name and no line items", async () => {
+    await categorizeFromReceipt(
+      "tx-003",
+      { supplier_name: null, line_items: [], total_amount: 50.0, date: null },
+      CATEGORIES,
+      "construction",
+    );
+
+    // Should bail out early — no description to work with
+    expect(mockAutoCategorise).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when findMatchingCategory returns null", async () => {
+    mockAutoCategorise.mockReturnValue({ category: "Uncategorised", confidence_score: 40 });
+    mockFindMatchingCategory.mockReturnValue(null);
+
+    await categorizeFromReceipt(
+      "tx-004",
+      { supplier_name: "Unknown Shop", total_amount: 15.0, date: "2024-06-15" },
+      CATEGORIES,
+      "construction",
+    );
+
+    // autoCategorise ran but no DB category matched — should not update
+    expect(mockAutoCategorise).toHaveBeenCalledTimes(1);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("passes accountType through to findMatchingCategory", async () => {
+    mockAutoCategorise.mockReturnValue({ category: "Materials", confidence_score: 90 });
+    mockFindMatchingCategory.mockReturnValue({ id: "cat-materials", name: "Materials & Supplies" });
+
+    await categorizeFromReceipt(
+      "tx-005",
+      { supplier_name: "Chadwicks", line_items: [{ description: "Timber" }], total_amount: 200, date: "2024-06-15" },
+      CATEGORIES,
+      "construction",
+      "limited_company",
+    );
+
+    expect(mockFindMatchingCategory).toHaveBeenCalledWith("Materials", CATEGORIES, "expense", "limited_company");
+    expect(mockAutoCategorise.mock.calls[0][0].account_type).toBe("limited_company");
+  });
+
+  it("works with supplier name only (no line items)", async () => {
+    mockAutoCategorise.mockReturnValue({ category: "Motor Vehicle Expenses", confidence_score: 85 });
+    mockFindMatchingCategory.mockReturnValue({ id: "cat-fuel", name: "Fuel" });
+
+    await categorizeFromReceipt(
+      "tx-006",
+      { supplier_name: "Applegreen", total_amount: 60.0, date: "2024-06-15" },
+      CATEGORIES,
+      "construction",
+    );
+
+    const txInput = mockAutoCategorise.mock.calls[0][0];
+    expect(txInput.description).toBe("Applegreen");
+    expect(mockUpdate).toHaveBeenCalledWith({ category_id: "cat-fuel" });
   });
 });

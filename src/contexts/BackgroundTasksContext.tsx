@@ -3,7 +3,12 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
 import { supabase } from "@/integrations/supabase/client";
 import { processReceipt, type ReceiptData } from "@/services/aiServices";
 import { useExpenseCategories } from "@/hooks/useCategories";
-import { matchReceiptToTransaction, linkReceiptToTransaction, type MatchResult } from "@/lib/receiptMatcher";
+import {
+  matchReceiptToTransaction,
+  linkReceiptToTransaction,
+  categorizeFromReceipt,
+  type MatchResult,
+} from "@/lib/receiptMatcher";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useCreateJob } from "@/hooks/useProcessingJobs";
@@ -54,7 +59,7 @@ export function useBackgroundTasks() {
 }
 
 export function BackgroundTasksProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const userId = user?.id;
 
   const [state, setState] = useState<BulkUploadState>({
@@ -215,6 +220,12 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
                 ? parseFloat(entry.receiptData!.vat_rate.replace(/[^0-9.]/g, "")) || null
                 : null,
             );
+            await categorizeFromReceipt(
+              result.transactionId,
+              entry.receiptData!,
+              categories || [],
+              (profile?.business_type as string) || "",
+            );
             updateFile(entry.id, { status: "matched", matchResult: result });
             matched++;
           } else {
@@ -246,7 +257,7 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
 
       toast.success(`Matching complete: ${matched} matched, ${notMatched} need review`);
     },
-    [updateFile],
+    [updateFile, categories, profile],
   );
 
   const startReceiptProcessing = useCallback(async () => {
@@ -368,6 +379,15 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
           entry.receiptData?.vat_rate ? parseFloat(entry.receiptData.vat_rate.replace(/[^0-9.]/g, "")) || null : null,
         );
 
+        if (entry.receiptData) {
+          await categorizeFromReceipt(
+            transactionId,
+            entry.receiptData,
+            categories || [],
+            (profile?.business_type as string) || "",
+          );
+        }
+
         updateFile(fileId, {
           status: "matched",
           matchResult: {
@@ -391,7 +411,7 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
         toast.error(msg);
       }
     },
-    [updateFile],
+    [updateFile, categories, profile],
   );
 
   const totalFiles = state.files.length;

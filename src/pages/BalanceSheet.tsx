@@ -73,7 +73,8 @@ const BalanceSheet = () => {
     const taxableProfit = Math.max(0, tradingProfit - lossesForward);
     const ctLiability = taxableProfit * 0.125 + (savedCT1.closeCompanySurcharge ?? 0);
     const totalExpensesAll = ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed;
-    const retainedProfits = totalIncome - totalExpensesAll - ctLiability;
+    const dlaTravel = ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0;
+    const retainedProfits = totalIncome - totalExpensesAll - ctLiability - dlaTravel;
 
     // Motor vehicles on balance sheet: prefer net book value from vehicle asset
     const motorVehiclesNBV = ct1.vehicleAsset
