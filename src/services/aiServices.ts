@@ -77,7 +77,12 @@ export async function categorizeTransaction(
 
   if (error) {
     console.error("Categorization error:", error);
-    throw new Error(error.message || "Failed to categorize transaction");
+    let errorMessage = "Failed to categorize transaction";
+    try {
+      const body = await error.context?.json();
+      if (body?.error) errorMessage = body.error;
+    } catch {}
+    throw new Error(errorMessage);
   }
 
   return data as CategorizeResult;
@@ -158,7 +163,15 @@ export async function processReceipt(
 
   if (error) {
     console.error("Receipt processing error:", error);
-    throw new Error(error.message || "Failed to process receipt");
+    // Extract the real error from the Edge Function response body
+    let errorMessage = "Failed to process receipt";
+    try {
+      const body = await error.context?.json();
+      if (body?.error) errorMessage = body.error;
+    } catch {
+      // context may not be readable — fall back to generic message
+    }
+    throw new Error(errorMessage);
   }
 
   return data as ReceiptResult;
@@ -177,7 +190,14 @@ export async function processReceiptFromUrl(imageUrl: string, categories?: Categ
 
   if (error) {
     console.error("Receipt processing error:", error);
-    throw new Error(error.message || "Failed to process receipt");
+    let errorMessage = "Failed to process receipt";
+    try {
+      const body = await error.context?.json();
+      if (body?.error) errorMessage = body.error;
+    } catch {
+      // context may not be readable
+    }
+    throw new Error(errorMessage);
   }
 
   return data as ReceiptResult;
