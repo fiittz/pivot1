@@ -16,48 +16,65 @@ import PostHogTracker from "@/components/PostHogTracker";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
+// Retry wrapper for lazy imports — handles stale chunk 404s after deploys
+function lazyWithRetry(importFn: () => Promise<{ default: React.ComponentType }>) {
+  return lazy(() =>
+    importFn().catch((err) => {
+      // If this looks like a chunk load failure, hard-reload once
+      const hasReloaded = sessionStorage.getItem("chunk_reload");
+      if (!hasReloaded) {
+        sessionStorage.setItem("chunk_reload", "1");
+        window.location.reload();
+        return new Promise(() => {}); // never resolves — page is reloading
+      }
+      sessionStorage.removeItem("chunk_reload");
+      throw err;
+    }),
+  );
+}
+
 // Lazy-loaded page components — split into separate chunks
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const BookkeepingDashboard = lazy(() => import("./pages/BookkeepingDashboard"));
-const Invoices = lazy(() => import("./pages/Invoices"));
-const AddInvoice = lazy(() => import("./pages/AddInvoice"));
-const AddExpense = lazy(() => import("./pages/AddExpense"));
-const ReceiptScanner = lazy(() => import("./pages/ReceiptScanner"));
-const BankFeed = lazy(() => import("./pages/BankFeed"));
-const VATCentre = lazy(() => import("./pages/VATCentre"));
-const RCTCentre = lazy(() => import("./pages/RCTCentre"));
-const TaxCentre = lazy(() => import("./pages/TaxCentre"));
-const Settings = lazy(() => import("./pages/Settings"));
-const BulkProcessor = lazy(() => import("./pages/BulkProcessor"));
-const Reports = lazy(() => import("./pages/Reports"));
-const ChartOfAccounts = lazy(() => import("./pages/ChartOfAccounts"));
-const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
-const DirectorOnboardingWizard = lazy(() => import("./pages/DirectorOnboardingWizard"));
-const Accounts = lazy(() => import("./pages/Accounts"));
-const AccountDetail = lazy(() => import("./pages/AccountDetail"));
-const BulkReceiptUpload = lazy(() => import("./pages/BulkReceiptUpload"));
-const Form11Return = lazy(() => import("./pages/Form11Return"));
-const CT1Return = lazy(() => import("./pages/CT1Return"));
-const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
-const ReliefScanner = lazy(() => import("./pages/ReliefScanner"));
-const TripClaimsManager = lazy(() => import("./pages/TripClaimsManager"));
-const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
-const AgedDebtors = lazy(() => import("./pages/AgedDebtors"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+const BookkeepingDashboard = lazyWithRetry(() => import("./pages/BookkeepingDashboard"));
+const Invoices = lazyWithRetry(() => import("./pages/Invoices"));
+const AddInvoice = lazyWithRetry(() => import("./pages/AddInvoice"));
+const AddExpense = lazyWithRetry(() => import("./pages/AddExpense"));
+const ReceiptScanner = lazyWithRetry(() => import("./pages/ReceiptScanner"));
+const BankFeed = lazyWithRetry(() => import("./pages/BankFeed"));
+const VATCentre = lazyWithRetry(() => import("./pages/VATCentre"));
+const RCTCentre = lazyWithRetry(() => import("./pages/RCTCentre"));
+const TaxCentre = lazyWithRetry(() => import("./pages/TaxCentre"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const BulkProcessor = lazyWithRetry(() => import("./pages/BulkProcessor"));
+const Reports = lazyWithRetry(() => import("./pages/Reports"));
+const ChartOfAccounts = lazyWithRetry(() => import("./pages/ChartOfAccounts"));
+const OnboardingWizard = lazyWithRetry(() => import("./pages/OnboardingWizard"));
+const DirectorOnboardingWizard = lazyWithRetry(() => import("./pages/DirectorOnboardingWizard"));
+const Accounts = lazyWithRetry(() => import("./pages/Accounts"));
+const AccountDetail = lazyWithRetry(() => import("./pages/AccountDetail"));
+const BulkReceiptUpload = lazyWithRetry(() => import("./pages/BulkReceiptUpload"));
+const Form11Return = lazyWithRetry(() => import("./pages/Form11Return"));
+const CT1Return = lazyWithRetry(() => import("./pages/CT1Return"));
+const BalanceSheet = lazyWithRetry(() => import("./pages/BalanceSheet"));
+const ReliefScanner = lazyWithRetry(() => import("./pages/ReliefScanner"));
+const TripClaimsManager = lazyWithRetry(() => import("./pages/TripClaimsManager"));
+const ProfitAndLoss = lazyWithRetry(() => import("./pages/ProfitAndLoss"));
+const AgedDebtors = lazyWithRetry(() => import("./pages/AgedDebtors"));
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const queryClient = new QueryClient();
 
 const App = () => (
   <Sentry.ErrorBoundary fallback={<p>An unexpected error occurred. Please refresh the page.</p>}>
     <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ErrorBoundary>
-                <AuthProvider>
-                  <PostHogTracker />
-                  <BackgroundTasksProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ErrorBoundary>
+              <AuthProvider>
+                <PostHogTracker />
+                <BackgroundTasksProvider>
                   <Suspense fallback={<div>Loading...</div>}>
                     <Routes>
                       <Route path="/" element={<Welcome />} />
@@ -274,13 +291,13 @@ const App = () => (
                     </Routes>
                   </Suspense>
                   <BackgroundTasksStatus />
-                  </BackgroundTasksProvider>
-                </AuthProvider>
-              </ErrorBoundary>
-            </BrowserRouter>
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
+                </BackgroundTasksProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   </Sentry.ErrorBoundary>
 );
 

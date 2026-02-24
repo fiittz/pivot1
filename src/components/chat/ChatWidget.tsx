@@ -177,21 +177,31 @@ export default function ChatWidget() {
   // Load all chat history from Supabase on mount
   useEffect(() => {
     if (!user?.id) return;
-    supabase
-      .from("chat_messages")
-      .select("id, role, content, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const grouped = groupConversations(data as StoredMessage[]);
-          setConversations(grouped);
-          // Load the most recent conversation
-          if (grouped.length > 0) {
-            setMessages(grouped[0].messages);
+
+    // Refresh the session first to ensure the token is valid
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+
+      supabase
+        .from("chat_messages")
+        .select("id, role, content, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Failed to load chat history:", error.message);
+            return;
           }
-        }
-      });
+          if (data && data.length > 0) {
+            const grouped = groupConversations(data as StoredMessage[]);
+            setConversations(grouped);
+            // Load the most recent conversation
+            if (grouped.length > 0) {
+              setMessages(grouped[0].messages);
+            }
+          }
+        });
+    });
   }, [user?.id]);
 
   const ct1 = useCT1Data();
