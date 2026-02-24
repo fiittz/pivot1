@@ -89,10 +89,20 @@ export const DISALLOWED_VAT_CREDITS = {
       "uber eats",
       "airbnb",
       "b&b",
+      // Irish restaurants/takeaways
+      "zaytoon",
+      "boojum",
+      "nandos",
+      "camile",
+      "apache pizza",
+      "four star pizza",
+      "eddie rockets",
+      "beshoff",
+      "roma",
     ],
     // Short keywords that need word-boundary matching to avoid false positives
     // (e.g. "bar" matching "barrier" in "Eflow Barrier Free Tol")
-    wordBoundaryKeywords: ["bar"],
+    wordBoundaryKeywords: ["bar", "grill", "diner"],
   },
 
   // Section 60(2)(a)(iii) - Entertainment
@@ -115,7 +125,10 @@ export const DISALLOWED_VAT_CREDITS = {
       "toys",
       "games",
       "amusement",
+      "bowling",
+      "arcade",
     ],
+    wordBoundaryKeywords: [] as string[],
   },
 
   // Section 60(2)(a)(iv) - Passenger motor vehicles

@@ -28,7 +28,9 @@ export function isVATDeductible(
   // ── Section 60 keyword checks (description-based) ──
 
   // Section 60(2)(a)(i) - Food, drink, accommodation
-  if (DISALLOWED_VAT_CREDITS.FOOD_DRINK_ACCOMMODATION.keywords.some((k) => combined.includes(k))) {
+  const foodWordBoundary = DISALLOWED_VAT_CREDITS.FOOD_DRINK_ACCOMMODATION.wordBoundaryKeywords || [];
+  const foodWordMatch = foodWordBoundary.some((k: string) => new RegExp(`\\b${k}\\b`).test(combined));
+  if (foodWordMatch || DISALLOWED_VAT_CREDITS.FOOD_DRINK_ACCOMMODATION.keywords.some((k) => combined.includes(k))) {
     return {
       isDeductible: false,
       reason: "Food, drink or accommodation - VAT NOT recoverable",
@@ -37,7 +39,9 @@ export function isVATDeductible(
   }
 
   // Section 60(2)(a)(iii) - Entertainment
-  if (DISALLOWED_VAT_CREDITS.ENTERTAINMENT.keywords.some((k) => combined.includes(k))) {
+  const entertainWordBoundary = DISALLOWED_VAT_CREDITS.ENTERTAINMENT.wordBoundaryKeywords || [];
+  const entertainWordMatch = entertainWordBoundary.some((k: string) => new RegExp(`\\b${k}\\b`).test(combined));
+  if (entertainWordMatch || DISALLOWED_VAT_CREDITS.ENTERTAINMENT.keywords.some((k) => combined.includes(k))) {
     return {
       isDeductible: false,
       reason: "Entertainment expense - VAT NOT recoverable",

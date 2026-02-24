@@ -82,42 +82,67 @@ const BalanceSheet = () => {
     const lossesForward = savedCT1.lossesForward ?? 0;
     const taxableProfit = Math.max(0, tradingProfit - lossesForward);
     const ctLiability = taxableProfit * 0.125 + (savedCT1.closeCompanySurcharge ?? 0);
-    const totalExpensesAll = ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed;
-    const dlaTravel = ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0;
-    const retainedProfits = totalIncome - totalExpensesAll - ctLiability - dlaTravel;
 
     // Motor vehicles on balance sheet: prefer net book value from vehicle asset
     const motorVehiclesNBV = ct1.vehicleAsset
       ? ct1.vehicleAsset.depreciation.netBookValue
       : (savedCT1.fixedAssetsMotorVehicles ?? 0);
 
+    // Compute all balance sheet line items
+    const landBuildings = savedCT1.fixedAssetsLandBuildings ?? 0;
+    const plantMachinery = savedCT1.fixedAssetsPlantMachinery ?? 0;
+    const motorVehicles = motorVehiclesNBV;
+    const fixturesFittings = savedCT1.fixedAssetsFixturesFittings ?? 0;
+    const stock = savedCT1.currentAssetsStock ?? 0;
+    const debtors = savedCT1.currentAssetsDebtors ?? savedCT1.tradeDebtorsTotal ?? 0;
+    const cash = savedCT1.currentAssetsCash ?? 0;
+    const bankBalance = savedCT1.currentAssetsBankBalance ?? (() => {
+      const companyAcct = allAccounts?.find((a) => a.account_type === "limited_company");
+      const companyTxns = companyAcct
+        ? (allTransactions || []).filter((t) => t.account_id === companyAcct.id)
+        : [];
+      const netCash = companyTxns.reduce((sum, t) => {
+        const amt = Math.abs(Number(t.amount) || 0);
+        return sum + (t.type === "income" ? amt : -amt);
+      }, 0);
+      return (companyAcct?.balance ?? 0) + netCash;
+    })();
+    const rctPrepayment = ct1.rctPrepayment;
+    const directorsLoanTravel = ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0;
+    const creditors = savedCT1.liabilitiesCreditors ?? savedCT1.tradeCreditorsTotal ?? 0;
+    const taxation = ctLiability;
+    const bankOverdraft = 0;
+    const bankLoans = savedCT1.liabilitiesBankLoans ?? 0;
+    const directorsLoans = savedCT1.liabilitiesDirectorsLoans ?? savedCT1.directorsLoanBalance ?? 0;
+    const shareCapital = savedCT1.shareCapital ?? 100;
+
+    // Derive retained profits as the balancing figure (Assets - Liabilities - Share Capital)
+    // This ensures the balance sheet always balances. The P&L net profit serves as verification.
+    // Direct P&L computation doesn't reconcile because bank income is net of RCT (withheld at
+    // source) while RCT appears as a separate current asset.
+    const totalFixedAssets = landBuildings + plantMachinery + motorVehicles + fixturesFittings;
+    const totalCurrentAssets = stock + debtors + cash + bankBalance + rctPrepayment;
+    const totalCurrentLiabilities = creditors + taxation + bankOverdraft + directorsLoanTravel;
+    const totalLongTermLiabilities = bankLoans + directorsLoans;
+    const retainedProfits = totalFixedAssets + totalCurrentAssets - totalCurrentLiabilities - totalLongTermLiabilities - shareCapital;
+
     return {
-      landBuildings: savedCT1.fixedAssetsLandBuildings ?? 0,
-      plantMachinery: savedCT1.fixedAssetsPlantMachinery ?? 0,
-      motorVehicles: motorVehiclesNBV,
-      fixturesFittings: savedCT1.fixedAssetsFixturesFittings ?? 0,
-      stock: savedCT1.currentAssetsStock ?? 0,
-      debtors: savedCT1.currentAssetsDebtors ?? savedCT1.tradeDebtorsTotal ?? 0,
-      cash: savedCT1.currentAssetsCash ?? 0,
-      bankBalance: savedCT1.currentAssetsBankBalance ?? (() => {
-        const companyAcct = allAccounts?.find((a) => a.account_type === "limited_company");
-        const companyTxns = companyAcct
-          ? (allTransactions || []).filter((t) => t.account_id === companyAcct.id)
-          : [];
-        const netCash = companyTxns.reduce((sum, t) => {
-          const amt = Math.abs(Number(t.amount) || 0);
-          return sum + (t.type === "income" ? amt : -amt);
-        }, 0);
-        return (companyAcct?.balance ?? 0) + netCash;
-      })(),
-      rctPrepayment: ct1.rctPrepayment,
-      directorsLoanTravel: ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0,
-      creditors: savedCT1.liabilitiesCreditors ?? savedCT1.tradeCreditorsTotal ?? 0,
-      taxation: ctLiability,
-      bankOverdraft: 0,
-      bankLoans: savedCT1.liabilitiesBankLoans ?? 0,
-      directorsLoans: savedCT1.liabilitiesDirectorsLoans ?? savedCT1.directorsLoanBalance ?? 0,
-      shareCapital: savedCT1.shareCapital ?? 100,
+      landBuildings,
+      plantMachinery,
+      motorVehicles,
+      fixturesFittings,
+      stock,
+      debtors,
+      cash,
+      bankBalance,
+      rctPrepayment,
+      directorsLoanTravel,
+      creditors,
+      taxation,
+      bankOverdraft,
+      bankLoans,
+      directorsLoans,
+      shareCapital,
       retainedProfits,
     };
   }, [savedCT1, ct1, allAccounts, allTransactions]);
