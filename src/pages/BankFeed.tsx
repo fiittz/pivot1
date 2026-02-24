@@ -2519,6 +2519,7 @@ const BankFeed = () => {
                     const netAssets = totalAssets - totalLiabilities;
 
                     // Derive retained profits as balancing figure
+                    const totalExpensesAll = ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed;
                     const shareCapital = 100;
                     const retainedProfits = totalAssets - totalLiabilities - shareCapital;
 
