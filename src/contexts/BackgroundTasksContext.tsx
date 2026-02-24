@@ -13,6 +13,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useCreateJob } from "@/hooks/useProcessingJobs";
 
+/** Build a rich description from OCR receipt data for the matched transaction */
+function buildReceiptDescription(data: ReceiptData): string | null {
+  const parts: string[] = [];
+  if (data.supplier_name) parts.push(data.supplier_name);
+  if ((data as Record<string, unknown>).purchase_description) {
+    parts.push((data as Record<string, unknown>).purchase_description as string);
+  } else if (data.line_items?.length) {
+    const items = data.line_items.map((li) => li.description).filter(Boolean).slice(0, 3);
+    if (items.length) parts.push(items.join(", "));
+  }
+  return parts.length > 0 ? parts.join(" - ") : null;
+}
+
 export type FileStatus = "queued" | "processing" | "done" | "error" | "matching" | "matched" | "not_matched";
 
 export interface BulkReceiptFile {
@@ -211,6 +224,7 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
           );
 
           if (result.autoMatched && result.transactionId) {
+            const receiptDesc = buildReceiptDescription(entry.receiptData!);
             await linkReceiptToTransaction(
               entry.receiptDbId!,
               result.transactionId,
@@ -219,6 +233,7 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
               entry.receiptData!.vat_rate
                 ? parseFloat(entry.receiptData!.vat_rate.replace(/[^0-9.]/g, "")) || null
                 : null,
+              receiptDesc,
             );
             await categorizeFromReceipt(
               result.transactionId,
@@ -371,14 +386,15 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
       if (!entry || !entry.receiptDbId || !entry.imageUrl) return;
 
       try {
+        const receiptDesc = entry.receiptData ? buildReceiptDescription(entry.receiptData) : null;
         await linkReceiptToTransaction(
           entry.receiptDbId,
           transactionId,
           entry.imageUrl,
           entry.receiptData?.vat_amount,
           entry.receiptData?.vat_rate ? parseFloat(entry.receiptData.vat_rate.replace(/[^0-9.]/g, "")) || null : null,
+          receiptDesc,
         );
-
         if (entry.receiptData) {
           await categorizeFromReceipt(
             transactionId,

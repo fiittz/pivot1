@@ -13,6 +13,7 @@ export interface CategorizeResult {
 
 export interface ReceiptData {
   supplier_name: string | null;
+  purchase_description: string | null;
   date: string | null;
   invoice_number: string | null;
   total_amount: number;

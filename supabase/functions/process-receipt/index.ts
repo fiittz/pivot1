@@ -81,7 +81,7 @@ serve(async (req) => {
       ? { type: "image_url", image_url: { url: `data:${detectedMime};base64,${imageBase64}` } }
       : { type: "image_url", image_url: { url: imageUrl } };
 
-    const systemPrompt = `You are an expert Irish receipt OCR AI for Balnce bookkeeping. 
+    const systemPrompt = `You are an expert Irish receipt OCR AI for Balnce bookkeeping.
 Extract structured data from receipt images with high accuracy.
 
 IRISH VAT RATES to identify:
@@ -91,25 +91,27 @@ IRISH VAT RATES to identify:
 - 0% (zero-rated): Exports, certain food
 - Exempt: Medical, education, financial
 
-Look for:
+CRITICAL — extract ALL of these:
 - Total amount (required)
 - VAT amount and rate (if shown)
 - Supplier/merchant name
 - Date of purchase
 - Invoice/receipt number
-- Line items if visible
+- EVERY line item with its description — read the product/service names exactly as printed (e.g. "Diesel", "Angle Braces", "Goldscrew 3.5x30")
 - Payment method
+- A short plain-English summary of what was purchased (purchase_description), e.g. "Diesel fuel", "Screws and angle braces", "Headlight restorer liquid". This MUST always be filled — read the items on the receipt and summarise them.
 
 Available categories for suggestion:
 ${categories?.map((c: any) => `- ${c.name} (${c.type})`).join("\n") || "Not provided"}`;
 
-    const userPrompt = `Extract all visible information from this receipt image.
+    const userPrompt = `Extract all visible information from this receipt image. Read every product/item name printed on the receipt.
 
 Return a JSON object with:
 {
   "success": true/false,
   "data": {
     "supplier_name": "string or null",
+    "purchase_description": "Short plain-English summary of what was bought, e.g. 'Diesel fuel', 'Screws, angle braces and fixings', 'Headlight restorer liquid'. ALWAYS fill this by reading the item names on the receipt.",
     "date": "YYYY-MM-DD or null",
     "invoice_number": "string or null",
     "total_amount": number,
@@ -118,7 +120,7 @@ Return a JSON object with:
     "net_amount": number or null,
     "payment_method": "cash" | "card" | "bank_transfer" | null,
     "line_items": [
-      { "description": "string", "quantity": number, "unit_price": number, "total": number }
+      { "description": "Exact product/item name as printed on receipt", "quantity": number, "unit_price": number, "total": number }
     ],
     "suggested_category": "category name or null",
     "currency": "EUR" | "GBP" | "USD",

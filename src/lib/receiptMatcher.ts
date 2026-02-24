@@ -181,6 +181,7 @@ export async function linkReceiptToTransaction(
   imageUrl: string,
   receiptVatAmount?: number | null,
   receiptVatRate?: number | null,
+  receiptDescription?: string | null,
 ): Promise<void> {
   // Update receipt: set transaction_id
   const { error: receiptError } = await supabase
@@ -192,10 +193,11 @@ export async function linkReceiptToTransaction(
     throw new Error(`Failed to link receipt: ${receiptError.message}`);
   }
 
-  // Update transaction: set receipt_url, optionally upgrade VAT data
+  // Update transaction: set receipt_url, optionally upgrade VAT data and description
   const txUpdate: Record<string, unknown> = { receipt_url: imageUrl };
   if (receiptVatAmount != null) txUpdate.vat_amount = receiptVatAmount;
   if (receiptVatRate != null) txUpdate.vat_rate = receiptVatRate;
+  if (receiptDescription) txUpdate.description = receiptDescription;
 
   const { error: txError } = await supabase.from("transactions").update(txUpdate).eq("id", transactionId);
 

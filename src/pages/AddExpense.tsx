@@ -217,27 +217,45 @@ const AddExpense = () => {
 
       if (result.success && result.data) {
         const d = result.data;
-        // Only fill empty fields — don't overwrite user edits
-        if (!description && d.supplier_name) setDescription(d.supplier_name);
+        // Build description: supplier + what was purchased
+        if (!description) {
+          const parts: string[] = [];
+          if (d.supplier_name) parts.push(d.supplier_name);
+          // Prefer the AI-generated purchase summary (e.g. "Diesel fuel", "Screws and angle braces")
+          if (d.purchase_description) {
+            parts.push(d.purchase_description);
+          } else if (d.line_items?.length) {
+            const itemDescs = d.line_items
+              .map((li) => li.description)
+              .filter(Boolean)
+              .slice(0, 3);
+            if (itemDescs.length) parts.push(itemDescs.join(", "));
+          }
+          if (parts.length) setDescription(parts.join(" - "));
+        }
         if (!amount && d.total_amount) setAmount(String(d.total_amount));
         if (d.date && expenseDate === new Date().toISOString().split("T")[0]) setExpenseDate(d.date);
         if (!invoiceNumber && d.invoice_number) setInvoiceNumber(d.invoice_number);
         if (d.vat_rate) {
+          // Handle both formats: edge function may return "standard_23" or "23"
           const rateMap: Record<string, VatRate> = {
-            "23": "standard_23",
-            "13.5": "reduced_13_5",
-            "9": "second_reduced_9",
-            "4.8": "livestock_4_8",
-            "0": "zero_rated",
+            "23": "standard_23", "standard_23": "standard_23",
+            "13.5": "reduced_13_5", "reduced_13_5": "reduced_13_5",
+            "9": "second_reduced_9", "second_reduced_9": "second_reduced_9",
+            "4.8": "livestock_4_8", "livestock_4_8": "livestock_4_8",
+            "0": "zero_rated", "zero_rated": "zero_rated",
+            "exempt": "exempt",
           };
           const mapped = rateMap[d.vat_rate];
           if (mapped) setSelectedVat(mapped);
         }
-        if (d.suggested_category && categories) {
-          const match = categories.find(
-            (c) => c.name.toLowerCase() === d.suggested_category!.toLowerCase(),
-          );
-          if (match && !selectedCategory) setSelectedCategory(match.id);
+        // Fuzzy match OCR suggested category to existing categories
+        if (d.suggested_category && categories && !selectedCategory) {
+          const suggested = d.suggested_category.toLowerCase();
+          const match =
+            categories.find((c) => c.name.toLowerCase() === suggested) ||
+            categories.find((c) => suggested.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(suggested));
+          if (match) setSelectedCategory(match.id);
         }
         toast.success("Receipt scanned successfully");
       } else {
