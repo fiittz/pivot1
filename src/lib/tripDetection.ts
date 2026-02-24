@@ -207,6 +207,14 @@ export function extractCountyFromAddress(address: string): string | null {
     return COUNTY_MAP[location];
   }
 
+  // Bare county name anywhere in the address — check rightmost match first
+  // (Irish addresses typically end with the county: "123 Main St, Waterford")
+  const words = norm.split(/[\s,]+/).filter(Boolean);
+  for (let i = words.length - 1; i >= 0; i--) {
+    const candidate = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+    if (allCounties.has(candidate)) return candidate;
+  }
+
   return null;
 }
 

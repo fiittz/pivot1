@@ -351,10 +351,27 @@ const BankFeed = () => {
 
   const { data: onboarding } = useOnboardingSettings();
   const { invoiceTrips: allInvoiceTrips } = useInvoiceTripMatcher();
-  const ct1 = useCT1Data();
-  const { data: invoicesData } = useInvoices();
   const { user } = useAuth();
+  const { data: invoicesData } = useInvoices();
   const { data: directorRows } = useDirectorOnboarding();
+
+  // Read saved CT1 questionnaire for VAT options (must be before useCT1Data)
+  const savedCT1ForVat = useMemo(() => {
+    const now = new Date();
+    const ty = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
+    const raw = localStorage.getItem(`ct1_questionnaire_${user?.id}_${ty}`);
+    return raw ? JSON.parse(raw) : null;
+  }, [user?.id]);
+
+  const ct1 = useCT1Data(
+    savedCT1ForVat?.vatStatusChangeDate
+      ? {
+          vatChangeDate: savedCT1ForVat.vatStatusChangeDate,
+          vatStatusBefore: savedCT1ForVat.vatStatus === "not_registered" ? "not_registered" : undefined,
+          vatStatusAfter: savedCT1ForVat.vatStatus,
+        }
+      : undefined,
+  );
 
   // VAT summary from hook — single source of truth for VAT figures
   const vatTaxYear = useMemo(() => {
