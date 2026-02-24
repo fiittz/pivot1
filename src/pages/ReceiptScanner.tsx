@@ -97,10 +97,15 @@ const ReceiptScanner = () => {
         .filter(Boolean)
         .join("\n\n");
 
-      // Build a richer description from line items
-      const description = receiptData.line_items?.length
-        ? `${receiptData.supplier_name || "Receipt"} — ${receiptData.line_items.map((li) => li.description).join(", ")}`
-        : receiptData.supplier_name || "Expense";
+      // Build a richer description: prefer AI purchase summary, fall back to line items
+      const descParts: string[] = [];
+      if (receiptData.supplier_name) descParts.push(receiptData.supplier_name);
+      if (receiptData.purchase_description) {
+        descParts.push(receiptData.purchase_description);
+      } else if (receiptData.line_items?.length) {
+        descParts.push(receiptData.line_items.map((li) => li.description).join(", "));
+      }
+      const description = descParts.length > 0 ? descParts.join(" — ") : "Expense";
 
       // AI categorization
       const vatRateStr = receiptData.vat_rate || "standard_23";
