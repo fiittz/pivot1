@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Upload, Sparkles, Loader2, Paperclip, AlertTriangle, Camera, X } from "lucide-react";
+import { ArrowLeft, Upload, Sparkles, Loader2, Paperclip, AlertTriangle, Camera, X, Files } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -616,6 +616,14 @@ const AddExpense = () => {
                 />
               </label>
             )}
+            <button
+              type="button"
+              onClick={() => navigate("/receipts/bulk")}
+              className="w-full mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2 rounded-lg hover:bg-muted/50"
+            >
+              <Files className="w-4 h-4" />
+              Bulk Upload Multiple Receipts
+            </button>
           </div>
 
           {/* Notes / Business Purpose */}
