@@ -39,7 +39,6 @@ function Divider() {
 const BalanceSheet = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const ct1 = useCT1Data();
   const { data: allTransactions } = useTransactions();
   const { data: allAccounts } = useAccounts();
   const { invoiceTrips } = useInvoiceTripMatcher();
@@ -49,11 +48,22 @@ const BalanceSheet = () => {
   const taxYear = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
   const taxYearStr = String(taxYear);
 
-  // Read saved CT1 questionnaire
+  // Read saved CT1 questionnaire (must be before useCT1Data so we can pass VAT options)
   const savedCT1 = useMemo(() => {
     const raw = localStorage.getItem(`ct1_questionnaire_${user?.id}_${taxYearStr}`);
     return raw ? JSON.parse(raw) : null;
   }, [user?.id, taxYearStr]);
+
+  // Pass VAT change dates from saved questionnaire to useCT1Data for re-evaluation
+  const ct1 = useCT1Data(
+    savedCT1?.vatStatusChangeDate
+      ? {
+          vatChangeDate: savedCT1.vatStatusChangeDate,
+          vatStatusBefore: savedCT1.vatStatus === "not_registered" ? "not_registered" : undefined,
+          vatStatusAfter: savedCT1.vatStatus,
+        }
+      : undefined,
+  );
 
   // Build balance sheet input from questionnaire data
   const bsInput = useMemo((): BalanceSheetInput | null => {
