@@ -12,7 +12,7 @@ const corsHeaders = {
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-2.5-flash";
+const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-3-flash-preview";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
