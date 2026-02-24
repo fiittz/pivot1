@@ -365,8 +365,8 @@ const AccountDetail = () => {
     const capital: { label: string; amount: number }[] = [];
     const shareCapital = q?.shareCapital ?? 100;
     capital.push({ label: "Share Capital", amount: shareCapital });
-    const totalIncome = ct1.detectedIncome.reduce((s, i) => s + i.amount, 0);
-    const retainedProfits = totalIncome - ct1.expenseSummary.allowable;
+    // Derive retained profits as balancing figure (Assets - Liabilities - Share Capital)
+    const retainedProfits = totalAssets - totalLiabilities - shareCapital;
     if (retainedProfits !== 0) capital.push({ label: "Retained Profits", amount: retainedProfits });
     const totalCapital = capital.reduce((s, c) => s + c.amount, 0);
 

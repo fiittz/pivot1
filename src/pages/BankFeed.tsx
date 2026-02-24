@@ -657,14 +657,14 @@ const BankFeed = () => {
       // Capital
       const shareCapital = q?.shareCapital ?? 100;
       capital.push({ label: "Share Capital", amount: shareCapital });
-      const totalIncome = ct1.detectedIncome.reduce((s, i) => s + i.amount, 0);
-      const totalExpensesAll = ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed;
-      const retainedProfits = totalIncome - totalExpensesAll;
-      if (retainedProfits !== 0) capital.push({ label: "Retained Profits", amount: retainedProfits });
     }
 
     const totalAssets = assets.reduce((s, a) => s + a.amount, 0);
     const totalLiabilities = liabilities.reduce((s, l) => s + l.amount, 0);
+    // Derive retained profits as balancing figure (Assets - Liabilities - Share Capital)
+    const shareCapitalAmt = capital.find((c) => c.label === "Share Capital")?.amount ?? 0;
+    const retainedProfits = totalAssets - totalLiabilities - shareCapitalAmt;
+    if (retainedProfits !== 0) capital.push({ label: "Retained Profits", amount: retainedProfits });
     const totalCapital = capital.reduce((s, c) => s + c.amount, 0);
 
     return { assets, totalAssets, liabilities, totalLiabilities, capital, totalCapital };
@@ -1064,24 +1064,39 @@ const BankFeed = () => {
     const vehicleNBV = ct1.vehicleAsset ? ct1.vehicleAsset.depreciation.netBookValue : 0;
     const directorsLoanNet = ct1.netDirectorsLoan;
 
+    const bsShareCapital = q?.shareCapital ?? 100;
+    const bsLandBuildings = q?.fixedAssetsLandBuildings ?? 0;
+    const bsPlantMachinery = q?.fixedAssetsPlantMachinery ?? 0;
+    const bsFixturesFittings = q?.fixedAssetsFixturesFittings ?? 0;
+    const bsStock = q?.currentAssetsStock ?? 0;
+    const bsDebtors = (directorsLoanNet < 0 ? Math.abs(directorsLoanNet) : 0) + (q?.currentAssetsDebtors ?? 0);
+    const bsCash = q?.currentAssetsCash ?? 0;
+    const bsDLT = directorsLoanNet > 0 ? directorsLoanNet : 0;
+    const bsCreditors = q?.liabilitiesCreditors ?? 0;
+    const bsBankLoans = q?.liabilitiesBankLoans ?? 0;
+    const bsDirectorsLoans = q?.liabilitiesDirectorsLoans ?? 0;
+    // Derive retained profits as balancing figure
+    const bsTotalA = bsLandBuildings + bsPlantMachinery + vehicleNBV + bsFixturesFittings + bsStock + bsDebtors + bsCash + bankBalance + ct1.rctPrepayment;
+    const bsTotalL = bsCreditors + 0 + 0 + bsDLT + bsBankLoans + bsDirectorsLoans;
+    const bsRetained = bsTotalA - bsTotalL - bsShareCapital;
     const bsInput: BalanceSheetInput = {
-      landBuildings: q?.fixedAssetsLandBuildings ?? 0,
-      plantMachinery: q?.fixedAssetsPlantMachinery ?? 0,
+      landBuildings: bsLandBuildings,
+      plantMachinery: bsPlantMachinery,
       motorVehicles: vehicleNBV,
-      fixturesFittings: q?.fixedAssetsFixturesFittings ?? 0,
-      stock: q?.currentAssetsStock ?? 0,
-      debtors: (directorsLoanNet < 0 ? Math.abs(directorsLoanNet) : 0) + (q?.currentAssetsDebtors ?? 0),
-      cash: q?.currentAssetsCash ?? 0,
+      fixturesFittings: bsFixturesFittings,
+      stock: bsStock,
+      debtors: bsDebtors,
+      cash: bsCash,
       bankBalance: bankBalance,
       rctPrepayment: ct1.rctPrepayment,
-      creditors: q?.liabilitiesCreditors ?? 0,
+      creditors: bsCreditors,
       taxation: 0,
       bankOverdraft: 0,
-      directorsLoanTravel: directorsLoanNet > 0 ? directorsLoanNet : 0,
-      bankLoans: q?.liabilitiesBankLoans ?? 0,
-      directorsLoans: q?.liabilitiesDirectorsLoans ?? 0,
-      shareCapital: q?.shareCapital ?? 100,
-      retainedProfits: totalIncome - (ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed),
+      directorsLoanTravel: bsDLT,
+      bankLoans: bsBankLoans,
+      directorsLoans: bsDirectorsLoans,
+      shareCapital: bsShareCapital,
+      retainedProfits: bsRetained,
     };
 
     const reportData = assembleBalanceSheetData(bsInput, meta);
@@ -1126,6 +1141,16 @@ const BankFeed = () => {
     }
     if (directorNamesLocal.length === 0) directorNamesLocal.push("Director");
 
+    // Derive retained profits as balancing figure for abridged accounts
+    const abStock = q?.currentAssetsStock ?? 0;
+    const abDebtors = (ct1.rctPrepayment > 0 ? ct1.rctPrepayment : 0) + (directorsLoanNet < 0 ? Math.abs(directorsLoanNet) : 0);
+    const abCreditors = q?.liabilitiesCreditors ?? 0;
+    const abBankLoans = q?.liabilitiesBankLoans ?? 0;
+    const abDirectorsLoans = directorsLoanNet > 0 ? directorsLoanNet : 0;
+    const abShareCapital = q?.shareCapital ?? 100;
+    const abTotalAssets = vehicleNBV + abStock + 0 + abDebtors + 0 + cashAtBank;
+    const abTotalLiabilities = abCreditors + 0 + 0 + abBankLoans + abDirectorsLoans;
+    const abRetained = abTotalAssets - abTotalLiabilities - abShareCapital;
     const abInput: AbridgedAccountsInput = {
       companyName: companyInfo.companyName || "Company",
       croNumber: companyInfo.croNumber || "",
@@ -1133,21 +1158,19 @@ const BankFeed = () => {
       accountingYearEnd: `31 December ${ty}`,
       directorNames: directorNamesLocal,
       fixedAssetsTangible: vehicleNBV,
-      stock: q?.currentAssetsStock ?? 0,
+      stock: abStock,
       wip: 0,
-      debtors:
-        (ct1.rctPrepayment > 0 ? ct1.rctPrepayment : 0) + (directorsLoanNet < 0 ? Math.abs(directorsLoanNet) : 0),
+      debtors: abDebtors,
       prepayments: 0,
       cashAtBank,
-      creditors: q?.liabilitiesCreditors ?? 0,
+      creditors: abCreditors,
       accruals: 0,
       taxation: 0,
-      bankLoans: q?.liabilitiesBankLoans ?? 0,
-      directorsLoans: directorsLoanNet > 0 ? directorsLoanNet : 0,
+      bankLoans: abBankLoans,
+      directorsLoans: abDirectorsLoans,
       directorsLoanDirection: directorsLoanNet > 0 ? "from_company" : undefined,
-      shareCapital: q?.shareCapital ?? 100,
-      retainedProfits:
-        totalIncome - (ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed) - (q?.shareCapital ?? 100),
+      shareCapital: abShareCapital,
+      retainedProfits: abRetained,
     };
 
     const reportData = assembleAbridgedAccountsData(abInput, meta);
@@ -2495,10 +2518,9 @@ const BankFeed = () => {
                     // Capital
                     const netAssets = totalAssets - totalLiabilities;
 
-                    // Compute breakdowns for expandable rows
-                    const totalExpensesAll = ct1.expenseSummary.allowable + ct1.expenseSummary.disallowed;
+                    // Derive retained profits as balancing figure
                     const shareCapital = 100;
-                    const retainedProfits = totalIncome - totalExpensesAll;
+                    const retainedProfits = totalAssets - totalLiabilities - shareCapital;
 
                     const BsRow = ({
                       label,
