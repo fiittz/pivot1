@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, RequireAuth } from "@/hooks/useAuth";
 import { RequireAccountant } from "@/components/auth/RequireAccountant";
+import { RequirePlatformAdmin } from "@/components/auth/RequirePlatformAdmin";
 import { BackgroundTasksProvider } from "@/contexts/BackgroundTasksContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import BackgroundTasksStatus from "@/components/layout/BackgroundTasksStatus";
@@ -307,7 +308,9 @@ const App = () => (
                         path="/admin"
                         element={
                           <RequireAuth>
-                            <AdminDashboard />
+                            <RequirePlatformAdmin>
+                              <AdminDashboard />
+                            </RequirePlatformAdmin>
                           </RequireAuth>
                         }
                       />
