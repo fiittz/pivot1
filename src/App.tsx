@@ -63,6 +63,9 @@ const ProfitAndLoss = lazyWithRetry(() => import("./pages/ProfitAndLoss"));
 const AgedDebtors = lazyWithRetry(() => import("./pages/AgedDebtors"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 
+// Admin pages (lazy-loaded)
+const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"));
+
 // Accountant pages (lazy-loaded)
 const AccountantDashboard = lazyWithRetry(() => import("./pages/accountant/AccountantDashboard"));
 const AccountantSettings = lazyWithRetry(() => import("./pages/accountant/AccountantSettings"));
@@ -296,6 +299,15 @@ const App = () => (
                         element={
                           <RequireAuth>
                             <ChartOfAccounts />
+                          </RequireAuth>
+                        }
+                      />
+                      {/* Admin routes */}
+                      <Route
+                        path="/admin"
+                        element={
+                          <RequireAuth>
+                            <AdminDashboard />
                           </RequireAuth>
                         }
                       />
