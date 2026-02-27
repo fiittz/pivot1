@@ -42,7 +42,7 @@ const Welcome = () => {
   const [industryType, setIndustryType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isAccountant } = useAuth();
 
   // Form state
   const [businessName, setBusinessName] = useState("");
@@ -52,9 +52,13 @@ const Welcome = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      navigate("/dashboard");
+      if (isAccountant) {
+        navigate("/accountant/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isAccountant, navigate]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -255,6 +259,15 @@ const Welcome = () => {
             >
               Log In
             </Button>
+            <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm pt-2">
+              Are you an accountant?{" "}
+              <button
+                onClick={() => navigate("/accountant/signup")}
+                className="font-semibold text-foreground underline"
+              >
+                Sign up as Accountant
+              </button>
+            </p>
           </div>
         </div>
       )}

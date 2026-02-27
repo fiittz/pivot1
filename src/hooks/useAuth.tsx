@@ -1,9 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { MOCK_USER, MOCK_SESSION, MOCK_PROFILE, isDemoMode, disableDemoMode } from "@/lib/mockData";
+import type { UserRoleType, AccountantPractice } from "@/types/accountant";
 
 interface AuthContextType {
   user: User | null;
@@ -14,11 +15,19 @@ interface AuthContextType {
   directorOnboardingComplete: boolean | null;
   directorCount: number;
   directorsCompleted: number;
+  /** Active roles for the current user */
+  roles: UserRoleType[];
+  /** Whether the user holds the 'accountant' role (null while loading) */
+  isAccountant: boolean | null;
+  /** The accountant's practice (null if not an accountant or not yet loaded) */
+  practice: AccountantPractice | null;
   signOut: () => Promise<void>;
   refreshOnboardingStatus: () => Promise<void>;
   refreshDirectorOnboardingStatus: () => void;
   setDirectorOnboardingComplete: (complete: boolean) => void;
   incrementDirectorCompleted: () => void;
+  /** Re-fetch roles and practice from the database */
+  refreshRoles: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [directorCount, setDirectorCount] = useState<number>(1);
   const [directorsCompleted, setDirectorsCompleted] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [roles, setRoles] = useState<UserRoleType[]>([]);
+  const [isAccountant, setIsAccountant] = useState<boolean | null>(null);
+  const [practice, setPractice] = useState<AccountantPractice | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -44,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDirectorOnboardingComplete(true);
       setDirectorCount(1);
       setDirectorsCompleted(1);
+      setRoles(["owner"]);
+      setIsAccountant(false);
+      setPractice(null);
       setIsLoading(false);
     };
 
@@ -61,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchProfile(session.user.id);
         fetchOnboardingStatus(session.user.id);
         checkDirectorOnboarding(session.user.id);
+        fetchRoles(session.user.id);
         return;
       }
 
@@ -89,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fetchProfile(nextSession.user.id);
           fetchOnboardingStatus(nextSession.user.id);
           checkDirectorOnboarding(nextSession.user.id);
+          fetchRoles(nextSession.user.id);
         }, 0);
         return;
       }
@@ -104,6 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setOnboardingComplete(null);
       setDirectorOnboardingComplete(null);
+      setRoles([]);
+      setIsAccountant(null);
+      setPractice(null);
       setIsLoading(false);
     });
 
@@ -111,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchRoles]);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -195,6 +215,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      const userRoles = (data?.map((r) => r.role) || []) as UserRoleType[];
+      setRoles(userRoles);
+      const hasAccountant = userRoles.includes("accountant");
+      setIsAccountant(hasAccountant);
+
+      if (hasAccountant) {
+        // Fetch practice
+        const { data: practiceData, error: practiceError } = await supabase
+          .from("accountant_practices")
+          .select("*")
+          .eq("owner_id", userId)
+          .maybeSingle();
+
+        if (practiceError) console.error("Error fetching practice:", practiceError);
+        setPractice((practiceData as AccountantPractice) || null);
+      } else {
+        setPractice(null);
+      }
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      setIsAccountant(false);
+      setPractice(null);
+    }
+  }, []);
+
   const signOut = async () => {
     // Clear demo mode if active
     if (isDemoMode()) {
@@ -208,6 +262,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDirectorOnboardingComplete(null);
     setDirectorCount(1);
     setDirectorsCompleted(0);
+    setRoles([]);
+    setIsAccountant(null);
+    setPractice(null);
   };
 
   const refreshOnboardingStatus = async () => {
@@ -236,6 +293,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshRoles = () => {
+    if (user) {
+      fetchRoles(user.id);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -247,11 +310,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         directorOnboardingComplete,
         directorCount,
         directorsCompleted,
+        roles,
+        isAccountant,
+        practice,
         signOut,
         refreshOnboardingStatus,
         refreshDirectorOnboardingStatus,
         setDirectorOnboardingComplete: updateDirectorOnboardingComplete,
         incrementDirectorCompleted,
+        refreshRoles,
       }}
     >
       {children}
@@ -269,17 +336,21 @@ export function useAuth() {
 
 // Protected route wrapper
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, isLoading, onboardingComplete, directorOnboardingComplete } = useAuth();
+  const { user, isLoading, onboardingComplete, directorOnboardingComplete, isAccountant } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isOnboardingRoute = location.pathname === "/onboarding" || location.pathname === "/onboarding/director";
+  const isAccountantRoute = location.pathname.startsWith("/accountant");
 
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/");
       return;
     }
+
+    // Skip onboarding redirects for accountant routes — accountants don't need business onboarding
+    if (isAccountantRoute) return;
 
     // Redirect to business onboarding if not completed
     if (!isLoading && user && onboardingComplete === false && location.pathname !== "/onboarding") {
@@ -298,7 +369,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       navigate("/onboarding/director");
       return;
     }
-  }, [user, isLoading, onboardingComplete, directorOnboardingComplete, navigate, location.pathname]);
+  }, [user, isLoading, onboardingComplete, directorOnboardingComplete, isAccountant, navigate, location.pathname, isAccountantRoute]);
 
   if (isLoading) {
     return (

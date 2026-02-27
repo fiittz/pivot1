@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, RequireAuth } from "@/hooks/useAuth";
+import { RequireAccountant } from "@/components/auth/RequireAccountant";
 import { BackgroundTasksProvider } from "@/contexts/BackgroundTasksContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import BackgroundTasksStatus from "@/components/layout/BackgroundTasksStatus";
@@ -61,6 +62,17 @@ const TripClaimsManager = lazyWithRetry(() => import("./pages/TripClaimsManager"
 const ProfitAndLoss = lazyWithRetry(() => import("./pages/ProfitAndLoss"));
 const AgedDebtors = lazyWithRetry(() => import("./pages/AgedDebtors"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
+
+// Accountant pages (lazy-loaded)
+const AccountantDashboard = lazyWithRetry(() => import("./pages/accountant/AccountantDashboard"));
+const AccountantSettings = lazyWithRetry(() => import("./pages/accountant/AccountantSettings"));
+const AccountantSignup = lazyWithRetry(() => import("./pages/accountant/AccountantSignup"));
+const ClientList = lazyWithRetry(() => import("./pages/accountant/ClientList"));
+const InviteClient = lazyWithRetry(() => import("./pages/accountant/InviteClient"));
+const ClientDetail = lazyWithRetry(() => import("./pages/accountant/ClientDetail"));
+const AccountantTasks = lazyWithRetry(() => import("./pages/accountant/AccountantTasks"));
+const ClientFilingReview = lazyWithRetry(() => import("./pages/accountant/ClientFilingReview"));
+const AcceptInvite = lazyWithRetry(() => import("./pages/AcceptInvite"));
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -284,6 +296,87 @@ const App = () => (
                         element={
                           <RequireAuth>
                             <ChartOfAccounts />
+                          </RequireAuth>
+                        }
+                      />
+                      {/* Accountant routes */}
+                      <Route path="/accountant/signup" element={<AccountantSignup />} />
+                      <Route
+                        path="/accountant/dashboard"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <AccountantDashboard />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/settings"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <AccountantSettings />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/clients"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <ClientList />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/clients/invite"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <InviteClient />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/clients/:clientId"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <ClientDetail />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/tasks"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <AccountantTasks />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/filings/:filingId"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <ClientFilingReview />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      {/* Public invite acceptance route */}
+                      <Route
+                        path="/invite/:token"
+                        element={
+                          <RequireAuth>
+                            <AcceptInvite />
                           </RequireAuth>
                         }
                       />

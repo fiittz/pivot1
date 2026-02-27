@@ -36,3 +36,12 @@ verify_jwt = true
 
 [functions.send-password-reset]
 verify_jwt = false
+
+[functions.send-client-invite]
+verify_jwt = true
+
+[functions.accept-client-invite]
+verify_jwt = true
+
+[functions.store-filing-xml]
+verify_jwt = true

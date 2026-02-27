@@ -1528,6 +1528,10 @@ const BankFeed = () => {
                       Import CSV
                     </Button>
                   )}
+                  <Button variant="outline" size="sm" onClick={() => navigate("/receipts/bulk")}>
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Upload Receipts
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm">

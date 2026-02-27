@@ -12,6 +12,7 @@ import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { WidgetCustomizeSheet } from "@/components/dashboard/WidgetCustomizeSheet";
 import { DeadlinesWidget } from "@/components/dashboard/DeadlinesWidget";
+import { DocumentRequestsBanner } from "@/components/dashboard/DocumentRequestsBanner";
 
 const BookkeepingDashboard = () => {
   const navigate = useNavigate();
@@ -183,6 +184,9 @@ const BookkeepingDashboard = () => {
         <main className="flex-1 px-6 py-6 space-y-6 overflow-y-auto">
           {/* Onboarding Progress Card - shows if setup incomplete */}
           <OnboardingProgressCard />
+
+          {/* Document requests from accountant */}
+          <DocumentRequestsBanner />
 
           {/* Top cards grid */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
