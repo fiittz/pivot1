@@ -284,11 +284,19 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
     abortRef.current = false;
     setState((prev) => ({ ...prev, phase: "ocr", currentIndex: 0 }));
 
+    // Refresh session before batch to ensure JWT is valid
+    const { error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) {
+      toast.error("Session expired — please sign in again");
+      return;
+    }
+
     // Snapshot queued files at start
     const filesToProcess = stateRef.current.files.filter((f) => f.status === "queued");
+    let authFailed = false;
 
     for (let i = 0; i < filesToProcess.length; i++) {
-      if (abortRef.current) break;
+      if (abortRef.current || authFailed) break;
 
       const entry = filesToProcess[i];
       setState((prev) => ({ ...prev, currentIndex: i + 1 }));
@@ -315,7 +323,18 @@ export function BackgroundTasksProvider({ children }: { children: React.ReactNod
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Processing failed";
-        updateFile(entry.id, { status: "error", error: msg });
+        // Abort the entire batch on auth errors — don't spam a broken endpoint
+        if (msg.includes("non-2xx") || msg.includes("401") || msg.includes("Unauthorized")) {
+          authFailed = true;
+          updateFile(entry.id, { status: "error", error: "Authentication error — please refresh the page" });
+          // Mark remaining files as error too
+          for (let j = i + 1; j < filesToProcess.length; j++) {
+            updateFile(filesToProcess[j].id, { status: "error", error: "Skipped — auth error on earlier receipt" });
+          }
+          toast.error("Receipt processing failed — please refresh the page and try again");
+        } else {
+          updateFile(entry.id, { status: "error", error: msg });
+        }
       }
     }
 

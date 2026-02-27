@@ -101,6 +101,7 @@ const AccountDetail = () => {
   const [activeTab, setActiveTab] = useState("pnl");
   const [dateRange, setDateRange] = useState<DateRangeOption>("this_month");
 
+  const { user } = useAuth();
   const { data: supabaseAccounts } = useAccounts();
   const account = supabaseAccounts?.find((a) => a.id === accountId);
 
@@ -108,8 +109,24 @@ const AccountDetail = () => {
   const { data: categories = [] } = useCategories();
   const { invoiceTrips } = useInvoiceTripMatcher();
   const { data: invoices = [] } = useInvoices();
-  const ct1 = useCT1Data();
-  const { user } = useAuth();
+
+  // Read saved CT1 questionnaire for VAT options
+  const savedCT1 = useMemo(() => {
+    const now = new Date();
+    const ty = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
+    const raw = localStorage.getItem(`ct1_questionnaire_${user?.id}_${ty}`);
+    return raw ? JSON.parse(raw) : null;
+  }, [user?.id]);
+
+  const ct1 = useCT1Data(
+    savedCT1?.vatStatusChangeDate
+      ? {
+          vatChangeDate: savedCT1.vatStatusChangeDate,
+          vatStatusBefore: savedCT1.vatStatus === "not_registered" ? "not_registered" : undefined,
+          vatStatusAfter: savedCT1.vatStatus,
+        }
+      : undefined,
+  );
 
   // Get date range bounds
   const dateRangeBounds = useMemo(() => {

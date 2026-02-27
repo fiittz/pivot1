@@ -174,6 +174,9 @@ export default function ChatWidget() {
   const { user, profile, directorCount } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  // Whether the chat_messages table exists in the DB
+  const chatTableExists = useRef(true);
+
   // Load all chat history from Supabase on mount
   useEffect(() => {
     if (!user?.id) return;
@@ -189,7 +192,10 @@ export default function ChatWidget() {
         .order("created_at", { ascending: true })
         .then(({ data, error }) => {
           if (error) {
-            console.error("Failed to load chat history:", error.message);
+            // If the table doesn't exist, silently disable DB persistence
+            if (error.message?.includes("schema cache") || error.code === "PGRST204") {
+              chatTableExists.current = false;
+            }
             return;
           }
           if (data && data.length > 0) {
@@ -551,7 +557,7 @@ export default function ChatWidget() {
     setLastToolUsed(null);
     let toolWasUsed = false;
 
-    if (user?.id) {
+    if (user?.id && chatTableExists.current) {
       supabase.from("chat_messages").insert({ user_id: user.id, role: "user", content: messageText }).then();
     }
 
@@ -717,7 +723,7 @@ export default function ChatWidget() {
           return updated;
         });
       }
-      if (user?.id && finalContent) {
+      if (user?.id && finalContent && chatTableExists.current) {
         supabase.from("chat_messages").insert({ user_id: user.id, role: "assistant", content: finalContent }).then();
       }
     } catch (err) {
@@ -839,10 +845,10 @@ export default function ChatWidget() {
                 onClick={() => {
                   setMessages([]);
                   setLastToolUsed(null);
-                  if (user?.id) {
+                  if (user?.id && chatTableExists.current) {
                     supabase.from("chat_messages").delete().eq("user_id", user.id).then();
-                    setConversations([]);
                   }
+                  setConversations([]);
                 }}
                 className="text-white/70 hover:text-white transition-colors"
                 aria-label="Clear all history"

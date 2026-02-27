@@ -163,6 +163,17 @@ export async function processReceipt(
 
   if (error) {
     console.error("Receipt processing error:", error);
+    // If auth failed, try refreshing session once and retry
+    const errMsg = error.message || "";
+    if (errMsg.includes("non-2xx") || errMsg.includes("401") || errMsg.includes("Unauthorized")) {
+      const { error: refreshErr } = await supabase.auth.refreshSession();
+      if (!refreshErr) {
+        const retry = await supabase.functions.invoke("process-receipt", {
+          body: { imageBase64, mimeType: mimeType || "image/jpeg", categories },
+        });
+        if (!retry.error) return retry.data as ReceiptResult;
+      }
+    }
     // Extract the real error from the Edge Function response body
     let errorMessage = "Failed to process receipt";
     try {
@@ -190,6 +201,16 @@ export async function processReceiptFromUrl(imageUrl: string, categories?: Categ
 
   if (error) {
     console.error("Receipt processing error:", error);
+    const errMsg = error.message || "";
+    if (errMsg.includes("non-2xx") || errMsg.includes("401") || errMsg.includes("Unauthorized")) {
+      const { error: refreshErr } = await supabase.auth.refreshSession();
+      if (!refreshErr) {
+        const retry = await supabase.functions.invoke("process-receipt", {
+          body: { imageUrl, categories },
+        });
+        if (!retry.error) return retry.data as ReceiptResult;
+      }
+    }
     let errorMessage = "Failed to process receipt";
     try {
       const body = await error.context?.json();
