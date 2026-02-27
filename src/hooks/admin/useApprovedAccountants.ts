@@ -6,8 +6,6 @@ import type { ApprovedAccountant } from "@/types/accountant";
 const QUERY_KEY = ["approved_accountants"];
 
 export function useApprovedAccountants() {
-  const { user } = useAuth();
-
   return useQuery<ApprovedAccountant[]>({
     queryKey: QUERY_KEY,
     queryFn: async () => {
@@ -20,7 +18,6 @@ export function useApprovedAccountants() {
       if (error) throw error;
       return (data ?? []) as ApprovedAccountant[];
     },
-    enabled: !!user,
   });
 }
 

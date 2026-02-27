@@ -303,15 +303,13 @@ const App = () => (
                           </RequireAuth>
                         }
                       />
-                      {/* Admin routes */}
+                      {/* Admin routes — PIN-gated, no login required */}
                       <Route
                         path="/admin"
                         element={
-                          <RequireAuth>
-                            <RequirePlatformAdmin>
-                              <AdminDashboard />
-                            </RequirePlatformAdmin>
-                          </RequireAuth>
+                          <RequirePlatformAdmin>
+                            <AdminDashboard />
+                          </RequirePlatformAdmin>
                         }
                       />
                       {/* Accountant routes */}
