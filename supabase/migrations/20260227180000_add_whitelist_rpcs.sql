@@ -15,6 +15,8 @@ BEGIN
   RETURN QUERY
   INSERT INTO public.approved_accountants (email)
   VALUES (lower(trim(p_email)))
+  ON CONFLICT (email) DO UPDATE
+    SET status = 'active'
   RETURNING
     approved_accountants.id,
     approved_accountants.email,

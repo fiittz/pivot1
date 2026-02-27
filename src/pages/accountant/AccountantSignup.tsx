@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,77 +7,113 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Step = "details" | "practice";
+type Mode = "login" | "forgot";
 
-const AccountantSignup = () => {
+const AccountantPortal = () => {
   const navigate = useNavigate();
-  const { user, refreshRoles } = useAuth();
-  const [step, setStep] = useState<Step>("details");
+  const { user, isAccountant, practice, refreshRoles } = useAuth();
+  const [mode, setMode] = useState<Mode>("login");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Account fields
+  // Auth fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
 
   // Practice fields
   const [practiceName, setPracticeName] = useState("");
   const [tain, setTain] = useState("");
+  const [showPracticeSetup, setShowPracticeSetup] = useState(false);
 
-  const handleCreateAccount = async () => {
-    if (!email || !password || !fullName) {
-      toast.error("Please fill in all fields");
-      return;
+  // If already logged in as accountant with a practice, go straight to dashboard
+  useEffect(() => {
+    if (user && isAccountant && practice) {
+      navigate("/accountant/dashboard");
     }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+  }, [user, isAccountant, practice, navigate]);
+
+  // If logged in as accountant but no practice, show practice setup
+  useEffect(() => {
+    if (user && isAccountant && practice === null) {
+      setShowPracticeSetup(true);
+    }
+  }, [user, isAccountant, practice]);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      toast.error("Please enter your email and password");
       return;
     }
 
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/accountant/dashboard`,
-          data: { full_name: fullName, is_accountant: true },
-        },
       });
 
       if (error) throw error;
 
-      if (data.user && data.session) {
-        // Add accountant role
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: data.user.id,
-          role: "accountant",
-        });
+      // Check if user has accountant role
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .eq("role", "accountant");
 
-        if (roleError) {
-          console.error("Role insert error:", roleError);
-          setErrorMsg(`Role error: ${roleError.message}`);
-          setIsLoading(false);
-          return; // Don't proceed — role is required
-        }
+      if (!roles || roles.length === 0) {
+        await supabase.auth.signOut();
+        setErrorMsg("This account doesn't have accountant access. Contact your admin.");
+        setIsLoading(false);
+        return;
+      }
 
-        // Sync auth context so RequireAccountant sees the new role
-        refreshRoles();
+      // Check if they have a practice
+      const { data: practiceData } = await supabase
+        .from("accountant_practices")
+        .select("id")
+        .eq("owner_id", data.user.id)
+        .maybeSingle();
+
+      refreshRoles();
+
+      if (practiceData) {
+        navigate("/accountant/dashboard");
+      } else {
         setIsLoading(false);
-        setStep("practice");
-      } else if (data.user && !data.session) {
-        // Email confirmation required — account created but no session yet
-        toast.error(
-          "Check your email to confirm your account, then come back and log in."
-        );
-        setIsLoading(false);
+        setShowPracticeSetup(true);
       }
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
       setErrorMsg(errMsg);
-      toast.error(errMsg || "Failed to create account");
+      toast.error(errMsg || "Failed to log in");
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password reset email sent — check your inbox");
+      setIsLoading(false);
+      setMode("login");
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      setErrorMsg(errMsg);
+      toast.error(errMsg || "Failed to send reset email");
       setIsLoading(false);
     }
   };
@@ -160,12 +196,14 @@ const AccountantSignup = () => {
             />
             <div>
               <h1 className="text-3xl font-semibold text-foreground font-['IBM_Plex_Mono'] tracking-wide">
-                {step === "details" ? "Accountant signup" : "Your practice"}
+                {showPracticeSetup ? "Your practice" : "Accountant portal"}
               </h1>
               <p className="text-sm text-muted-foreground font-['IBM_Plex_Sans']">
-                {step === "details"
-                  ? "Create your accountant account"
-                  : "Set up your firm"}
+                {showPracticeSetup
+                  ? "Set up your firm"
+                  : mode === "forgot"
+                    ? "Reset your password"
+                    : "Log in to your account"}
               </p>
             </div>
           </div>
@@ -176,21 +214,8 @@ const AccountantSignup = () => {
             </div>
           )}
 
-          {step === "details" && (
+          {!showPracticeSetup && mode === "login" && (
             <div className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="full-name" className={labelClass}>
-                  Full Name
-                </Label>
-                <Input
-                  id="full-name"
-                  type="text"
-                  placeholder="Your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="acct-email" className={labelClass}>
                   Email
@@ -216,31 +241,66 @@ const AccountantSignup = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={inputClass}
-                  autoComplete="new-password"
+                  autoComplete="current-password"
+                />
+                <button
+                  onClick={() => { setMode("forgot"); setErrorMsg(null); }}
+                  className="text-xs text-muted-foreground hover:text-foreground font-['IBM_Plex_Sans'] underline mt-1"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <Button
+                onClick={handleLogin}
+                disabled={isLoading}
+                className={primaryBtnClass}
+              >
+                {isLoading ? "Logging in..." : "Log in"}
+              </Button>
+            </div>
+          )}
+
+          {!showPracticeSetup && mode === "forgot" && (
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground font-['IBM_Plex_Sans']">
+                Enter your email and we&apos;ll send you a link to set a new password.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="acct-email" className={labelClass}>
+                  Email
+                </Label>
+                <Input
+                  id="acct-email"
+                  type="email"
+                  placeholder="you@firm.ie"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                  autoComplete="email"
                 />
               </div>
 
               <Button
-                onClick={handleCreateAccount}
+                onClick={handleForgotPassword}
                 disabled={isLoading}
                 className={primaryBtnClass}
               >
-                {isLoading ? "Creating account..." : "Continue"}
+                {isLoading ? "Sending..." : "Send reset link"}
               </Button>
 
               <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm">
-                Already have an account?{" "}
                 <button
-                  onClick={() => navigate("/")}
+                  onClick={() => { setMode("login"); setErrorMsg(null); }}
                   className="font-semibold text-foreground underline"
                 >
-                  Log in
+                  Back to login
                 </button>
               </p>
             </div>
           )}
 
-          {step === "practice" && (
+          {showPracticeSetup && (
             <div className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="practice-name" className={labelClass}>
@@ -287,4 +347,4 @@ const AccountantSignup = () => {
   );
 };
 
-export default AccountantSignup;
+export default AccountantPortal;

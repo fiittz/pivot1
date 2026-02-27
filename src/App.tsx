@@ -313,6 +313,7 @@ const App = () => (
                         }
                       />
                       {/* Accountant routes */}
+                      <Route path="/accountant" element={<AccountantSignup />} />
                       <Route path="/accountant/signup" element={<AccountantSignup />} />
                       <Route
                         path="/accountant/dashboard"
