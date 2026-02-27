@@ -8,6 +8,72 @@ export type Database = {
   };
   public: {
     Tables: {
+      accountant_clients: {
+        Row: {
+          id: string;
+          accountant_id: string;
+          client_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          accountant_id: string;
+          client_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          accountant_id?: string;
+          client_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      approved_accountants: {
+        Row: {
+          id: string;
+          email: string;
+          approved_by: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          approved_by?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          approved_by?: string | null;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      user_roles: {
+        Row: {
+          id: string;
+          user_id: string;
+          role: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          role: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          role?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       chat_messages: {
         Row: {
           id: string;

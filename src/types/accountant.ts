@@ -1,6 +1,42 @@
 // Accountant domain types — Phase 1+
 
-export type UserRoleType = 'owner' | 'accountant';
+export type UserRoleType = 'owner' | 'accountant' | 'platform_admin';
+
+export type AccountantStatus = "active" | "revoked" | "suspended";
+
+export interface ApprovedAccountant {
+  id: string;
+  email: string;
+  approved_by: string | null;
+  status: AccountantStatus;
+  created_at: string;
+}
+
+export interface RegisteredAccountant {
+  user_id: string;
+  email: string;
+  display_name: string;
+  signed_up_at: string;
+  status: AccountantStatus;
+  client_count: number;
+}
+
+export interface AdminClientView {
+  client_id: string;
+  email: string;
+  business_name: string | null;
+  signed_up_at: string;
+  transaction_count: number;
+}
+
+export interface PlatformOverview {
+  total_users: number;
+  active_accountants: number;
+  suspended_accountants: number;
+  whitelisted_emails: number;
+  total_transactions: number;
+  businesses_with_transactions: number;
+}
 
 export interface UserRole {
   id: string;
