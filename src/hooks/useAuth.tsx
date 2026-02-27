@@ -45,6 +45,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAccountant, setIsAccountant] = useState<boolean | null>(null);
   const [practice, setPractice] = useState<AccountantPractice | null>(null);
 
+  const fetchRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      const userRoles = (data?.map((r) => r.role) || []) as UserRoleType[];
+      setRoles(userRoles);
+      const hasAccountant = userRoles.includes("accountant");
+      setIsAccountant(hasAccountant);
+
+      if (hasAccountant) {
+        const { data: practiceData, error: practiceError } = await supabase
+          .from("accountant_practices")
+          .select("*")
+          .eq("owner_id", userId)
+          .maybeSingle();
+
+        if (practiceError) console.error("Error fetching practice:", practiceError);
+        setPractice((practiceData as AccountantPractice) || null);
+      } else {
+        setPractice(null);
+      }
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      setIsAccountant(false);
+      setPractice(null);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -214,40 +247,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDirectorOnboardingComplete(false);
     }
   };
-
-  const fetchRoles = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      const userRoles = (data?.map((r) => r.role) || []) as UserRoleType[];
-      setRoles(userRoles);
-      const hasAccountant = userRoles.includes("accountant");
-      setIsAccountant(hasAccountant);
-
-      if (hasAccountant) {
-        // Fetch practice
-        const { data: practiceData, error: practiceError } = await supabase
-          .from("accountant_practices")
-          .select("*")
-          .eq("owner_id", userId)
-          .maybeSingle();
-
-        if (practiceError) console.error("Error fetching practice:", practiceError);
-        setPractice((practiceData as AccountantPractice) || null);
-      } else {
-        setPractice(null);
-      }
-    } catch (error) {
-      console.error("Error fetching roles:", error);
-      setIsAccountant(false);
-      setPractice(null);
-    }
-  }, []);
 
   const signOut = async () => {
     // Clear demo mode if active
