@@ -1,4 +1,5 @@
--- Practice Management: suspended status, accountant_clients table, admin RPCs
+-- Practice Management: suspended status + admin RPCs
+-- accountant_clients table already created in 110000
 
 -- 1. Update approved_accountants CHECK constraint to include 'suspended'
 ALTER TABLE public.approved_accountants
@@ -8,35 +9,14 @@ ALTER TABLE public.approved_accountants
   ADD CONSTRAINT approved_accountants_status_check
   CHECK (status IN ('active', 'revoked', 'suspended'));
 
--- 2. Create accountant_clients junction table
-CREATE TABLE public.accountant_clients (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  accountant_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  client_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (accountant_id, client_id)
-);
-
-ALTER TABLE public.accountant_clients ENABLE ROW LEVEL SECURITY;
-
--- Accountants can see their own clients
-CREATE POLICY "Accountants can view own clients"
-  ON public.accountant_clients FOR SELECT
-  USING (auth.uid() = accountant_id);
-
--- Platform admins can see all
-CREATE POLICY "Platform admins can view all accountant_clients"
-  ON public.accountant_clients FOR SELECT
-  USING (public.is_platform_admin());
-
--- Platform admins can manage
-CREATE POLICY "Platform admins can insert accountant_clients"
-  ON public.accountant_clients FOR INSERT
-  WITH CHECK (public.is_platform_admin());
-
-CREATE POLICY "Platform admins can delete accountant_clients"
-  ON public.accountant_clients FOR DELETE
-  USING (public.is_platform_admin());
+-- 2. Add platform admin RLS policies to existing accountant_clients table
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'accountant_clients' AND policyname = 'Platform admins can view all accountant_clients'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Platform admins can view all accountant_clients" ON public.accountant_clients FOR SELECT USING (public.is_platform_admin())';
+  END IF;
+END $$;
 
 -- 3. get_registered_accountants() RPC
 CREATE OR REPLACE FUNCTION public.get_registered_accountants()
@@ -91,6 +71,7 @@ AS $$
 $$;
 
 -- 5. get_accountant_clients(p_accountant_id) RPC
+-- Uses client_user_id from existing accountant_clients table schema
 CREATE OR REPLACE FUNCTION public.get_accountant_clients(p_accountant_id UUID)
 RETURNS TABLE (
   client_id UUID,
@@ -104,15 +85,16 @@ STABLE
 SECURITY DEFINER SET search_path = public
 AS $$
   SELECT
-    ac.client_id,
+    ac.client_user_id AS client_id,
     au.email::TEXT,
     p.business_name,
     au.created_at AS signed_up_at,
-    (SELECT count(*) FROM public.transactions t WHERE t.user_id = ac.client_id) AS transaction_count
+    (SELECT count(*) FROM public.transactions t WHERE t.user_id = ac.client_user_id) AS transaction_count
   FROM public.accountant_clients ac
-  JOIN auth.users au ON au.id = ac.client_id
-  LEFT JOIN public.profiles p ON p.id = ac.client_id
+  JOIN auth.users au ON au.id = ac.client_user_id
+  LEFT JOIN public.profiles p ON p.id = ac.client_user_id
   WHERE ac.accountant_id = p_accountant_id
+    AND ac.client_user_id IS NOT NULL
   ORDER BY au.created_at DESC;
 $$;
 

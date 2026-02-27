@@ -73,20 +73,26 @@ CREATE POLICY "Accountants can view client vat_returns"
   ON public.vat_returns FOR SELECT
   USING (public.is_accountant_for(user_id));
 
--- subcontractors
-CREATE POLICY "Accountants can view client subcontractors"
-  ON public.subcontractors FOR SELECT
-  USING (public.is_accountant_for(user_id));
+-- subcontractors (created later if RCT feature is enabled)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'subcontractors') THEN
+    EXECUTE 'CREATE POLICY "Accountants can view client subcontractors" ON public.subcontractors FOR SELECT USING (public.is_accountant_for(user_id))';
+  END IF;
+END $$;
 
--- rct_contracts
-CREATE POLICY "Accountants can view client rct_contracts"
-  ON public.rct_contracts FOR SELECT
-  USING (public.is_accountant_for(user_id));
+-- rct_contracts (created later if RCT feature is enabled)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'rct_contracts') THEN
+    EXECUTE 'CREATE POLICY "Accountants can view client rct_contracts" ON public.rct_contracts FOR SELECT USING (public.is_accountant_for(user_id))';
+  END IF;
+END $$;
 
--- rct_deductions
-CREATE POLICY "Accountants can view client rct_deductions"
-  ON public.rct_deductions FOR SELECT
-  USING (public.is_accountant_for(user_id));
+-- rct_deductions (created later if RCT feature is enabled)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'rct_deductions') THEN
+    EXECUTE 'CREATE POLICY "Accountants can view client rct_deductions" ON public.rct_deductions FOR SELECT USING (public.is_accountant_for(user_id))';
+  END IF;
+END $$;
 
 -- director_onboarding
 CREATE POLICY "Accountants can view client director_onboarding"
@@ -103,10 +109,12 @@ CREATE POLICY "Accountants can view client receipts"
   ON public.receipts FOR SELECT
   USING (public.is_accountant_for(user_id));
 
--- audit_log
-CREATE POLICY "Accountants can view client audit_log"
-  ON public.audit_log FOR SELECT
-  USING (public.is_accountant_for(user_id));
+-- audit_log (may not exist on all deployments)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'audit_log') THEN
+    EXECUTE 'CREATE POLICY "Accountants can view client audit_log" ON public.audit_log FOR SELECT USING (public.is_accountant_for(user_id))';
+  END IF;
+END $$;
 
 -- import_batches
 CREATE POLICY "Accountants can view client import_batches"
