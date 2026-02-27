@@ -11,9 +11,10 @@ type Step = "details" | "practice";
 
 const AccountantSignup = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshRoles } = useAuth();
   const [step, setStep] = useState<Step>("details");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Account fields
   const [email, setEmail] = useState("");
@@ -35,6 +36,7 @@ const AccountantSignup = () => {
     }
 
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -54,15 +56,27 @@ const AccountantSignup = () => {
           role: "accountant",
         });
 
-        if (roleError) console.error("Role insert error:", roleError);
+        if (roleError) {
+          console.error("Role insert error:", roleError);
+          setErrorMsg(`Role error: ${roleError.message}`);
+          setIsLoading(false);
+          return; // Don't proceed — role is required
+        }
 
+        // Sync auth context so RequireAccountant sees the new role
+        refreshRoles();
+        setIsLoading(false);
         setStep("practice");
       } else if (data.user && !data.session) {
-        toast.error("This email may already be registered. Try logging in instead.");
+        // Email confirmation required — account created but no session yet
+        toast.error(
+          "Check your email to confirm your account, then come back and log in."
+        );
         setIsLoading(false);
       }
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
+      setErrorMsg(errMsg);
       toast.error(errMsg || "Failed to create account");
       setIsLoading(false);
     }
@@ -76,11 +90,12 @@ const AccountantSignup = () => {
 
     const currentUser = user || (await supabase.auth.getUser()).data.user;
     if (!currentUser) {
-      toast.error("Not authenticated");
+      toast.error("Not authenticated — please log in first");
       return;
     }
 
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const { error } = await supabase.from("accountant_practices").insert({
         owner_id: currentUser.id,
@@ -91,9 +106,10 @@ const AccountantSignup = () => {
       if (error) throw error;
 
       toast.success("Practice created! Welcome to Balnce.");
-      window.location.href = "/accountant/dashboard";
+      navigate("/accountant/dashboard");
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
+      setErrorMsg(errMsg);
       toast.error(errMsg || "Failed to create practice");
       setIsLoading(false);
     }
@@ -153,6 +169,12 @@ const AccountantSignup = () => {
               </p>
             </div>
           </div>
+
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm font-mono">
+              {errorMsg}
+            </div>
+          )}
 
           {step === "details" && (
             <div className="space-y-5">

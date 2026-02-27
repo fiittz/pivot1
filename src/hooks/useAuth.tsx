@@ -378,8 +378,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  // Don't render children until we know onboarding status (except on onboarding pages)
-  if ((onboardingComplete === null || directorOnboardingComplete === null) && !isOnboardingRoute) {
+  // Don't render children until we know onboarding status (except on onboarding/accountant pages)
+  if ((onboardingComplete === null || directorOnboardingComplete === null) && !isOnboardingRoute && !isAccountantRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary">
         <div className="animate-pulse text-xl font-semibold">Loading...</div>

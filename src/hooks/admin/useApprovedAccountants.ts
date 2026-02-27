@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import type { ApprovedAccountant } from "@/types/accountant";
 
 const QUERY_KEY = ["approved_accountants"];
@@ -9,12 +8,7 @@ export function useApprovedAccountants() {
   return useQuery<ApprovedAccountant[]>({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("approved_accountants")
-        .select("*")
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
-
+      const { data, error } = await supabase.rpc("admin_list_approved_accountants");
       if (error) throw error;
       return (data ?? []) as ApprovedAccountant[];
     },
@@ -23,18 +17,15 @@ export function useApprovedAccountants() {
 
 export function useAddApprovedAccountant() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (email: string) => {
-      const { data, error } = await supabase
-        .from("approved_accountants")
-        .insert({ email: email.toLowerCase().trim(), approved_by: user?.id })
-        .select()
-        .single();
-
+      const { data, error } = await supabase.rpc("admin_add_approved_accountant", {
+        p_email: email,
+      });
       if (error) throw error;
-      return data as ApprovedAccountant;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row as ApprovedAccountant;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -48,11 +39,9 @@ export function useRemoveApprovedAccountant() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("approved_accountants")
-        .update({ status: "revoked" })
-        .eq("id", id);
-
+      const { error } = await supabase.rpc("admin_revoke_approved_accountant", {
+        p_id: id,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
