@@ -189,6 +189,7 @@ const ClientDetail = () => {
           <TabsContent value="transactions">
             <ClientTransactions
               clientUserId={clientId}
+              accountantClientId={accountantClientId}
               accountType={hasBothAccountTypes ? (taxView === "ct1" ? "limited_company" : "directors_personal_tax") : undefined}
             />
           </TabsContent>

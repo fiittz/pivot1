@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -8,6 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DataTable,
   StatusPipelineTabs,
@@ -20,12 +28,26 @@ import {
   useClientCategories,
 } from "@/hooks/accountant/useClientData";
 import { useUpdateTransactionCategory } from "@/hooks/accountant/useClientData";
+import { useCreateDocumentRequest } from "@/hooks/accountant/useDocumentRequests";
 import { useTableSort } from "@/hooks/useTableSort";
 import { useTableSelection } from "@/hooks/useTableSelection";
-import { ArrowUpRight, ArrowDownRight, Building2, User, Wallet } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Building2,
+  User,
+  Wallet,
+  MoreHorizontal,
+  Receipt,
+  FileText,
+  FilePlus,
+  Image,
+} from "lucide-react";
 
 interface ClientTransactionsProps {
   clientUserId: string | null | undefined;
+  accountantClientId?: string;
   accountType?: string;
 }
 
@@ -49,14 +71,10 @@ function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amount);
 }
 
-function formatVatRate(rate: number | null): string {
-  if (rate == null) return "\u2014";
-  return `${rate}%`;
-}
-
-const ClientTransactions = ({ clientUserId, accountType }: ClientTransactionsProps) => {
+const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: ClientTransactionsProps) => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const { toast } = useToast();
 
   const now = new Date();
   const taxYear = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
@@ -71,6 +89,7 @@ const ClientTransactions = ({ clientUserId, accountType }: ClientTransactionsPro
   });
   const { data: categories = [] } = useClientCategories(clientUserId, undefined, accountType);
   const updateCategory = useUpdateTransactionCategory(clientUserId);
+  const createDocRequest = useCreateDocumentRequest();
 
   const transactions: TransactionRow[] = rawTransactions.map((t: Record<string, unknown>) => ({
     id: t.id as string,
@@ -137,11 +156,70 @@ const ClientTransactions = ({ clientUserId, accountType }: ClientTransactionsPro
     updateCategory.mutate({ transactionId: txId, categoryId });
   };
 
+  const handleRequestDocument = (row: TransactionRow, category: string) => {
+    if (!accountantClientId || !clientUserId) {
+      toast({ title: "Cannot create request", description: "Client not linked.", variant: "destructive" });
+      return;
+    }
+    const desc = row.description || "Unknown";
+    const amt = formatCurrency(Math.abs(row.amount));
+    createDocRequest.mutate(
+      {
+        accountant_client_id: accountantClientId,
+        client_user_id: clientUserId,
+        title: `${category} for ${desc}`,
+        description: `Please provide the ${category.toLowerCase()} for the transaction: ${desc} on ${row.transaction_date} for ${amt}.`,
+        category,
+      },
+      {
+        onSuccess: () => toast({ title: `${category} requested`, description: `Request sent for "${desc}"` }),
+      },
+    );
+  };
+
   const columns: ColumnDef<TransactionRow>[] = [
+    {
+      id: "actions",
+      header: "",
+      width: "w-10",
+      accessorFn: (row) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => handleRequestDocument(row, "Receipt")}>
+              <Receipt className="w-3.5 h-3.5 mr-2" />
+              Request Receipt
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleRequestDocument(row, "Invoice")}>
+              <FileText className="w-3.5 h-3.5 mr-2" />
+              Request Invoice
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleRequestDocument(row, "Bank Statement")}>
+              <FilePlus className="w-3.5 h-3.5 mr-2" />
+              Request Bank Statement
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleRequestDocument(row, "Other")}>
+              <Image className="w-3.5 h-3.5 mr-2" />
+              Request Other Document
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
     {
       id: "type",
       header: "",
-      width: "w-10",
+      width: "w-8",
       accessorFn: (row) => {
         const isIncome = row.type === "income";
         return (
