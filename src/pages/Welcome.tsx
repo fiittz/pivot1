@@ -82,10 +82,20 @@ const Welcome = () => {
 
       toast.success("Welcome back!");
 
-      // Navigate directly on successful login using window.location for reliability
+      // Check if user has accountant role and redirect accordingly
       if (data.session) {
-        window.location.href = "/dashboard";
-        return; // Exit early to prevent finally from resetting loading
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .eq("role", "accountant");
+
+        if (roleData && roleData.length > 0) {
+          window.location.href = "/accountant/dashboard";
+        } else {
+          window.location.href = "/dashboard";
+        }
+        return;
       }
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
@@ -262,10 +272,10 @@ const Welcome = () => {
             <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm pt-2">
               Are you an accountant?{" "}
               <button
-                onClick={() => navigate("/accountant/signup")}
+                onClick={() => navigate("/accountant")}
                 className="font-semibold text-foreground underline"
               >
-                Sign up as Accountant
+                Accountant login
               </button>
             </p>
           </div>
