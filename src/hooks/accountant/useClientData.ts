@@ -4,7 +4,7 @@
  * instead of using auth.uid(). The is_accountant_for() RLS function
  * grants SELECT access on the client's tables.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // ────────────────────────────────────────────
@@ -242,6 +242,30 @@ export function useClientProfile(clientUserId: string | null | undefined) {
       return data;
     },
     enabled: !!clientUserId,
+  });
+}
+
+// ────────────────────────────────────────────
+// Update Transaction Category (mutation)
+// ────────────────────────────────────────────
+export function useUpdateTransactionCategory(clientUserId: string | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { transactionId: string; categoryId: string }) => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .update({ category_id: input.categoryId })
+        .eq("id", input.transactionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-transactions", clientUserId] });
+    },
   });
 }
 

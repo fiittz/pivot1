@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DataTable,
+  StatusPipelineTabs,
+  TableActionBar,
+} from "@/components/accountant/table";
+import type { ColumnDef } from "@/components/accountant/table";
+import type { PipelineTab } from "@/components/accountant/table";
 import {
   useClientFilings,
   useCreateFiling,
@@ -41,6 +47,8 @@ interface ClientFilingsTabProps {
   clientUserId: string;
 }
 
+type TabFilter = "all" | FilingStatus;
+
 const FILING_TYPES: { value: FilingType; label: string }[] = [
   { value: "ct1", label: "CT1 — Corporation Tax" },
   { value: "form11", label: "Form 11 — Income Tax" },
@@ -48,6 +56,39 @@ const FILING_TYPES: { value: FilingType; label: string }[] = [
   { value: "rct_monthly", label: "RCT Monthly" },
   { value: "b1", label: "B1 — Annual Return" },
 ];
+
+const FILING_TYPE_LABELS: Record<string, string> = {
+  ct1: "CT1 — Corporation Tax",
+  form11: "Form 11 — Income Tax",
+  vat3: "VAT3 — VAT Return",
+  rct_monthly: "RCT Monthly",
+  b1: "B1 — Annual Return",
+  annual_return: "Annual Return",
+};
+
+const STATUS_ICONS: Record<FilingStatus, React.ReactNode> = {
+  draft: <Clock className="w-3.5 h-3.5 text-gray-400" />,
+  in_review: <FileText className="w-3.5 h-3.5 text-blue-500" />,
+  approved: <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />,
+  filed: <Send className="w-3.5 h-3.5 text-purple-500" />,
+  acknowledged: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
+};
+
+const STATUS_COLORS: Record<FilingStatus, string> = {
+  draft: "bg-gray-500/10 text-gray-500",
+  in_review: "bg-blue-500/10 text-blue-500",
+  approved: "bg-emerald-500/10 text-emerald-500",
+  filed: "bg-purple-500/10 text-purple-500",
+  acknowledged: "bg-emerald-600/10 text-emerald-600",
+};
+
+const STATUS_LABELS: Record<FilingStatus, string> = {
+  draft: "Draft",
+  in_review: "In Review",
+  approved: "Approved",
+  filed: "Filed",
+  acknowledged: "Acknowledged",
+};
 
 const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTabProps) => {
   const navigate = useNavigate();
@@ -59,12 +100,39 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<FilingType>("ct1");
+  const [tabFilter, setTabFilter] = useState<TabFilter>("all");
+  const [search, setSearch] = useState("");
 
   const now = new Date();
   const taxYear = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
 
+  const filtered = filings.filter((f) => {
+    if (tabFilter !== "all" && f.status !== tabFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const typeLabel = FILING_TYPE_LABELS[f.filing_type] ?? f.filing_type;
+      if (!typeLabel.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const statusCounts = filings.reduce(
+    (acc, f) => {
+      acc[f.status] = (acc[f.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const pipelineTabs: PipelineTab<TabFilter>[] = [
+    { key: "all", label: "All", count: filings.length },
+    { key: "draft", label: "Draft", count: statusCounts.draft || 0 },
+    { key: "in_review", label: "In Review", count: statusCounts.in_review || 0 },
+    { key: "approved", label: "Approved", count: statusCounts.approved || 0 },
+    { key: "filed", label: "Filed", count: statusCounts.filed || 0 },
+  ];
+
   const handleCreate = () => {
-    // Build snapshot based on filing type
     let snapshot: Record<string, unknown> = {};
 
     if (selectedType === "ct1") {
@@ -113,70 +181,94 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
     );
   };
 
+  const columns: ColumnDef<FilingRecord>[] = [
+    {
+      id: "status_icon",
+      header: "",
+      width: "w-10",
+      accessorFn: (row) => STATUS_ICONS[row.status],
+    },
+    {
+      id: "type",
+      header: "Filing Type",
+      width: "min-w-[200px]",
+      accessorFn: (row) => (
+        <span className="text-sm font-medium text-foreground">
+          {FILING_TYPE_LABELS[row.filing_type] ?? row.filing_type}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      width: "w-24",
+      accessorFn: (row) => (
+        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${STATUS_COLORS[row.status]}`}>
+          {STATUS_LABELS[row.status]}
+        </Badge>
+      ),
+    },
+    {
+      id: "period",
+      header: "Tax Period",
+      width: "w-48",
+      accessorFn: (row) => (
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Calendar className="w-3 h-3" />
+          {row.tax_period_start} — {row.tax_period_end}
+        </span>
+      ),
+    },
+    {
+      id: "approved",
+      header: "Approved",
+      width: "w-32",
+      accessorFn: (row) =>
+        row.approved_at ? (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <ShieldCheck className="w-3 h-3 text-emerald-500" />
+            {new Date(row.approved_at).toLocaleDateString("en-IE")}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">{"\u2014"}</span>
+        ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          {filings.length} filing{filings.length !== 1 ? "s" : ""}
-        </h3>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          size="sm"
-          className="h-8 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white gap-1"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Filing
-        </Button>
-      </div>
+      <StatusPipelineTabs
+        tabs={pipelineTabs}
+        activeTab={tabFilter}
+        onTabChange={setTabFilter}
+      />
 
-      {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Loading filings...</div>
-      ) : filings.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FileText className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground text-sm">
-              No filings yet. Create one to start the review process.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border">
-              {filings.map((filing) => (
-                <button
-                  key={filing.id}
-                  onClick={() => navigate(`/accountant/filings/${filing.id}`)}
-                  className="flex items-start gap-3 px-4 py-3 w-full text-left hover:bg-secondary/50 transition-colors"
-                >
-                  <FilingStatusIcon status={filing.status} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">
-                        {FILING_TYPE_LABELS[filing.filing_type] ?? filing.filing_type}
-                      </p>
-                      <FilingStatusBadge status={filing.status} />
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {filing.tax_period_start} — {filing.tax_period_end}
-                      </span>
-                      {filing.approved_at && (
-                        <span className="flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                          Approved {new Date(filing.approved_at).toLocaleDateString("en-IE")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <TableActionBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search filings..."
+        actions={
+          <Button
+            onClick={() => setCreateOpen(true)}
+            size="sm"
+            className="h-8 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white gap-1"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Filing
+          </Button>
+        }
+      />
+
+      <DataTable
+        columns={columns}
+        data={filtered}
+        getRowId={(row) => row.id}
+        isLoading={isLoading}
+        onRowClick={(row) => navigate(`/accountant/filings/${row.id}`)}
+        emptyIcon={<FileText className="w-10 h-10 text-muted-foreground/40" />}
+        emptyMessage="No filings yet"
+        emptyDescription="Create one to start the review process."
+      />
 
       {/* Create Filing Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -218,48 +310,6 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
       </Dialog>
     </div>
   );
-};
-
-function FilingStatusIcon({ status }: { status: FilingStatus }) {
-  const icons: Record<FilingStatus, React.ReactNode> = {
-    draft: <Clock className="w-4 h-4 text-gray-400" />,
-    in_review: <FileText className="w-4 h-4 text-blue-500" />,
-    approved: <ShieldCheck className="w-4 h-4 text-emerald-500" />,
-    filed: <Send className="w-4 h-4 text-purple-500" />,
-    acknowledged: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
-  };
-  return <div className="mt-0.5 shrink-0">{icons[status]}</div>;
-}
-
-function FilingStatusBadge({ status }: { status: FilingStatus }) {
-  const config: Record<FilingStatus, string> = {
-    draft: "bg-gray-500/10 text-gray-500",
-    in_review: "bg-blue-500/10 text-blue-500",
-    approved: "bg-emerald-500/10 text-emerald-500",
-    filed: "bg-purple-500/10 text-purple-500",
-    acknowledged: "bg-emerald-600/10 text-emerald-600",
-  };
-  const labels: Record<FilingStatus, string> = {
-    draft: "Draft",
-    in_review: "In Review",
-    approved: "Approved",
-    filed: "Filed",
-    acknowledged: "Acknowledged",
-  };
-  return (
-    <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${config[status]}`}>
-      {labels[status]}
-    </Badge>
-  );
-}
-
-const FILING_TYPE_LABELS: Record<string, string> = {
-  ct1: "CT1 — Corporation Tax",
-  form11: "Form 11 — Income Tax",
-  vat3: "VAT3 — VAT Return",
-  rct_monthly: "RCT Monthly",
-  b1: "B1 — Annual Return",
-  annual_return: "Annual Return",
 };
 
 export default ClientFilingsTab;

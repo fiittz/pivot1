@@ -1,13 +1,17 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import AccountantLayout from "@/components/layout/AccountantLayout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientStatusBadge } from "@/components/accountant/ClientStatusBadge";
 import { useClientProfile, useClientOnboardingSettings, useClientAccounts } from "@/hooks/accountant/useClientData";
 import { useClientCT1Data } from "@/hooks/accountant/useClientCT1Data";
 import { useAccountantClientByUserId } from "@/hooks/accountant/useAccountantClients";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import ClientCT1Overview from "./ClientCT1Overview";
+import ClientForm11Overview from "./ClientForm11Overview";
 import ClientTransactions from "./ClientTransactions";
 import ClientDocuments from "./ClientDocuments";
 import ClientReports from "./ClientReports";
@@ -18,8 +22,9 @@ import {
   ArrowLeft,
   Building2,
   Mail,
-  TrendingUp,
-  TrendingDown,
+  KeyRound,
+  Loader2,
+  User,
   Wallet,
   FileText,
   Receipt,
@@ -29,10 +34,18 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+type TaxView = "ct1" | "form11";
+
 const ClientDetail = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab }, { replace: true });
+  };
+  const [taxView, setTaxView] = useState<TaxView>("ct1");
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   const { data: profile, isLoading: profileLoading } = useClientProfile(clientId);
   const { data: onboarding } = useClientOnboardingSettings(clientId);
@@ -44,8 +57,31 @@ const ClientDetail = () => {
   const businessName = onboarding?.company_name ?? profile?.full_name ?? "Client";
   const email = profile?.email ?? "";
 
-  const totalIncome = ct1Data.detectedIncome.reduce((sum, i) => sum + i.amount, 0);
-  const totalExpenses = ct1Data.expenseSummary.allowable + ct1Data.expenseSummary.disallowed;
+  // Show toggle only when client has both company and personal tax accounts
+  const hasBothAccountTypes = useMemo(() => {
+    if (!accounts) return false;
+    const hasCompany = accounts.some((a) => (a as Record<string, unknown>).account_type === "limited_company");
+    const hasPersonal = accounts.some((a) => (a as Record<string, unknown>).account_type === "directors_personal_tax");
+    return hasCompany && hasPersonal;
+  }, [accounts]);
+
+  const handleSendPasswordReset = async () => {
+    if (!email) {
+      toast.error("No email address found for this client");
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      await supabase.functions.invoke("send-password-reset", {
+        body: { email, origin: window.location.origin },
+      });
+      toast.success("Password reset email sent to client");
+    } catch {
+      toast.error("Failed to send password reset email");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   return (
     <AccountantLayout>
@@ -83,7 +119,36 @@ const ClientDetail = () => {
               )}
             </div>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSendPasswordReset}
+            disabled={isSendingReset || !email}
+            className="shrink-0 gap-1.5"
+          >
+            {isSendingReset ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+            Send Password Reset
+          </Button>
         </div>
+
+        {/* Tax view toggle — only when client has both account types */}
+        {hasBothAccountTypes && (
+          <ToggleGroup
+            type="single"
+            value={taxView}
+            onValueChange={(v) => { if (v) setTaxView(v as TaxView); }}
+            variant="outline"
+            size="sm"
+            className="justify-start"
+          >
+            <ToggleGroupItem value="ct1" className="gap-1.5 text-xs">
+              <Building2 className="w-3.5 h-3.5" /> CT1
+            </ToggleGroupItem>
+            <ToggleGroupItem value="form11" className="gap-1.5 text-xs">
+              <User className="w-3.5 h-3.5" /> Form 11
+            </ToggleGroupItem>
+          </ToggleGroup>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -113,137 +178,19 @@ const ClientDetail = () => {
 
           {/* Overview */}
           <TabsContent value="overview">
-            {ct1Data.isLoading || profileLoading ? (
-              <div className="text-center py-12 text-muted-foreground">Loading client data...</div>
+            {taxView === "ct1" ? (
+              <ClientCT1Overview ct1Data={ct1Data} isLoading={ct1Data.isLoading || profileLoading} />
             ) : (
-              <div className="space-y-4">
-                {/* Financial summary cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
-                      <TrendingUp className="w-4 h-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-semibold text-emerald-600">
-                        {formatCurrency(totalIncome)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
-                      <TrendingDown className="w-4 h-4 text-red-500" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-semibold text-red-600">
-                        {formatCurrency(totalExpenses)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Net Position</CardTitle>
-                      <Wallet className="w-4 h-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className={`text-2xl font-semibold ${ct1Data.closingBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                        {formatCurrency(ct1Data.closingBalance)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Income breakdown */}
-                {ct1Data.detectedIncome.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Income by Category</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {ct1Data.detectedIncome.map((item) => (
-                          <div key={item.category} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{item.category}</span>
-                            <span className="font-medium text-foreground">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Expense breakdown */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Expense Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Allowable</span>
-                          <span className="font-medium text-emerald-600">
-                            {formatCurrency(ct1Data.expenseSummary.allowable)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Disallowed</span>
-                          <span className="font-medium text-red-600">
-                            {formatCurrency(ct1Data.expenseSummary.disallowed)}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {ct1Data.disallowedByCategory.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Disallowed by Category</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 text-sm">
-                          {ct1Data.disallowedByCategory.slice(0, 5).map((item) => (
-                            <div key={item.category} className="flex justify-between">
-                              <span className="text-muted-foreground truncate">{item.category}</span>
-                              <span className="font-medium text-red-600">{formatCurrency(item.amount)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-
-                {/* Flagged capital items */}
-                {ct1Data.flaggedCapitalItems.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Flagged Capital Items</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        {ct1Data.flaggedCapitalItems.map((item, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <div>
-                              <span className="text-foreground">{item.description}</span>
-                              <span className="text-muted-foreground ml-2">{item.date}</span>
-                            </div>
-                            <span className="font-medium">{formatCurrency(item.amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              <ClientForm11Overview clientUserId={clientId} />
             )}
           </TabsContent>
 
           {/* Transactions */}
           <TabsContent value="transactions">
-            <ClientTransactions clientUserId={clientId} />
+            <ClientTransactions
+              clientUserId={clientId}
+              accountType={hasBothAccountTypes ? (taxView === "ct1" ? "limited_company" : "directors_personal_tax") : undefined}
+            />
           </TabsContent>
 
           {/* Documents */}
@@ -253,7 +200,7 @@ const ClientDetail = () => {
 
           {/* Reports */}
           <TabsContent value="reports">
-            <ClientReports clientUserId={clientId} />
+            <ClientReports clientUserId={clientId} taxView={taxView} />
           </TabsContent>
 
           {/* Notes */}
@@ -287,9 +234,5 @@ const ClientDetail = () => {
     </AccountantLayout>
   );
 };
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amount);
-}
 
 export default ClientDetail;
