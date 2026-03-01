@@ -31,6 +31,7 @@ const ALLOWED_EMAILS = [
   "markafmoore+balnce@gmail.com",
   "brendan@coso.ai",
   "harshhc5@proton.me",
+  "jamie@balnce.ie",
 ];
 
 const isEmailAllowed = (email: string) => ALLOWED_EMAILS.some((e) => e.toLowerCase() === email.trim().toLowerCase());

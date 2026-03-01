@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Balnce</string>
+    <string name="title_activity_main">Balnce</string>
+    <string name="package_name">ie.balnce.app</string>
+    <string name="custom_url_scheme">ie.balnce.app</string>
+</resources>

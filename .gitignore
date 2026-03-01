@@ -42,3 +42,13 @@ supabase/.temp/
 
 coverage/
 .vercel
+
+# Capacitor native build artifacts
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+ios/App/Pods/
+ios/DerivedData/
+*.keystore
+*.jks
