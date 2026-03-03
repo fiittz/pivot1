@@ -76,6 +76,7 @@ const InviteClient = lazyWithRetry(() => import("./pages/accountant/InviteClient
 const ClientDetail = lazyWithRetry(() => import("./pages/accountant/ClientDetail"));
 const AccountantTasks = lazyWithRetry(() => import("./pages/accountant/AccountantTasks"));
 const ClientFilingReview = lazyWithRetry(() => import("./pages/accountant/ClientFilingReview"));
+const ClientSettings = lazyWithRetry(() => import("./pages/accountant/ClientSettings"));
 const AcceptInvite = lazyWithRetry(() => import("./pages/AcceptInvite"));
 const queryClient = new QueryClient();
 
@@ -371,6 +372,16 @@ const App = () => (
                           <RequireAuth>
                             <RequireAccountant>
                               <AccountantTasks />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/client-settings"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <ClientSettings />
                             </RequireAccountant>
                           </RequireAuth>
                         }

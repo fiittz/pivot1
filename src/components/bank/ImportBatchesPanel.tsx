@@ -194,7 +194,7 @@ const ImportBatchesPanel = ({ onSelectBatch }: ImportBatchesPanelProps) => {
               <p className="font-medium truncate">{batch.filename || "CSV Import"}</p>
               <div className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground">
                 <span>{format(parseISO(batch.created_at || new Date().toISOString()), "d MMM yyyy, HH:mm")}</span>
-                <span>•</span>
+                <span className="text-muted-foreground">/</span>
                 <span>{batch.row_count || 0} transactions</span>
               </div>
             </div>

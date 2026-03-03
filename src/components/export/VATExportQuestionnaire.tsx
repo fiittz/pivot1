@@ -142,7 +142,7 @@ export function VATExportQuestionnaire({
           <Progress value={progress} className="h-1.5 mt-2" />
           <p className="text-xs text-muted-foreground mt-1">
             Step {step + 1} of {SECTIONS.length}
-            {periodStart && periodEnd && ` • ${periodStart} to ${periodEnd}`}
+            {periodStart && periodEnd && ` / ${periodStart} to ${periodEnd}`}
           </p>
         </DialogHeader>
 

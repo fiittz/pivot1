@@ -546,16 +546,16 @@ export function buildFinancialContext(input: FinancialContextInput): string {
     const yearsTrading = currentYear - incorpYear;
     if (yearsTrading <= 3) {
       lines.push(
-        `  ✓ START-UP COMPANY RELIEF: Company incorporated ${incorpDate} — year ${yearsTrading} of 3. CT relief up to employer PRSI paid (max €40,000/year). If CT < €40k, could be fully exempt.`,
+        `  [ELIGIBLE] START-UP COMPANY RELIEF: Company incorporated ${incorpDate} — year ${yearsTrading} of 3. CT relief up to employer PRSI paid (max €40,000/year). If CT < €40k, could be fully exempt.`,
       );
     } else {
-      lines.push(`  ✗ Start-up relief: Not eligible (incorporated ${incorpDate}, more than 3 years ago).`);
+      lines.push(`  [NOT ELIGIBLE] Start-up relief: Not eligible (incorporated ${incorpDate}, more than 3 years ago).`);
     }
   }
 
   // Capital allowances
   if (capitalAllowancesTotal > 0) {
-    lines.push(`  ✓ CAPITAL ALLOWANCES: Already claiming ${eur(capitalAllowancesTotal)} (12.5% wear & tear).`);
+    lines.push(`  [ELIGIBLE] CAPITAL ALLOWANCES: Already claiming ${eur(capitalAllowancesTotal)} (12.5% wear & tear).`);
   } else {
     lines.push(
       `  ? CAPITAL ALLOWANCES: No capital allowances claimed. If the company owns tools, equipment, vans, or vehicles, 12.5% annual write-off applies.`,
@@ -566,14 +566,14 @@ export function buildFinancialContext(input: FinancialContextInput): string {
   const hasEmployees = biz?.has_employees || directors.length > 0;
   if (hasEmployees) {
     lines.push(
-      `  ✓ SMALL BENEFIT EXEMPTION: Can give up to 5 non-cash vouchers per director/employee per year, combined max €1,500 — tax-free for recipient, deductible for company.`,
+      `  [ELIGIBLE] SMALL BENEFIT EXEMPTION: Can give up to 5 non-cash vouchers per director/employee per year, combined max €1,500 — tax-free for recipient, deductible for company.`,
     );
   }
 
   // Pension contributions
   const anyPension = allForm11Data?.some((f) => Number(f.data?.pensionContributions) > 0);
   if (anyPension) {
-    lines.push(`  ✓ PENSION CONTRIBUTIONS: Director is contributing to a pension — deductible from personal income.`);
+    lines.push(`  [ELIGIBLE] PENSION CONTRIBUTIONS: Director is contributing to a pension — deductible from personal income.`);
   } else {
     lines.push(
       `  ? PENSION CONTRIBUTIONS: No pension contributions detected. Employer pension contributions are 100% deductible for the company with no age-based limits. This is one of the most effective ways for a director to extract value tax-efficiently.`,
@@ -582,7 +582,7 @@ export function buildFinancialContext(input: FinancialContextInput): string {
 
   // Mileage / travel
   if (ct1.directorsLoanTravel > 0) {
-    lines.push(`  ✓ MILEAGE & SUBSISTENCE: Claiming ${eur(ct1.travelAllowance)} at Revenue civil service rates.`);
+    lines.push(`  [ELIGIBLE] MILEAGE & SUBSISTENCE: Claiming ${eur(ct1.travelAllowance)} at Revenue civil service rates.`);
   } else {
     const anyCommute = directors.some((d) => d.commute_distance_km > 0);
     if (anyCommute) {
@@ -594,32 +594,32 @@ export function buildFinancialContext(input: FinancialContextInput): string {
 
   // Losses forward
   if (lossesForward > 0) {
-    lines.push(`  ✓ LOSS RELIEF: Carrying forward ${eur(lossesForward)} in trading losses against future profits.`);
+    lines.push(`  [ELIGIBLE] LOSS RELIEF: Carrying forward ${eur(lossesForward)} in trading losses against future profits.`);
   }
 
   // RCT credit
   if (rctCredit > 0) {
-    lines.push(`  ✓ RCT CREDIT: ${eur(rctCredit)} deducted at source — offsets CT liability.`);
+    lines.push(`  [ELIGIBLE] RCT CREDIT: ${eur(rctCredit)} deducted at source — offsets CT liability.`);
   }
 
   // Rent credit
   const anyRentPaid = allForm11Data?.some((f) => Number(f.data?.rentPaid) > 0);
   if (anyRentPaid) {
     lines.push(
-      `  ✓ RENT TAX CREDIT: Director pays rent — entitled to €1,000 credit (single) or €2,000 (jointly assessed).`,
+      `  [ELIGIBLE] RENT TAX CREDIT: Director pays rent — entitled to €1,000 credit (single) or €2,000 (jointly assessed).`,
     );
   }
 
   // Medical expenses
   const anyMedical = allForm11Data?.some((f) => Number(f.data?.medicalExpenses) > 0);
   if (anyMedical) {
-    lines.push(`  ✓ MEDICAL EXPENSES: Director has medical expenses — 20% tax relief on qualifying expenses.`);
+    lines.push(`  [ELIGIBLE] MEDICAL EXPENSES: Director has medical expenses — 20% tax relief on qualifying expenses.`);
   }
 
   // Home office
   if (biz?.has_home_office) {
     lines.push(
-      `  ✓ HOME OFFICE: Claiming ${biz.business_use_percentage || 0}% of home expenses (heat, light, broadband).`,
+      `  [ELIGIBLE] HOME OFFICE: Claiming ${biz.business_use_percentage || 0}% of home expenses (heat, light, broadband).`,
     );
   }
 

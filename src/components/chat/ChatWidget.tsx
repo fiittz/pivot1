@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { X, Send, Trash2, Sparkles, ChevronRight, MessageSquarePlus, History, ChevronLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import PenguinIcon from "@/components/PenguinIcon";
 import ChatMarkdown from "@/components/chat/ChatMarkdown";
 import ChatChart, { parseChartBlocks } from "@/components/chat/ChatChart";
+import AccountantMessageTab from "@/components/chat/AccountantMessageTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useCT1Data } from "@/hooks/useCT1Data";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -165,6 +167,7 @@ export default function ChatWidget() {
   const [loadingText, setLoadingText] = useState("Balnce is thinking...");
   const [lastToolUsed, setLastToolUsed] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [chatTab, setChatTab] = useState<"ai" | "accountant">("ai");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -216,6 +219,22 @@ export default function ChatWidget() {
   const { data: directorRows } = useDirectorOnboarding();
   const { data: invoices } = useInvoices();
   const trialBalance = useTrialBalance();
+
+  // Get accountant-client relationship for direct messaging
+  const { data: myAccountantLink } = useQuery({
+    queryKey: ["my-accountant-link", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("accountant_clients")
+        .select("id")
+        .eq("client_user_id", user!.id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   const businessExtra = useMemo(() => {
     const raw = localStorage.getItem("business_onboarding_extra");
@@ -864,6 +883,37 @@ export default function ChatWidget() {
               </button>
             </div>
 
+            {/* Tab bar — only show if client has an accountant */}
+            {myAccountantLink && (
+              <div className="flex border-b border-border shrink-0">
+                <button
+                  onClick={() => setChatTab("ai")}
+                  className={`flex-1 text-xs font-medium py-2 transition-colors ${
+                    chatTab === "ai"
+                      ? "text-foreground border-b-2 border-blue-600"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  AI Assistant
+                </button>
+                <button
+                  onClick={() => setChatTab("accountant")}
+                  className={`flex-1 text-xs font-medium py-2 transition-colors ${
+                    chatTab === "accountant"
+                      ? "text-foreground border-b-2 border-blue-600"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  My Accountant
+                </button>
+              </div>
+            )}
+
+            {/* Accountant messages tab */}
+            {chatTab === "accountant" && myAccountantLink ? (
+              <AccountantMessageTab accountantClientId={myAccountantLink.id} />
+            ) : (
+            <>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
               {messages.length === 0 && (
@@ -1005,6 +1055,8 @@ export default function ChatWidget() {
                 AI-generated — verify with a professional before filing
               </p>
             </div>
+            </>
+            )}
           </div>
         </div>
       )}

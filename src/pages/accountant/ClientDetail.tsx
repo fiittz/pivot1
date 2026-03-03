@@ -18,6 +18,7 @@ import ClientReports from "./ClientReports";
 import ClientNotesTab from "./ClientNotesTab";
 import ClientTasksTab from "./ClientTasksTab";
 import ClientFilingsTab from "./ClientFilingsTab";
+import ClientMessagesTab from "@/components/accountant/ClientMessagesTab";
 import {
   ArrowLeft,
   Building2,
@@ -32,6 +33,7 @@ import {
   StickyNote,
   ListTodo,
   ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 
 type TaxView = "ct1" | "form11";
@@ -174,6 +176,9 @@ const ClientDetail = () => {
             <TabsTrigger value="filings" className="gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" /> Filings
             </TabsTrigger>
+            <TabsTrigger value="messages" className="gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" /> Messages
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview */}
@@ -191,6 +196,7 @@ const ClientDetail = () => {
               clientUserId={clientId}
               accountantClientId={accountantClientId}
               accountType={hasBothAccountTypes ? (taxView === "ct1" ? "limited_company" : "directors_personal_tax") : undefined}
+              isVatRegistered={!!onboarding?.vat_registered}
             />
           </TabsContent>
 
@@ -226,6 +232,15 @@ const ClientDetail = () => {
           <TabsContent value="filings">
             {accountantClientId && clientId ? (
               <ClientFilingsTab accountantClientId={accountantClientId} clientUserId={clientId} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Messages */}
+          <TabsContent value="messages">
+            {accountantClientId ? (
+              <ClientMessagesTab accountantClientId={accountantClientId} />
             ) : (
               <div className="text-center py-12 text-muted-foreground">Loading...</div>
             )}

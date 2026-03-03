@@ -1510,7 +1510,7 @@ const BankFeed = () => {
                               ? "Sole Trader"
                               : "Director's Personal Tax"
                           : "All Accounts"}
-                        <span className="mx-1">•</span>
+                        <span className="mx-1.5 text-muted-foreground">/</span>
                         {accountFilteredTransactions?.length || 0} transactions
                       </span>
                     </div>
@@ -2975,7 +2975,7 @@ const BankFeed = () => {
                         <Briefcase className="w-5 h-5" />
                         Abridged Financial Statements
                       </h3>
-                      <p className="text-sm text-muted-foreground mt-1">CRO Filing • Companies Act 2014 • FRS 102</p>
+                      <p className="text-sm text-muted-foreground mt-1">CRO Filing / Companies Act 2014 / FRS 102</p>
                     </div>
                   </div>
 

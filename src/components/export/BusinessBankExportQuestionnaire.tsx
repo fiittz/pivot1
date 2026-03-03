@@ -826,7 +826,7 @@ export function BusinessBankExportQuestionnaire({
 
             <div className="bg-muted/50 rounded-lg p-3">
               {flaggedCapitalItems.length === 0 ? (
-                <p className="text-sm">✓ No transactions requiring special treatment</p>
+                <p className="text-sm">No transactions requiring special treatment</p>
               ) : (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Flagged items:</p>
@@ -834,7 +834,7 @@ export function BusinessBankExportQuestionnaire({
                     <div key={idx} className="flex justify-between text-sm border-b border-border/50 pb-1">
                       <span>{item.description}</span>
                       <span className="font-mono">
-                        {item.date} • {formatCurrency(item.amount)}
+                        {item.date} / {formatCurrency(item.amount)}
                       </span>
                     </div>
                   ))}
@@ -1178,7 +1178,7 @@ export function BusinessBankExportQuestionnaire({
                       <div key={idx} className="flex justify-between text-sm">
                         <span>{asset.name}</span>
                         <span className="font-mono">
-                          {formatCurrency(asset.cost)} • {asset.date}
+                          {formatCurrency(asset.cost)} / {asset.date}
                         </span>
                       </div>
                     ))}
@@ -1972,7 +1972,7 @@ export function BusinessBankExportQuestionnaire({
             {periodStart && periodEnd && (
               <>
                 {" "}
-                • {format(periodStart, "d MMM yyyy")} – {format(periodEnd, "d MMM yyyy")}
+                / {format(periodStart, "d MMM yyyy")} – {format(periodEnd, "d MMM yyyy")}
               </>
             )}
           </p>

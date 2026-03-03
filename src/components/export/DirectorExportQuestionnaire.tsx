@@ -1104,7 +1104,7 @@ export function DirectorExportQuestionnaire({
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {accountName}
-            {taxYear && <> • Tax Year {taxYear}</>}
+            {taxYear && <> / Tax Year {taxYear}</>}
           </p>
         </DialogHeader>
 

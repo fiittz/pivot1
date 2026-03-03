@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -42,6 +42,8 @@ interface DataTableProps<T> {
   sortDir?: SortDirection;
   onSort?: (field: string) => void;
   skeletonRows?: number;
+  groupBy?: (row: T) => string;
+  renderGroupHeader?: (groupKey: string, groupRows: T[]) => React.ReactNode;
 }
 
 export function DataTable<T>({
@@ -62,6 +64,8 @@ export function DataTable<T>({
   sortDir,
   onSort,
   skeletonRows = 8,
+  groupBy,
+  renderGroupHeader,
 }: DataTableProps<T>) {
   const allIds = data.map(getRowId);
   const totalCols = columns.length + (selectable ? 1 : 0);
@@ -175,43 +179,58 @@ export function DataTable<T>({
               data.map((row, rowIdx) => {
                 const rowId = getRowId(row);
                 const isSelected = selectedIds?.has(rowId);
+                const showGroupHeader =
+                  groupBy &&
+                  renderGroupHeader &&
+                  (rowIdx === 0 || groupBy(row) !== groupBy(data[rowIdx - 1]));
                 return (
-                  <tr
-                    key={rowId}
-                    data-row-id={rowId}
-                    tabIndex={0}
-                    className={cn(
-                      "border-b transition-colors hover:bg-muted/50 group outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
-                      onRowClick && "cursor-pointer",
-                      isSelected && "bg-muted/50",
+                  <React.Fragment key={rowId}>
+                    {showGroupHeader && (
+                      <tr className="border-b bg-muted/20">
+                        <td colSpan={totalCols} className="py-2 px-3">
+                          {renderGroupHeader(
+                            groupBy!(row),
+                            data.filter((r) => groupBy!(r) === groupBy!(row)),
+                          )}
+                        </td>
+                      </tr>
                     )}
-                    data-state={isSelected ? "selected" : undefined}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  >
-                    {selectable && (
-                      <td className="py-2 px-3 w-10 align-middle">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => onToggle?.(rowId)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Select row ${rowId}`}
-                        />
-                      </td>
-                    )}
-                    {columns.map((col) => (
-                      <td
-                        key={col.id}
-                        className={cn(
-                          "py-2 px-3 align-middle",
-                          col.width,
-                          col.align === "right" && "text-right",
-                          col.align === "center" && "text-center",
-                        )}
-                      >
-                        {col.accessorFn(row)}
-                      </td>
-                    ))}
-                  </tr>
+                    <tr
+                      data-row-id={rowId}
+                      tabIndex={0}
+                      className={cn(
+                        "border-b transition-colors hover:bg-muted/50 group outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
+                        onRowClick && "cursor-pointer",
+                        isSelected && "bg-muted/50",
+                      )}
+                      data-state={isSelected ? "selected" : undefined}
+                      onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    >
+                      {selectable && (
+                        <td className="py-2 px-3 w-10 align-middle">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => onToggle?.(rowId)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select row ${rowId}`}
+                          />
+                        </td>
+                      )}
+                      {columns.map((col) => (
+                        <td
+                          key={col.id}
+                          className={cn(
+                            "py-2 px-3 align-middle",
+                            col.width,
+                            col.align === "right" && "text-right",
+                            col.align === "center" && "text-center",
+                          )}
+                        >
+                          {col.accessorFn(row)}
+                        </td>
+                      ))}
+                    </tr>
+                  </React.Fragment>
                 );
               })
             )}

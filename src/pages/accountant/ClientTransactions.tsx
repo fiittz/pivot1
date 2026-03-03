@@ -17,6 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DataTable,
   StatusPipelineTabs,
   TableActionBar,
@@ -26,15 +32,13 @@ import type { PipelineTab } from "@/components/accountant/table";
 import {
   useClientTransactions,
   useClientCategories,
+  useClientReceipts,
 } from "@/hooks/accountant/useClientData";
 import { useUpdateTransactionCategory } from "@/hooks/accountant/useClientData";
 import { useCreateDocumentRequest } from "@/hooks/accountant/useDocumentRequests";
-import { useTableSort } from "@/hooks/useTableSort";
 import { useTableSelection } from "@/hooks/useTableSelection";
 import { useToast } from "@/hooks/use-toast";
 import {
-  ArrowUpRight,
-  ArrowDownRight,
   Building2,
   User,
   Wallet,
@@ -43,12 +47,14 @@ import {
   FileText,
   FilePlus,
   Image,
+  Paperclip,
 } from "lucide-react";
 
 interface ClientTransactionsProps {
   clientUserId: string | null | undefined;
   accountantClientId?: string;
   accountType?: string;
+  isVatRegistered?: boolean;
 }
 
 type TypeFilter = "all" | "income" | "expense";
@@ -71,7 +77,12 @@ function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(amount);
 }
 
-const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: ClientTransactionsProps) => {
+const ClientTransactions = ({
+  clientUserId,
+  accountantClientId,
+  accountType,
+  isVatRegistered = false,
+}: ClientTransactionsProps) => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const { toast } = useToast();
@@ -90,6 +101,7 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
   const { data: categories = [] } = useClientCategories(clientUserId, undefined, accountType);
   const updateCategory = useUpdateTransactionCategory(clientUserId);
   const createDocRequest = useCreateDocumentRequest();
+  const { data: receipts = [] } = useClientReceipts(clientUserId);
 
   const transactions: TransactionRow[] = rawTransactions.map((t: Record<string, unknown>) => ({
     id: t.id as string,
@@ -105,6 +117,22 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
     is_reconciled: t.is_reconciled as boolean | null,
   }));
 
+  // Build receipt lookup map by transaction_id
+  const receiptMap = useMemo(() => {
+    const map = new Map<string, { vendor_name: string | null; amount: number | null; receipt_date: string | null }>();
+    for (const r of receipts as Record<string, unknown>[]) {
+      const txId = r.transaction_id as string | null;
+      if (txId) {
+        map.set(txId, {
+          vendor_name: r.vendor_name as string | null,
+          amount: r.amount as number | null,
+          receipt_date: r.receipt_date as string | null,
+        });
+      }
+    }
+    return map;
+  }, [receipts]);
+
   const filtered = useMemo(() => {
     if (!search) return transactions;
     const q = search.toLowerCase();
@@ -116,11 +144,33 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
     );
   }, [transactions, search]);
 
-  const { sortField, sortDir, onSort, sortData } = useTableSort<TransactionRow>();
+  // Group by category, sort by VAT rate descending within each group
+  const groupedAndSorted = useMemo(() => {
+    const groups = new Map<string, TransactionRow[]>();
+
+    for (const t of filtered) {
+      const key = t.category?.name ?? "Uncategorised";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(t);
+    }
+
+    // Sort each group by VAT rate descending
+    for (const rows of groups.values()) {
+      rows.sort((a, b) => (b.vat_rate ?? -1) - (a.vat_rate ?? -1));
+    }
+
+    // Named categories alphabetically, uncategorised last
+    const sortedKeys = [...groups.keys()].sort((a, b) => {
+      if (a === "Uncategorised") return 1;
+      if (b === "Uncategorised") return -1;
+      return a.localeCompare(b);
+    });
+
+    return sortedKeys.flatMap((key) => groups.get(key)!);
+  }, [filtered]);
+
   const { selectedIds, toggle, toggleAll, clear, isAllSelected, selectedCount } =
     useTableSelection();
-
-  const sorted = sortData(filtered);
 
   const totalIncome = rawTransactions
     .filter((t: Record<string, unknown>) => t.type === "income")
@@ -128,8 +178,10 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
   const totalExpenses = rawTransactions
     .filter((t: Record<string, unknown>) => t.type === "expense")
     .reduce((sum: number, t: Record<string, unknown>) => sum + Math.abs(Number(t.amount) || 0), 0);
-  const totalVat = rawTransactions
-    .reduce((sum: number, t: Record<string, unknown>) => sum + Math.abs(Number(t.vat_amount) || 0), 0);
+  const totalVat = rawTransactions.reduce(
+    (sum: number, t: Record<string, unknown>) => sum + Math.abs(Number(t.vat_amount) || 0),
+    0,
+  );
 
   const incomeCount = rawTransactions.filter((t: Record<string, unknown>) => t.type === "income").length;
   const expenseCount = rawTransactions.filter((t: Record<string, unknown>) => t.type === "expense").length;
@@ -177,6 +229,32 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
     );
   };
 
+  const handleBulkRequestDocument = (category: string) => {
+    if (!accountantClientId || !clientUserId) {
+      toast({ title: "Cannot create request", description: "Client not linked.", variant: "destructive" });
+      return;
+    }
+
+    const selectedTxs = groupedAndSorted.filter((t) => selectedIds.has(t.id));
+    for (const row of selectedTxs) {
+      const desc = row.description || "Unknown";
+      const amt = formatCurrency(Math.abs(row.amount));
+      createDocRequest.mutate({
+        accountant_client_id: accountantClientId,
+        client_user_id: clientUserId,
+        title: `${category} for ${desc}`,
+        description: `Please provide the ${category.toLowerCase()} for the transaction: ${desc} on ${row.transaction_date} for ${amt}.`,
+        category,
+      });
+    }
+
+    toast({
+      title: `${category} requested`,
+      description: `Request sent for ${selectedCount} transaction${selectedCount !== 1 ? "s" : ""}`,
+    });
+    clear();
+  };
+
   const columns: ColumnDef<TransactionRow>[] = [
     {
       id: "actions",
@@ -217,30 +295,9 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
       ),
     },
     {
-      id: "type",
-      header: "",
-      width: "w-8",
-      accessorFn: (row) => {
-        const isIncome = row.type === "income";
-        return (
-          <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center ${
-              isIncome ? "bg-emerald-500/10" : "bg-red-500/10"
-            }`}
-          >
-            {isIncome ? (
-              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-            ) : (
-              <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
-            )}
-          </div>
-        );
-      },
-    },
-    {
       id: "status",
       header: "Status",
-      width: "w-24",
+      width: "w-28",
       accessorFn: (row) => {
         if (row.is_reconciled) {
           return (
@@ -249,17 +306,17 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
             </Badge>
           );
         }
-        if (!row.category_id) {
+        if (row.category?.name) {
           return (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-500">
-              Review
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-500 truncate max-w-[100px]">
+              {row.category.name}
             </Badge>
           );
         }
         return (
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-500">
-            Categorised
-          </Badge>
+          <span className="text-xs font-medium text-amber-500">
+            Uncategorised
+          </span>
         );
       },
     },
@@ -277,18 +334,39 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
       header: "Supplier / Description",
       sortField: "description",
       width: "min-w-[180px]",
-      accessorFn: (row) => (
-        <div className="min-w-0">
-          <span className="text-sm text-foreground truncate block font-medium">
-            {row.description || "No description"}
-          </span>
-          {row.reference && (
-            <span className="text-[10px] text-muted-foreground truncate block">
-              Ref: {row.reference}
-            </span>
-          )}
-        </div>
-      ),
+      accessorFn: (row) => {
+        const receipt = receiptMap.get(row.id);
+        return (
+          <div className="min-w-0 flex items-center gap-1.5">
+            <div className="min-w-0 flex-1">
+              <span className="text-sm text-foreground truncate block font-medium">
+                {row.description || "No description"}
+              </span>
+              {row.reference && (
+                <span className="text-[10px] text-muted-foreground truncate block">
+                  Ref: {row.reference}
+                </span>
+              )}
+            </div>
+            {receipt && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Paperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs space-y-0.5">
+                      {receipt.vendor_name && <p className="font-medium">{receipt.vendor_name}</p>}
+                      {receipt.amount != null && <p>{formatCurrency(receipt.amount)}</p>}
+                      {receipt.receipt_date && <p>{receipt.receipt_date}</p>}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        );
+      },
     },
     {
       id: "category",
@@ -321,52 +399,58 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
       id: "total",
       header: "Total",
       sortField: "amount",
-      width: "w-24",
+      width: "w-28",
       align: "right",
       accessorFn: (row) => {
         const isIncome = row.type === "income";
         return (
           <span
             className={`text-sm font-semibold tabular-nums ${
-              isIncome ? "text-emerald-600" : "text-foreground"
+              isIncome ? "text-emerald-600" : "text-red-600"
             }`}
           >
+            {isIncome ? "+" : "\u2212"}
             {formatCurrency(Math.abs(row.amount))}
           </span>
         );
       },
     },
-    {
-      id: "tax",
-      header: "Tax",
-      sortField: "vat_amount",
-      width: "w-20",
-      align: "right",
-      accessorFn: (row) => (
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {row.vat_amount != null ? formatCurrency(Math.abs(row.vat_amount)) : "\u2014"}
-        </span>
-      ),
-    },
-    {
-      id: "tax_rate",
-      header: "Tax Rate",
-      width: "w-20",
-      align: "right",
-      accessorFn: (row) => {
-        if (row.vat_rate == null) {
-          return <span className="text-xs text-muted-foreground">{"\u2014"}</span>;
-        }
-        return (
-          <Badge
-            variant="secondary"
-            className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground font-mono"
-          >
-            {row.vat_rate}%
-          </Badge>
-        );
-      },
-    },
+    // VAT columns — only shown when client is VAT registered
+    ...(isVatRegistered
+      ? [
+          {
+            id: "tax",
+            header: "Tax",
+            sortField: "vat_amount",
+            width: "w-20",
+            align: "right" as const,
+            accessorFn: (row: TransactionRow) => (
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {row.vat_amount != null ? formatCurrency(Math.abs(row.vat_amount)) : "\u2014"}
+              </span>
+            ),
+          },
+          {
+            id: "tax_rate",
+            header: "VAT %",
+            width: "w-20",
+            align: "right" as const,
+            accessorFn: (row: TransactionRow) => {
+              if (row.vat_rate == null) {
+                return <span className="text-xs text-muted-foreground">{"\u2014"}</span>;
+              }
+              return (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground font-mono"
+                >
+                  {row.vat_rate}%
+                </Badge>
+              );
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -407,18 +491,60 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
       {/* Pipeline tabs */}
       <StatusPipelineTabs tabs={pipelineTabs} activeTab={typeFilter} onTabChange={handleTabChange} />
 
-      {/* Action bar */}
+      {/* Action bar with bulk actions */}
       <TableActionBar
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search transactions..."
         selectedCount={selectedCount}
+        bulkActions={
+          selectedCount > 0 ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleBulkRequestDocument("Receipt")}
+              >
+                <Receipt className="w-3.5 h-3.5 mr-1.5" />
+                Request Receipt
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleBulkRequestDocument("Invoice")}
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                Request Invoice
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleBulkRequestDocument("Bank Statement")}
+              >
+                <FilePlus className="w-3.5 h-3.5 mr-1.5" />
+                Request Statement
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleBulkRequestDocument("Other")}
+              >
+                <Image className="w-3.5 h-3.5 mr-1.5" />
+                Request Other
+              </Button>
+            </>
+          ) : undefined
+        }
       />
 
-      {/* Table */}
+      {/* Table with category grouping */}
       <DataTable
         columns={columns}
-        data={sorted}
+        data={groupedAndSorted}
         getRowId={(row) => row.id}
         isLoading={isLoading}
         emptyIcon={<Wallet className="w-10 h-10 text-muted-foreground/40" />}
@@ -427,10 +553,18 @@ const ClientTransactions = ({ clientUserId, accountantClientId, accountType }: C
         selectedIds={selectedIds}
         onToggle={toggle}
         onToggleAll={toggleAll}
-        isAllSelected={isAllSelected(sorted.map((t) => t.id))}
-        sortField={sortField}
-        sortDir={sortDir}
-        onSort={onSort}
+        isAllSelected={isAllSelected(groupedAndSorted.map((t) => t.id))}
+        groupBy={(row) => row.category?.name ?? "Uncategorised"}
+        renderGroupHeader={(groupKey, groupRows) => (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-semibold ${groupKey === "Uncategorised" ? "text-amber-500" : "text-foreground"}`}>
+              {groupKey}
+            </span>
+            <span className="text-[10px] text-muted-foreground">
+              {groupRows.length} transaction{groupRows.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
       />
     </div>
   );

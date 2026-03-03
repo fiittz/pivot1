@@ -741,7 +741,7 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
                 const needsReceipt = (engineResult as Record<string, unknown>).needs_receipt ?? false;
 
                 console.log(
-                  `[AutoCat] "${txn.description}" → ${engineResult.category} | VAT: ${vatDeductible ? "✓" : "✗"} | Conf: ${engineResult.confidence_score}% → DB: ${matchedCategory?.name || "NO MATCH"}`,
+                  `[AutoCat] "${txn.description}" → ${engineResult.category} | VAT: ${vatDeductible ? "Yes" : "No"} | Conf: ${engineResult.confidence_score}% → DB: ${matchedCategory?.name || "NO MATCH"}`,
                 );
 
                 const vatRateStr = mapVatTypeToRate(engineResult.vat_type);
@@ -961,9 +961,9 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
             <div className="bg-muted/50 rounded-xl p-4">
               <p className="text-sm font-medium mb-2">Supported formats:</p>
               <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• AIB, BOI, Ulster Bank, Revolut CSV exports</li>
-                <li>• Standard CSV with Date, Description, Amount columns</li>
-                <li>• Separate Credit/Debit columns supported</li>
+                <li>AIB, BOI, Ulster Bank, Revolut CSV exports</li>
+                <li>Standard CSV with Date, Description, Amount columns</li>
+                <li>Separate Credit/Debit columns supported</li>
               </ul>
             </div>
           </div>

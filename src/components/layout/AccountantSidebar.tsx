@@ -13,6 +13,8 @@ import {
   StickyNote,
   ListTodo,
   ShieldCheck,
+  MessageSquare,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +38,7 @@ const CLIENT_SUB_TABS: { tab: string; label: string; icon: React.ElementType }[]
   { tab: "notes", label: "Notes", icon: StickyNote },
   { tab: "tasks", label: "Tasks", icon: ListTodo },
   { tab: "filings", label: "Filings", icon: ShieldCheck },
+  { tab: "messages", label: "Messages", icon: MessageSquare },
 ];
 
 const AccountantSidebar = () => {
@@ -65,6 +68,7 @@ const AccountantSidebar = () => {
     { path: "/accountant/clients", label: "Clients", icon: Users },
     { path: "/accountant/tasks", label: "Tasks", icon: CheckSquare, badge: openTaskCount || undefined },
     { path: "/accountant/settings", label: "Settings", icon: Settings },
+    { path: "/accountant/client-settings", label: "Client Settings", icon: UserCog },
   ];
 
   const isActive = (path: string) => {

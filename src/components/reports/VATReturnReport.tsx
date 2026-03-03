@@ -214,7 +214,7 @@ export function VATReturnReport() {
                       {(finalisationData.unpaid_invoices_list as { description: string; amount: number }[]).map(
                         (item, i) => (
                           <li key={i}>
-                            • {item.description}: €{item.amount}
+                            {item.description}: €{item.amount}
                           </li>
                         ),
                       )}
@@ -266,7 +266,7 @@ export function VATReturnReport() {
                       {(finalisationData.missing_receipts_list as { description: string; amount: number }[]).map(
                         (item, i) => (
                           <li key={i}>
-                            • {item.description}: €{item.amount}
+                            {item.description}: €{item.amount}
                           </li>
                         ),
                       )}
@@ -395,7 +395,7 @@ export function VATReturnReport() {
                       {(finalisationData.credit_notes_details as { description: string; amount: number }[]).map(
                         (item, i) => (
                           <li key={i}>
-                            • {item.description}: €{item.amount}
+                            {item.description}: €{item.amount}
                           </li>
                         ),
                       )}
