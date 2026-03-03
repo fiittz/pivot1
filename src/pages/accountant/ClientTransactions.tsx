@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -296,28 +295,35 @@ const ClientTransactions = ({
     },
     {
       id: "status",
-      header: "Status",
-      width: "w-28",
+      header: "",
+      width: "w-8",
+      align: "center",
       accessorFn: (row) => {
         if (row.is_reconciled) {
           return (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-500">
-              Reconciled
-            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto" />
+                </TooltipTrigger>
+                <TooltipContent><span className="text-xs">Reconciled</span></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         }
-        if (row.category?.name) {
+        if (!row.category?.name) {
           return (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-500 truncate max-w-[100px]">
-              {row.category.name}
-            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-2 h-2 rounded-full bg-amber-500 mx-auto" />
+                </TooltipTrigger>
+                <TooltipContent><span className="text-xs">Uncategorised</span></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         }
-        return (
-          <span className="text-xs font-medium text-amber-500">
-            Uncategorised
-          </span>
-        );
+        return null;
       },
     },
     {
@@ -330,74 +336,48 @@ const ClientTransactions = ({
       ),
     },
     {
-      id: "description",
-      header: "Supplier / Description",
+      id: "supplier",
+      header: "Supplier",
       sortField: "description",
-      width: "min-w-[180px]",
-      accessorFn: (row) => {
-        const receipt = receiptMap.get(row.id);
-        return (
-          <div className="min-w-0 flex items-center gap-1.5">
-            <div className="min-w-0 flex-1">
-              <span className="text-sm text-foreground truncate block font-medium">
-                {row.description || "No description"}
-              </span>
-              {row.reference && (
-                <span className="text-[10px] text-muted-foreground truncate block">
-                  Ref: {row.reference}
+      width: "min-w-[220px]",
+      accessorFn: (row) => (
+        <div className="min-w-0 -space-y-0.5">
+          <span className="text-sm text-foreground truncate block font-medium">
+            {row.description || "No description"}
+          </span>
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <Select
+              value={row.category_id ?? "uncategorised"}
+              onValueChange={(val) => {
+                if (val !== "uncategorised") handleCategoryChange(row.id, val);
+              }}
+            >
+              <SelectTrigger className="h-5 w-auto max-w-[180px] text-[10px] px-1.5 py-0 border-none bg-transparent text-muted-foreground hover:text-foreground transition-colors gap-0.5 [&>svg]:w-3 [&>svg]:h-3">
+                <SelectValue placeholder="Uncategorised" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat: Record<string, unknown>) => (
+                  <SelectItem key={cat.id as string} value={cat.id as string}>
+                    {cat.name as string}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {row.reference && (
+              <>
+                <span className="text-muted-foreground/30">/</span>
+                <span className="text-[10px] text-muted-foreground truncate">
+                  {row.reference}
                 </span>
-              )}
-            </div>
-            {receipt && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Paperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs space-y-0.5">
-                      {receipt.vendor_name && <p className="font-medium">{receipt.vendor_name}</p>}
-                      {receipt.amount != null && <p>{formatCurrency(receipt.amount)}</p>}
-                      {receipt.receipt_date && <p>{receipt.receipt_date}</p>}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              </>
             )}
           </div>
-        );
-      },
-    },
-    {
-      id: "category",
-      header: "Category",
-      width: "w-40",
-      accessorFn: (row) => (
-        <Select
-          value={row.category_id ?? "uncategorised"}
-          onValueChange={(val) => {
-            if (val !== "uncategorised") handleCategoryChange(row.id, val);
-          }}
-        >
-          <SelectTrigger
-            className="h-7 text-xs border-transparent bg-transparent hover:border-border transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SelectValue placeholder="Uncategorised" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat: Record<string, unknown>) => (
-              <SelectItem key={cat.id as string} value={cat.id as string}>
-                {cat.name as string}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        </div>
       ),
     },
     {
-      id: "total",
-      header: "Total",
+      id: "amount",
+      header: "Amount",
       sortField: "amount",
       width: "w-28",
       align: "right",
@@ -415,42 +395,58 @@ const ClientTransactions = ({
         );
       },
     },
-    // VAT columns — only shown when client is VAT registered
-    ...(isVatRegistered
-      ? [
-          {
-            id: "tax",
-            header: "Tax",
-            sortField: "vat_amount",
-            width: "w-20",
-            align: "right" as const,
-            accessorFn: (row: TransactionRow) => (
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {row.vat_amount != null ? formatCurrency(Math.abs(row.vat_amount)) : "\u2014"}
+    {
+      id: "vat",
+      header: "VAT",
+      sortField: "vat_amount",
+      width: "w-24",
+      align: "right",
+      accessorFn: (row) => {
+        if (row.vat_amount == null) {
+          return <span className="text-xs text-muted-foreground">{"\u2014"}</span>;
+        }
+        return (
+          <div className="text-right">
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {formatCurrency(Math.abs(row.vat_amount))}
+            </span>
+            {row.vat_rate != null && (
+              <span className="text-[10px] text-muted-foreground/60 ml-1">
+                ({row.vat_rate}%)
               </span>
-            ),
-          },
-          {
-            id: "tax_rate",
-            header: "VAT %",
-            width: "w-20",
-            align: "right" as const,
-            accessorFn: (row: TransactionRow) => {
-              if (row.vat_rate == null) {
-                return <span className="text-xs text-muted-foreground">{"\u2014"}</span>;
-              }
-              return (
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground font-mono"
-                >
-                  {row.vat_rate}%
-                </Badge>
-              );
-            },
-          },
-        ]
-      : []),
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "receipt",
+      header: "Receipt",
+      width: "w-20",
+      align: "center",
+      accessorFn: (row) => {
+        const receipt = receiptMap.get(row.id);
+        if (!receipt) {
+          return <span className="text-xs text-muted-foreground/40">{"\u2014"}</span>;
+        }
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Paperclip className="w-3.5 h-3.5 text-emerald-500 mx-auto" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs space-y-0.5">
+                  {receipt.vendor_name && <p className="font-medium">{receipt.vendor_name}</p>}
+                  {receipt.amount != null && <p>{formatCurrency(receipt.amount)}</p>}
+                  {receipt.receipt_date && <p>{receipt.receipt_date}</p>}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
+    },
   ];
 
   return (
@@ -466,26 +462,28 @@ const ClientTransactions = ({
         </Badge>
       )}
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="py-3 px-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Income ({taxYear})</span>
-            <span className="font-semibold text-emerald-600">{formatCurrency(totalIncome)}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-3 px-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Expenses ({taxYear})</span>
-            <span className="font-semibold text-red-600">{formatCurrency(totalExpenses)}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-3 px-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">VAT ({taxYear})</span>
-            <span className="font-semibold text-foreground">{formatCurrency(totalVat)}</span>
-          </CardContent>
-        </Card>
+      {/* Summary bar */}
+      <div className="flex items-center gap-6 rounded-lg border bg-card px-4 py-2.5 text-sm">
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Income</span>
+          <span className="font-semibold text-emerald-600">{formatCurrency(totalIncome)}</span>
+        </div>
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Expenses</span>
+          <span className="font-semibold text-red-600">{formatCurrency(totalExpenses)}</span>
+        </div>
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">VAT</span>
+          <span className="font-semibold text-foreground">{formatCurrency(totalVat)}</span>
+        </div>
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-1.5">
+          <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="font-semibold text-foreground">{receiptMap.size}</span>
+          <span className="text-muted-foreground">/ {rawTransactions.length}</span>
+        </div>
       </div>
 
       {/* Pipeline tabs */}
