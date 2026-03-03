@@ -222,13 +222,13 @@ const ClientTransactions = ({
     return map;
   }, [invoices]);
 
-  // VAT subtotals from transactions
+  // VAT subtotals from transactions (exclude RCT reverse charge invoices from sales)
   const vatOnSalesTotal = useMemo(
     () =>
       transactions
-        .filter((t) => t.type === "income")
+        .filter((t) => t.type === "income" && !invoiceMap.get(t.id)?.rct_enabled)
         .reduce((sum, t) => sum + Math.abs(t.vat_amount ?? 0), 0),
-    [transactions],
+    [transactions, invoiceMap],
   );
   const vatOnPurchasesTotal = useMemo(
     () =>

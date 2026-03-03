@@ -117,6 +117,23 @@ export async function applyManualMatch(
 
   if (matchType === "invoice") {
     updateData.invoice_id = matchId;
+
+    // Check if this is an RCT reverse charge invoice — VAT is not applicable
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("notes")
+      .eq("id", matchId)
+      .single();
+
+    if (invoice?.notes) {
+      try {
+        const notes = JSON.parse(invoice.notes);
+        if (notes?.rct_enabled) {
+          updateData.vat_amount = 0;
+          updateData.vat_rate = 0;
+        }
+      } catch { /* plain text notes, no RCT */ }
+    }
   } else {
     updateData.expense_id = matchId;
   }
