@@ -16,6 +16,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -47,7 +56,9 @@ import {
   FilePlus,
   Image,
   Paperclip,
+  ChevronDown,
 } from "lucide-react";
+import { isVATDeductible } from "@/lib/vatDeductibility";
 
 interface ClientTransactionsProps {
   clientUserId: string | null | undefined;
@@ -84,6 +95,9 @@ const ClientTransactions = ({
 }: ClientTransactionsProps) => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [otherDialogOpen, setOtherDialogOpen] = useState(false);
+  const [otherComment, setOtherComment] = useState("");
+  const [otherDialogTarget, setOtherDialogTarget] = useState<TransactionRow[] | null>(null);
   const { toast } = useToast();
 
   const now = new Date();
@@ -254,6 +268,40 @@ const ClientTransactions = ({
     clear();
   };
 
+  const openOtherDialog = (targets: TransactionRow[]) => {
+    setOtherDialogTarget(targets);
+    setOtherComment("");
+    setOtherDialogOpen(true);
+  };
+
+  const handleOtherDialogSend = () => {
+    if (!accountantClientId || !clientUserId || !otherDialogTarget?.length) return;
+
+    for (const row of otherDialogTarget) {
+      const desc = row.description || "Unknown";
+      const amt = formatCurrency(Math.abs(row.amount));
+      createDocRequest.mutate({
+        accountant_client_id: accountantClientId,
+        client_user_id: clientUserId,
+        title: `Other for ${desc}`,
+        description: otherComment || `Please provide the other document for the transaction: ${desc} on ${row.transaction_date} for ${amt}.`,
+        category: "Other",
+      });
+    }
+
+    toast({
+      title: "Other document requested",
+      description: otherDialogTarget.length === 1
+        ? `Request sent for "${otherDialogTarget[0].description || "Unknown"}"`
+        : `Request sent for ${otherDialogTarget.length} transactions`,
+    });
+
+    setOtherDialogOpen(false);
+    setOtherDialogTarget(null);
+    setOtherComment("");
+    clear();
+  };
+
   const columns: ColumnDef<TransactionRow>[] = [
     {
       id: "actions",
@@ -282,7 +330,7 @@ const ClientTransactions = ({
               Request Bank Statement
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleRequestDocument(row, "Other")}>
+            <DropdownMenuItem onClick={() => openOtherDialog([row])}>
               Request Other Document
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -290,43 +338,10 @@ const ClientTransactions = ({
       ),
     },
     {
-      id: "status",
-      header: "",
-      width: "w-6",
-      align: "center",
-      accessorFn: (row) => {
-        if (row.is_reconciled) {
-          return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto" />
-                </TooltipTrigger>
-                <TooltipContent><span className="text-xs">Reconciled</span></TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        }
-        if (!row.category?.name) {
-          return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="w-2 h-2 rounded-full bg-amber-500 mx-auto" />
-                </TooltipTrigger>
-                <TooltipContent><span className="text-xs">Uncategorised</span></TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
-        }
-        return null;
-      },
-    },
-    {
       id: "date",
       header: "Date",
       sortField: "transaction_date",
-      width: "w-20",
+      width: "w-24",
       accessorFn: (row) => (
         <span className="text-xs text-muted-foreground tabular-nums">{row.transaction_date}</span>
       ),
@@ -335,7 +350,7 @@ const ClientTransactions = ({
       id: "supplier",
       header: "Supplier",
       sortField: "description",
-      width: "",
+      width: "w-56",
       accessorFn: (row) => (
         <div className="min-w-0 -space-y-0.5">
           <span className="text-sm text-foreground truncate block font-medium">
@@ -372,21 +387,56 @@ const ClientTransactions = ({
       ),
     },
     {
-      id: "amount",
-      header: "Amount",
-      sortField: "amount",
+      id: "deductible",
+      header: "Deductible",
       width: "w-24",
+      align: "center",
+      accessorFn: (row) => {
+        if (row.type === "income" || (row.vat_amount == null && row.vat_rate == null)) {
+          return <span className="text-xs text-muted-foreground">{"\u2014"}</span>;
+        }
+        const result = isVATDeductible(row.description || "", row.category?.name);
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={`text-xs font-medium ${
+                    result.isDeductible ? "text-emerald-600" : "text-red-600"
+                  }`}
+                >
+                  {result.isDeductible ? "Yes" : "No"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="text-xs">
+                  {result.section ? `${result.section} — ` : ""}
+                  {result.reason}
+                </span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
+    },
+    {
+      id: "net",
+      header: "Net",
+      width: "w-28",
       align: "right",
       accessorFn: (row) => {
         const isIncome = row.type === "income";
+        const gross = Math.abs(row.amount);
+        const vat = row.vat_amount != null ? Math.abs(row.vat_amount) : 0;
+        const net = gross - vat;
         return (
           <span
-            className={`text-sm font-semibold tabular-nums ${
+            className={`text-sm tabular-nums ${
               isIncome ? "text-emerald-600" : "text-red-600"
             }`}
           >
             {isIncome ? "+" : "\u2212"}
-            {formatCurrency(Math.abs(row.amount))}
+            {formatCurrency(net)}
           </span>
         );
       },
@@ -395,7 +445,7 @@ const ClientTransactions = ({
       id: "vat",
       header: "VAT",
       sortField: "vat_amount",
-      width: "w-20",
+      width: "w-24",
       align: "right",
       accessorFn: (row) => {
         if (row.vat_amount == null) {
@@ -416,9 +466,29 @@ const ClientTransactions = ({
       },
     },
     {
+      id: "gross",
+      header: "Gross",
+      sortField: "amount",
+      width: "w-28",
+      align: "right",
+      accessorFn: (row) => {
+        const isIncome = row.type === "income";
+        return (
+          <span
+            className={`text-sm font-semibold tabular-nums ${
+              isIncome ? "text-emerald-600" : "text-red-600"
+            }`}
+          >
+            {isIncome ? "+" : "\u2212"}
+            {formatCurrency(Math.abs(row.amount))}
+          </span>
+        );
+      },
+    },
+    {
       id: "receipt",
       header: "Receipt",
-      width: "w-16",
+      width: "w-14",
       align: "center",
       accessorFn: (row) => {
         const receipt = receiptMap.get(row.id);
@@ -493,20 +563,32 @@ const ClientTransactions = ({
         selectedCount={selectedCount}
         bulkActions={
           selectedCount > 0 ? (
-            <>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Receipt")}>
-                Request Receipt
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Invoice")}>
-                Request Invoice
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Bank Statement")}>
-                Request Statement
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Other")}>
-                Request Other
-              </Button>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                  Request Document
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => handleBulkRequestDocument("Receipt")}>
+                  Request Receipt
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkRequestDocument("Invoice")}>
+                  Request Invoice
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkRequestDocument("Bank Statement")}>
+                  Request Bank Statement
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => {
+                  const selectedTxs = groupedAndSorted.filter((t) => selectedIds.has(t.id));
+                  openOtherDialog(selectedTxs);
+                }}>
+                  Request Other...
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : undefined
         }
       />
@@ -536,6 +618,39 @@ const ClientTransactions = ({
           </div>
         )}
       />
+
+      {/* Request Other Document dialog */}
+      <Dialog open={otherDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setOtherDialogOpen(false);
+          setOtherDialogTarget(null);
+          setOtherComment("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Other Document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="other-comment">What document do you need?</Label>
+            <Textarea
+              id="other-comment"
+              placeholder="Describe the document you need..."
+              value={otherComment}
+              onChange={(e) => setOtherComment(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setOtherDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleOtherDialogSend}>
+              Send Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
