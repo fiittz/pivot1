@@ -299,7 +299,7 @@ async function getCandidates(
     // Look for unpaid invoices
     const { data: invoices } = await supabase
       .from("invoices")
-      .select("id, invoice_number, total, issue_date, due_date, customer_id, customers(name)")
+      .select("id, invoice_number, total, issue_date, due_date, customer_id, notes, customers(name)")
       .eq("user_id", userId)
       .in("status", ["sent", "draft"])
       .is("matched_transaction_id", null)
@@ -308,10 +308,19 @@ async function getCandidates(
 
     if (invoices) {
       for (const inv of invoices) {
+        // For RCT invoices, the bank receives net receivable (total - rct_amount), not total
+        let matchAmount = inv.total;
+        try {
+          const notes = inv.notes ? JSON.parse(inv.notes) : null;
+          if (notes?.rct_enabled && notes?.rct_amount) {
+            matchAmount = inv.total - notes.rct_amount;
+          }
+        } catch { /* plain text notes */ }
+
         candidates.push({
           id: inv.id,
           type: "invoice",
-          amount: inv.total,
+          amount: matchAmount,
           date: inv.issue_date,
           description: `Invoice ${inv.invoice_number}`,
           customer_or_supplier: inv.customers?.name,
