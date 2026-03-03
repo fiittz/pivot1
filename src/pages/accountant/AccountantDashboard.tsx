@@ -1,11 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import AccountantLayout from "@/components/layout/AccountantLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAccountantClientCounts } from "@/hooks/accountant/useAccountantClients";
 import { useAccountantTaskCounts } from "@/hooks/accountant/useClientTasks";
 import { useFilingCounts } from "@/hooks/accountant/useFilingRecords";
-import { Plus } from "lucide-react";
 import { ClientStatusChart } from "@/components/accountant/dashboard/ClientStatusChart";
 import { FilingDeadlineTimeline } from "@/components/accountant/dashboard/FilingDeadlineTimeline";
 import { TasksDueThisWeek } from "@/components/accountant/dashboard/TasksDueThisWeek";
