@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Clock, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -150,10 +149,10 @@ export function DeadlinesWidget() {
   const now = new Date();
 
   return (
-    <Card className="border-0 shadow-lg rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg">Deadlines</h3>
+    <Card className="rounded-xl">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold">Deadlines</h3>
           <button
             onClick={() => navigate("/tax")}
             className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"

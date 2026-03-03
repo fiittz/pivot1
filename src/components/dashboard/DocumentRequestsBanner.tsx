@@ -1,6 +1,6 @@
 import { useMyDocumentRequests } from "@/hooks/accountant/useDocumentRequests";
 import { Card, CardContent } from "@/components/ui/card";
-import { FolderSearch, Calendar, ArrowRight } from "lucide-react";
+import { FolderSearch } from "lucide-react";
 
 /**
  * Banner shown on the business owner's dashboard when their accountant
