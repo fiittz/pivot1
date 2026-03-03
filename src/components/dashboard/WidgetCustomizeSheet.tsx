@@ -33,8 +33,7 @@ export function WidgetCustomizeSheet({ availableWidgets, preferences, onToggle, 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 rounded-full">
-          <Settings2 className="w-4 h-4" />
+        <Button variant="outline" size="sm" className="rounded-full">
           Customize
         </Button>
       </SheetTrigger>
@@ -69,8 +68,7 @@ export function WidgetCustomizeSheet({ availableWidgets, preferences, onToggle, 
         </div>
 
         <div className="mt-8 pt-4 border-t">
-          <Button variant="ghost" size="sm" className="gap-2 w-full" onClick={onReset}>
-            <RotateCcw className="w-4 h-4" />
+          <Button variant="ghost" size="sm" className="w-full" onClick={onReset}>
             Reset to Defaults
           </Button>
         </div>

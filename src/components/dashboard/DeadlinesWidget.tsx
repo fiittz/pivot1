@@ -153,16 +153,12 @@ export function DeadlinesWidget() {
     <Card className="border-0 shadow-lg rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-bold text-lg">Deadlines</h3>
-          </div>
+          <h3 className="font-bold text-lg">Deadlines</h3>
           <button
             onClick={() => navigate("/tax")}
             className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             Tax Centre
-            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -174,7 +170,6 @@ export function DeadlinesWidget() {
               className="w-full flex items-center justify-between p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-colors text-left"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{d.name}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(d.date)}</p>

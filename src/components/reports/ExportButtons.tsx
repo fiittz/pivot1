@@ -48,7 +48,7 @@ export function ExportButtons({ onPdf, onExcel, onXml, disabled, pdfLabel, excel
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" onClick={handlePdf} disabled={disabled || pdfLoading} className="rounded-xl">
-        {pdfLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+        {pdfLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         {pdfLabel ?? "Download PDF"}
       </Button>
       <Button
@@ -58,11 +58,7 @@ export function ExportButtons({ onPdf, onExcel, onXml, disabled, pdfLabel, excel
         disabled={disabled || excelLoading}
         className="rounded-xl"
       >
-        {excelLoading ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        ) : (
-          <FileSpreadsheet className="w-4 h-4 mr-2" />
-        )}
+        {excelLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         {excelLabel ?? "Download Excel"}
       </Button>
       {onXml && (
@@ -73,11 +69,7 @@ export function ExportButtons({ onPdf, onExcel, onXml, disabled, pdfLabel, excel
           disabled={disabled || xmlLoading}
           className="rounded-xl"
         >
-          {xmlLoading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <FileCode className="w-4 h-4 mr-2" />
-          )}
+          {xmlLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {xmlLabel ?? "ROS XML"}
         </Button>
       )}

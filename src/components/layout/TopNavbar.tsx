@@ -118,12 +118,6 @@ const TopNavbar = () => {
                     )}
                   >
                     {item.label}
-                    <ChevronRight
-                      className={cn(
-                        "w-4 h-4 transition-transform",
-                        active ? "text-accent-foreground" : "text-muted-foreground",
-                      )}
-                    />
                   </button>
                 );
               })}
@@ -135,7 +129,6 @@ const TopNavbar = () => {
                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium text-foreground hover:bg-secondary transition-all duration-200"
               >
                 Settings
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
           </nav>

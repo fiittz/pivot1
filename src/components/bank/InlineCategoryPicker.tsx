@@ -67,17 +67,7 @@ export default function InlineCategoryPicker({
             currentCategory ? "bg-muted hover:bg-muted/80" : "bg-purple-100 text-purple-700 hover:bg-purple-200"
           }`}
         >
-          {currentCategory ? (
-            <>
-              <Tag className="w-3 h-3" />
-              {currentCategory.name}
-            </>
-          ) : (
-            <>
-              <Brain className="w-3 h-3" />
-              Uncategorized
-            </>
-          )}
+          {currentCategory ? currentCategory.name : "Uncategorized"}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[220px] p-0" align="start" onClick={(e) => e.stopPropagation()}>

@@ -42,16 +42,12 @@ export function TasksDueThisWeek() {
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-bold text-lg">Tasks Due This Week</h3>
-          </div>
+          <h3 className="font-bold text-lg">Tasks Due This Week</h3>
           <button
             onClick={() => navigate("/accountant/tasks")}
             className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             All tasks
-            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 

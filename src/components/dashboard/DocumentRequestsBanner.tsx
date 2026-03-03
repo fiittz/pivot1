@@ -26,11 +26,9 @@ export function DocumentRequestsBanner() {
             <div className="mt-2 space-y-1.5">
               {requests.slice(0, 3).map((req) => (
                 <div key={req.id} className="flex items-center gap-2 text-sm">
-                  <ArrowRight className="w-3 h-3 text-[#E8930C] shrink-0" />
                   <span className="text-foreground">{req.title}</span>
                   {req.due_date && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-                      <Calendar className="w-3 h-3" />
+                    <span className="text-xs text-muted-foreground ml-auto">
                       {req.due_date}
                     </span>
                   )}

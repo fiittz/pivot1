@@ -273,20 +273,16 @@ const ClientTransactions = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem onClick={() => handleRequestDocument(row, "Receipt")}>
-              <Receipt className="w-3.5 h-3.5 mr-2" />
               Request Receipt
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleRequestDocument(row, "Invoice")}>
-              <FileText className="w-3.5 h-3.5 mr-2" />
               Request Invoice
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleRequestDocument(row, "Bank Statement")}>
-              <FilePlus className="w-3.5 h-3.5 mr-2" />
               Request Bank Statement
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleRequestDocument(row, "Other")}>
-              <Image className="w-3.5 h-3.5 mr-2" />
               Request Other Document
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -498,40 +494,16 @@ const ClientTransactions = ({
         bulkActions={
           selectedCount > 0 ? (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => handleBulkRequestDocument("Receipt")}
-              >
-                <Receipt className="w-3.5 h-3.5 mr-1.5" />
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Receipt")}>
                 Request Receipt
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => handleBulkRequestDocument("Invoice")}
-              >
-                <FileText className="w-3.5 h-3.5 mr-1.5" />
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Invoice")}>
                 Request Invoice
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => handleBulkRequestDocument("Bank Statement")}
-              >
-                <FilePlus className="w-3.5 h-3.5 mr-1.5" />
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Bank Statement")}>
                 Request Statement
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => handleBulkRequestDocument("Other")}
-              >
-                <Image className="w-3.5 h-3.5 mr-1.5" />
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkRequestDocument("Other")}>
                 Request Other
               </Button>
             </>

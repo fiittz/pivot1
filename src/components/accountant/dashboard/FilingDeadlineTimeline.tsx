@@ -23,16 +23,12 @@ export function FilingDeadlineTimeline() {
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-bold text-lg">Upcoming Deadlines</h3>
-          </div>
+          <h3 className="font-bold text-lg">Upcoming Deadlines</h3>
           <button
             onClick={() => navigate("/accountant/filings")}
             className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             All filings
-            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -54,7 +50,6 @@ export function FilingDeadlineTimeline() {
                   className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl text-left"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${badge?.className ?? ""}`}>

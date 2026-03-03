@@ -101,7 +101,6 @@ const AccountantSidebar = () => {
               onClick={() => navigate("/accountant/clients")}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors mb-2"
             >
-              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
               Back to Clients
             </button>
 
@@ -126,7 +125,6 @@ const AccountantSidebar = () => {
                       : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
                   )}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
                   {item.label}
                 </button>
               );
@@ -149,7 +147,6 @@ const AccountantSidebar = () => {
                     : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0" />
                 {item.label}
                 {item.badge ? (
                   <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-semibold rounded-full bg-[#E8930C] text-white">
@@ -169,7 +166,6 @@ const AccountantSidebar = () => {
           onClick={() => signOut()}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
         >
-          <LogOut className="w-4 h-4 shrink-0" />
           Sign Out
         </button>
       </div>

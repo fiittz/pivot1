@@ -63,8 +63,7 @@ export default function FloatingActionBar({ selectedIds, onClearSelection }: Flo
             onSelect={handleCategorize}
           />
 
-          <Button variant="secondary" size="sm" className="gap-2" onClick={handleMarkReviewed} disabled={isLoading}>
-            <CheckCircle2 className="w-4 h-4" />
+          <Button variant="secondary" size="sm" onClick={handleMarkReviewed} disabled={isLoading}>
             Reviewed
           </Button>
 
@@ -75,7 +74,6 @@ export default function FloatingActionBar({ selectedIds, onClearSelection }: Flo
             onClick={() => setShowDeleteDialog(true)}
             disabled={isLoading}
           >
-            <Trash2 className="w-4 h-4" />
             Delete
           </Button>
 
@@ -101,11 +99,7 @@ export default function FloatingActionBar({ selectedIds, onClearSelection }: Flo
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {bulkDelete.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
-              )}
+              {bulkDelete.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

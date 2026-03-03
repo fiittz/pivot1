@@ -17,8 +17,7 @@ export default function BulkCategoryPicker({ open, onOpenChange, onSelect }: Bul
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" className="gap-2">
-          <Tag className="w-4 h-4" />
+        <Button variant="secondary" size="sm">
           Categorize
         </Button>
       </PopoverTrigger>
