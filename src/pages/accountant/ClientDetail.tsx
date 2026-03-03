@@ -174,6 +174,7 @@ const ClientDetail = () => {
               accountantClientId={accountantClientId}
               accountType={hasBothAccountTypes ? (taxView === "ct1" ? "limited_company" : "directors_personal_tax") : undefined}
               isVatRegistered={!!onboarding?.vat_registered}
+              isRctRegistered={!!onboarding?.rct_registered}
             />
           </TabsContent>
 
