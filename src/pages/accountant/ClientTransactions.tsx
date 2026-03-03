@@ -258,7 +258,7 @@ const ClientTransactions = ({
     {
       id: "actions",
       header: "",
-      width: "w-10",
+      width: "w-8",
       accessorFn: (row) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -292,7 +292,7 @@ const ClientTransactions = ({
     {
       id: "status",
       header: "",
-      width: "w-8",
+      width: "w-6",
       align: "center",
       accessorFn: (row) => {
         if (row.is_reconciled) {
@@ -326,7 +326,7 @@ const ClientTransactions = ({
       id: "date",
       header: "Date",
       sortField: "transaction_date",
-      width: "w-24",
+      width: "w-20",
       accessorFn: (row) => (
         <span className="text-xs text-muted-foreground tabular-nums">{row.transaction_date}</span>
       ),
@@ -335,7 +335,7 @@ const ClientTransactions = ({
       id: "supplier",
       header: "Supplier",
       sortField: "description",
-      width: "min-w-[220px]",
+      width: "",
       accessorFn: (row) => (
         <div className="min-w-0 -space-y-0.5">
           <span className="text-sm text-foreground truncate block font-medium">
@@ -375,7 +375,7 @@ const ClientTransactions = ({
       id: "amount",
       header: "Amount",
       sortField: "amount",
-      width: "w-28",
+      width: "w-24",
       align: "right",
       accessorFn: (row) => {
         const isIncome = row.type === "income";
@@ -395,7 +395,7 @@ const ClientTransactions = ({
       id: "vat",
       header: "VAT",
       sortField: "vat_amount",
-      width: "w-24",
+      width: "w-20",
       align: "right",
       accessorFn: (row) => {
         if (row.vat_amount == null) {
@@ -418,7 +418,7 @@ const ClientTransactions = ({
     {
       id: "receipt",
       header: "Receipt",
-      width: "w-20",
+      width: "w-16",
       align: "center",
       accessorFn: (row) => {
         const receipt = receiptMap.get(row.id);

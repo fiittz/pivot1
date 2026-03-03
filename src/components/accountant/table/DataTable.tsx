@@ -104,8 +104,8 @@ export function DataTable<T>({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-card">
-      <div className="relative w-full overflow-auto">
-        <table className="w-full caption-bottom text-sm">
+      <div className="relative w-full overflow-x-hidden">
+        <table className="w-full table-fixed caption-bottom text-sm">
           <thead className="[&_tr]:border-b sticky top-0 z-10 bg-card">
             <tr className="border-b transition-colors bg-muted/30 hover:bg-muted/30">
               {selectable && (

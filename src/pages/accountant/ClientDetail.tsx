@@ -80,7 +80,7 @@ const ClientDetail = () => {
 
   return (
     <AccountantLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-full space-y-6">
         {/* Back button + header */}
         <div className="flex items-start gap-4">
           <Button
