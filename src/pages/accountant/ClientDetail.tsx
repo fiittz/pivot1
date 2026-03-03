@@ -27,13 +27,6 @@ import {
   Loader2,
   User,
   Wallet,
-  FileText,
-  Receipt,
-  BarChart3,
-  StickyNote,
-  ListTodo,
-  ShieldCheck,
-  MessageSquare,
 } from "lucide-react";
 
 type TaxView = "ct1" | "form11";
@@ -155,30 +148,14 @@ const ClientDetail = () => {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
-            <TabsTrigger value="overview" className="gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5" /> Overview
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="gap-1.5">
-              <Wallet className="w-3.5 h-3.5" /> Transactions
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-1.5">
-              <Receipt className="w-3.5 h-3.5" /> Documents
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="gap-1.5">
-              <FileText className="w-3.5 h-3.5" /> Reports
-            </TabsTrigger>
-            <TabsTrigger value="notes" className="gap-1.5">
-              <StickyNote className="w-3.5 h-3.5" /> Notes
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="gap-1.5">
-              <ListTodo className="w-3.5 h-3.5" /> Tasks
-            </TabsTrigger>
-            <TabsTrigger value="filings" className="gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" /> Filings
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" /> Messages
-            </TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="filings">Filings</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
           </TabsList>
 
           {/* Overview */}
