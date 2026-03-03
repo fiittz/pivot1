@@ -1,14 +1,5 @@
-import { FileText, CheckCircle2, Upload, StickyNote, UserPlus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useRecentActivity, type ActivityType } from "@/hooks/accountant/useRecentActivity";
-
-const activityIcons: Record<ActivityType, React.ComponentType<{ className?: string }>> = {
-  filing: FileText,
-  task: CheckCircle2,
-  document: Upload,
-  note: StickyNote,
-  client: UserPlus,
-};
+import { useRecentActivity } from "@/hooks/accountant/useRecentActivity";
 
 function relativeTime(timestamp: string): string {
   const diff = Date.now() - new Date(timestamp).getTime();
@@ -41,22 +32,15 @@ export function RecentActivityFeed() {
           <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
         ) : (
           <div className="space-y-1">
-            {items.slice(0, 10).map((item) => {
-              const Icon = activityIcons[item.type];
-              return (
-                <div key={item.id} className="flex items-start gap-3 p-2 rounded-lg">
-                  <Icon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm truncate">{item.description}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="truncate">{item.clientName}</span>
-                      <span>·</span>
-                      <span className="shrink-0">{relativeTime(item.timestamp)}</span>
-                    </div>
-                  </div>
+            {items.slice(0, 10).map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-2 rounded-lg">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm truncate">{item.description}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.clientName}</p>
                 </div>
-              );
-            })}
+                <span className="text-xs text-muted-foreground shrink-0 ml-4">{relativeTime(item.timestamp)}</span>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

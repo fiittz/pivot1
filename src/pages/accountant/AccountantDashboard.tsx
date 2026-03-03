@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import AccountantLayout from "@/components/layout/AccountantLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAccountantClientCounts } from "@/hooks/accountant/useAccountantClients";
 import { useAccountantTaskCounts } from "@/hooks/accountant/useClientTasks";
 import { useFilingCounts } from "@/hooks/accountant/useFilingRecords";
-import { Users, FileText, CheckSquare, Clock, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ClientStatusChart } from "@/components/accountant/dashboard/ClientStatusChart";
 import { FilingDeadlineTimeline } from "@/components/accountant/dashboard/FilingDeadlineTimeline";
 import { TasksDueThisWeek } from "@/components/accountant/dashboard/TasksDueThisWeek";
@@ -23,10 +23,10 @@ const AccountantDashboard = () => {
   const hasClients = (counts?.total ?? 0) > 0;
 
   const stats = [
-    { label: "Active Clients", value: String(counts?.active || 0), icon: Users },
-    { label: "Pending Invites", value: String(counts?.pending || 0), icon: Clock },
-    { label: "Pending Filings", value: String(pendingFilings), icon: FileText },
-    { label: "Open Tasks", value: String(openTasks), icon: CheckSquare },
+    { label: "Active Clients", value: String(counts?.active || 0) },
+    { label: "Pending Invites", value: String(counts?.pending || 0) },
+    { label: "Pending Filings", value: String(pendingFilings) },
+    { label: "Open Tasks", value: String(openTasks) },
   ];
 
   return (
@@ -41,31 +41,22 @@ const AccountantDashboard = () => {
           </div>
           <Button
             onClick={() => navigate("/accountant/clients/invite")}
-            className="h-10 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white rounded-md shadow-none gap-1.5"
+            className="h-10 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white rounded-md shadow-none"
           >
-            <Plus className="w-4 h-4" />
             Invite Client
           </Button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.label}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.label}
-                  </CardTitle>
-                  <Icon className="w-4 h-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold">{stat.value}</div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {stats.map((stat) => (
+            <Card key={stat.label}>
+              <CardContent className="py-4 px-5">
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-2xl font-semibold mt-1">{stat.value}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {hasClients ? (
