@@ -3,6 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
+const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");
+const GOOGLE_REFRESH_TOKEN = Deno.env.get("GOOGLE_REFRESH_TOKEN");
+const CALENDAR_IDS = ["mybpsinfo@gmail.com", "jamie@balnce.ie"];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +22,7 @@ const LOOKAHEAD_DAYS = 14;
 const TIMEZONE = "Europe/Dublin";
 
 function getDublinDate(date: Date): string {
-  return date.toLocaleDateString("en-CA", { timeZone: TIMEZONE }); // YYYY-MM-DD
+  return date.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
 }
 
 function getDublinHour(date: Date): number {
@@ -41,6 +45,102 @@ function getDublinDay(date: Date): number {
   return days[dayStr] ?? 0;
 }
 
+// ── Google Calendar FreeBusy ────────────────────────────────────────
+
+async function getGoogleAccessToken(): Promise<string> {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: GOOGLE_CLIENT_ID!,
+      client_secret: GOOGLE_CLIENT_SECRET!,
+      refresh_token: GOOGLE_REFRESH_TOKEN!,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Google OAuth token refresh failed ${res.status}: ${text}`);
+  }
+
+  const data = await res.json();
+  return data.access_token;
+}
+
+interface BusyPeriod {
+  start: string;
+  end: string;
+}
+
+async function getGoogleBusyPeriods(
+  timeMin: string,
+  timeMax: string,
+): Promise<BusyPeriod[]> {
+  const accessToken = await getGoogleAccessToken();
+
+  const res = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      timeMin,
+      timeMax,
+      timeZone: TIMEZONE,
+      items: CALENDAR_IDS.map((id) => ({ id })),
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`Google FreeBusy API ${res.status}: ${text}`);
+    return [];
+  }
+
+  const data = await res.json();
+  const allBusy: BusyPeriod[] = [];
+
+  for (const calId of CALENDAR_IDS) {
+    const calBusy = data.calendars?.[calId]?.busy || [];
+    allBusy.push(...calBusy);
+  }
+
+  return allBusy;
+}
+
+function isSlotBusy(
+  slotStartUtc: Date,
+  slotEndUtc: Date,
+  busyPeriods: BusyPeriod[],
+): boolean {
+  for (const period of busyPeriods) {
+    const busyStart = new Date(period.start);
+    const busyEnd = new Date(period.end);
+    // Overlaps if slot starts before busy ends AND slot ends after busy starts
+    if (slotStartUtc < busyEnd && slotEndUtc > busyStart) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ── Helpers to convert Dublin local time to UTC ─────────────────────
+
+function dublinToUtc(dateStr: string, timeStr: string): Date {
+  // Parse as local Dublin time and convert to UTC
+  // Create a date string that we can parse
+  const naive = new Date(`${dateStr}T${timeStr}:00`);
+  // Get the Dublin offset for this date
+  const utcStr = naive.toLocaleString("en-US", { timeZone: "UTC" });
+  const dublinStr = naive.toLocaleString("en-US", { timeZone: TIMEZONE });
+  const offset = (new Date(dublinStr).getTime() - new Date(utcStr).getTime());
+  return new Date(naive.getTime() - offset);
+}
+
+// ── Main handler ────────────────────────────────────────────────────
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,7 +150,6 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const now = new Date();
 
-    // Calculate date range
     const rangeStart = new Date(now);
     const rangeEnd = new Date(now.getTime() + LOOKAHEAD_DAYS * 24 * 60 * 60_000);
 
@@ -80,6 +179,22 @@ serve(async (req) => {
       bookedSlots.add(`${dateStr}_${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
 
+    // Fetch Google Calendar busy periods (both calendars)
+    let busyPeriods: BusyPeriod[] = [];
+    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REFRESH_TOKEN) {
+      try {
+        busyPeriods = await getGoogleBusyPeriods(
+          rangeStart.toISOString(),
+          rangeEnd.toISOString(),
+        );
+        console.log(`Google FreeBusy: ${busyPeriods.length} busy periods found`);
+      } catch (err) {
+        console.error("Google FreeBusy error (continuing without):", err);
+      }
+    } else {
+      console.warn("Google OAuth credentials not set — skipping calendar check");
+    }
+
     // Generate available slots for each day
     const slots: Record<string, string[]> = {};
 
@@ -87,7 +202,6 @@ serve(async (req) => {
       const date = new Date(now.getTime() + dayOffset * 24 * 60 * 60_000);
       const dayOfWeek = getDublinDay(date);
 
-      // Skip weekends (Sat=6, Sun=0)
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
       const dateStr = getDublinDate(date);
@@ -98,14 +212,21 @@ serve(async (req) => {
           const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
           const slotKey = `${dateStr}_${timeStr}`;
 
-          // Skip booked slots
+          // Skip booked slots (from demo_bookings DB)
           if (bookedSlots.has(slotKey)) continue;
 
-          // Skip past slots (compare in Dublin time)
+          // Skip past slots
           if (dayOffset === 0) {
             const nowH = getDublinHour(now);
             const nowM = getDublinMinute(now);
             if (h < nowH || (h === nowH && m <= nowM)) continue;
+          }
+
+          // Skip slots that overlap with Google Calendar busy periods
+          if (busyPeriods.length > 0) {
+            const slotStartUtc = dublinToUtc(dateStr, timeStr);
+            const slotEndUtc = new Date(slotStartUtc.getTime() + SLOT_MINUTES * 60_000);
+            if (isSlotBusy(slotStartUtc, slotEndUtc, busyPeriods)) continue;
           }
 
           daySlots.push(timeStr);
