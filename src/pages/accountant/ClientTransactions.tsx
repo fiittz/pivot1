@@ -491,46 +491,50 @@ const ClientTransactions = ({
       id: "supplier",
       header: "Supplier",
       sortField: "description",
-      width: "w-56",
-      accessorFn: (row) => (
-        <div className="min-w-0 -space-y-0.5">
-          <span className="text-sm text-foreground truncate block font-medium">
-            {row.description || "No description"}
-          </span>
-          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            <Select
-              value={row.category_id ?? "uncategorised"}
-              onValueChange={(val) => {
-                if (val !== "uncategorised") handleCategoryChange(row.id, val);
-              }}
-            >
-              <SelectTrigger className="h-5 w-auto max-w-[180px] text-[10px] px-1.5 py-0 border-none bg-transparent text-muted-foreground hover:text-foreground transition-colors gap-0.5 [&>svg]:w-3 [&>svg]:h-3">
-                <SelectValue placeholder="Uncategorised" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat: Record<string, unknown>) => (
-                  <SelectItem key={cat.id as string} value={cat.id as string}>
-                    {cat.name as string}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {row.reference && (
-              <>
-                <span className="text-muted-foreground/30">/</span>
-                <span className="text-[10px] text-muted-foreground truncate">
-                  {row.reference}
-                </span>
-              </>
-            )}
+      width: "w-44",
+      accessorFn: (row) => {
+        const receipt = receiptMap.get(row.id);
+        const supplierName = receipt?.vendor_name || row.description || "No description";
+        return (
+          <div className="min-w-0 -space-y-0.5">
+            <span className="text-sm text-foreground truncate block font-medium">
+              {supplierName}
+            </span>
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <Select
+                value={row.category_id ?? "uncategorised"}
+                onValueChange={(val) => {
+                  if (val !== "uncategorised") handleCategoryChange(row.id, val);
+                }}
+              >
+                <SelectTrigger className="h-5 w-auto max-w-[180px] text-[10px] px-1.5 py-0 border-none bg-transparent text-muted-foreground hover:text-foreground transition-colors gap-0.5 [&>svg]:w-3 [&>svg]:h-3">
+                  <SelectValue placeholder="Uncategorised" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat: Record<string, unknown>) => (
+                    <SelectItem key={cat.id as string} value={cat.id as string}>
+                      {cat.name as string}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {row.reference && (
+                <>
+                  <span className="text-muted-foreground/30">/</span>
+                  <span className="text-[10px] text-muted-foreground truncate">
+                    {row.reference}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       id: "receipt_desc",
       header: "Description",
-      width: "w-44",
+      width: "w-48",
       accessorFn: (row) => {
         const receipt = receiptMap.get(row.id);
         if (!receipt?.purchase_description) {
@@ -540,7 +544,7 @@ const ClientTransactions = ({
         return (
           <button
             type="button"
-            className="text-left w-full"
+            className="text-left w-full group"
             onClick={(e) => {
               e.stopPropagation();
               setExpandedDescriptions((prev) => {
@@ -551,11 +555,15 @@ const ClientTransactions = ({
               });
             }}
           >
-            <span
-              className={`text-xs text-muted-foreground ${isExpanded ? "whitespace-normal" : "truncate block"}`}
-            >
-              {receipt.purchase_description}
-            </span>
+            {isExpanded ? (
+              <span className="text-xs text-foreground whitespace-normal leading-relaxed">
+                {receipt.purchase_description}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground truncate block group-hover:text-foreground transition-colors cursor-pointer">
+                {receipt.purchase_description}
+              </span>
+            )}
           </button>
         );
       },
