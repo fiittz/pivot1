@@ -18,7 +18,8 @@ const corsHeaders = {
 const START_HOUR = 10;
 const END_HOUR = 17;
 const SLOT_MINUTES = 30;
-const LOOKAHEAD_DAYS = 14;
+const LOOKAHEAD_DAYS = 20;
+const SAME_DAY_BUFFER_HOURS = 3;
 const TIMEZONE = "Europe/Dublin";
 
 function getDublinDate(date: Date): string {
@@ -215,11 +216,13 @@ serve(async (req) => {
           // Skip booked slots (from demo_bookings DB)
           if (bookedSlots.has(slotKey)) continue;
 
-          // Skip past slots
+          // Skip past slots + 3-hour buffer for same-day bookings
           if (dayOffset === 0) {
             const nowH = getDublinHour(now);
             const nowM = getDublinMinute(now);
-            if (h < nowH || (h === nowH && m <= nowM)) continue;
+            const bufferH = nowH + SAME_DAY_BUFFER_HOURS;
+            const bufferM = nowM;
+            if (h < bufferH || (h === bufferH && m <= bufferM)) continue;
           }
 
           // Skip slots that overlap with Google Calendar busy periods
