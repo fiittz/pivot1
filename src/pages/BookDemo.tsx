@@ -28,12 +28,11 @@ const BookDemo = () => {
   useEffect(() => {
     async function fetchSlots() {
       try {
-        const { data, error } = await supabase.functions.invoke("get-available-slots", {
-          method: "GET",
-        });
-
-        if (error) throw error;
-        const response = data as SlotsResponse;
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-available-slots`,
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const response: SlotsResponse = await res.json();
         setSlots(response.slots || {});
       } catch (err) {
         console.error("Failed to fetch slots:", err);
