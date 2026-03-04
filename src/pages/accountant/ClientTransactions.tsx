@@ -114,6 +114,7 @@ const ClientTransactions = ({
   const [otherDialogOpen, setOtherDialogOpen] = useState(false);
   const [otherComment, setOtherComment] = useState("");
   const [otherDialogTarget, setOtherDialogTarget] = useState<TransactionRow[] | null>(null);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [vatApproveDialogOpen, setVatApproveDialogOpen] = useState(false);
   const [vatNotes, setVatNotes] = useState("");
   const { toast } = useToast();
@@ -529,16 +530,33 @@ const ClientTransactions = ({
     {
       id: "receipt_desc",
       header: "Description",
-      width: "w-40",
+      width: "w-44",
       accessorFn: (row) => {
         const receipt = receiptMap.get(row.id);
         if (!receipt?.purchase_description) {
           return <span className="text-xs text-muted-foreground/40">{"\u2014"}</span>;
         }
+        const isExpanded = expandedDescriptions.has(row.id);
         return (
-          <span className="text-xs text-muted-foreground truncate block">
-            {receipt.purchase_description}
-          </span>
+          <button
+            type="button"
+            className="text-left w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpandedDescriptions((prev) => {
+                const next = new Set(prev);
+                if (next.has(row.id)) next.delete(row.id);
+                else next.add(row.id);
+                return next;
+              });
+            }}
+          >
+            <span
+              className={`text-xs text-muted-foreground ${isExpanded ? "whitespace-normal" : "truncate block"}`}
+            >
+              {receipt.purchase_description}
+            </span>
+          </button>
         );
       },
     },
