@@ -1,72 +1,91 @@
 import type { CT1ReportData } from "../types";
-import { xmlDeclaration, xmlTag, wholeEuro, fmtRevDate, saveXml } from "../xmlHelpers";
+import { xmlDeclaration, xmlEl, wholeEuro, saveXml } from "../xmlHelpers";
 
 export interface CT1XmlOptions {
   periodStart: string;    // ISO date
   periodEnd: string;      // ISO date
   companyRegNo: string;   // CRO number
   taxRefNo: string;       // Revenue tax reference
+  companyName: string;
   isCloseCompany: boolean;
   rctCredit?: number;
   preliminaryCTPaid?: number;
+  language?: string;      // default "EN"
 }
 
 /**
  * Build CT1 XML string from report data.
- * Revenue FormCt1 schema — currency EUR, formversion 25.
+ * Revenue FormCt1 v25 XSD — attribute-based elements, currency EUR.
  */
 export function buildCT1Xml(data: CT1ReportData, options: CT1XmlOptions): string {
-  const tradingIncome = wholeEuro(data.totalIncome);
-  const allowableDeductions = wholeEuro(data.totalDeductions);
+  const lang = options.language ?? "EN";
   const tradingProfit = wholeEuro(data.tradingProfit);
+  const totalIncome = wholeEuro(data.totalIncome);
+  const totalDeductions = wholeEuro(data.totalDeductions);
   const totalCT = wholeEuro(data.totalCTLiability);
   const prelimPaid = wholeEuro(options.preliminaryCTPaid ?? 0);
   const rctCredit = wholeEuro(options.rctCredit ?? 0);
   const balanceDue = totalCT - prelimPaid - rctCredit;
 
+  // Tax at 12.5% on trading profits
+  const ctAt125 = wholeEuro(tradingProfit * 0.125);
+
+  // Close company surcharge
   let closeCompanySection = "";
   if (options.isCloseCompany) {
-    // Extract surcharge from CT liability if close company
-    const ctAt125 = wholeEuro(tradingProfit * 0.125);
     const surcharge = totalCT - ctAt125;
     if (surcharge > 0) {
       closeCompanySection = `
   <CloseCompanySurcharge>
-    ${xmlTag("SurchargeApplicable", "Y")}
-    ${xmlTag("SurchargeAmount", wholeEuro(surcharge))}
+    ${xmlEl("CloseCompanySurcharge", { electUnderSec440441: "true", section440: wholeEuro(surcharge) })}
   </CloseCompanySurcharge>`;
     }
   }
 
   return `${xmlDeclaration()}
-<FormCt1 xmlns="http://www.revenue.ie/schemas/ct1" currency="E" formversion="25">
-  ${xmlTag("CompanyRegNo", options.companyRegNo)}
-  ${xmlTag("TaxRefNo", options.taxRefNo)}
-  ${xmlTag("PeriodStart", fmtRevDate(options.periodStart))}
-  ${xmlTag("PeriodEnd", fmtRevDate(options.periodEnd))}
-  ${xmlTag("CompanyName", data.meta.companyName)}
-  <TradingIncome>
-    ${xmlTag("TotalTradingIncome", tradingIncome)}
-    ${xmlTag("AllowableDeductions", allowableDeductions)}
-    ${xmlTag("TradingProfit", tradingProfit)}
-  </TradingIncome>
-  <CorporationTax>
-    ${xmlTag("TaxableProfit", tradingProfit)}
-    ${xmlTag("CTRate", "12.5")}
-    ${xmlTag("CTOnTradingIncome", wholeEuro(tradingProfit * 0.125))}
-    ${xmlTag("TotalCTLiability", totalCT)}
-  </CorporationTax>${closeCompanySection}
-  <PaymentsCredits>
-    ${xmlTag("PreliminaryCTPaid", prelimPaid)}
-    ${xmlTag("RCTCredit", rctCredit)}
-    ${xmlTag("BalanceDue", wholeEuro(balanceDue))}
-  </PaymentsCredits>
+<FormCt1 xmlns="http://www.ros.ie/schemas/formct1/v25/" currency="E" formversion="25" language="${lang}">
+  <CompanyDetails>
+    ${xmlEl("CompanyDetails", { referencenumber: options.taxRefNo, companyname: options.companyName })}
+    <ReturnContactDetails/>
+  </CompanyDetails>
+  <TradingResults>
+    ${xmlEl("TradeProfits", { profityear: tradingProfit })}
+  </TradingResults>${closeCompanySection}
+  <Deductions>
+    ${xmlEl("Credits", { pswtOnFees: 0 })}
+  </Deductions>
+  <SelfAssessmentCt>
+    ${xmlEl("SelfAssessmentCt", {
+      selfProfitChargeTax: tradingProfit,
+      selfTaxCharge: totalCT,
+      selfTaxPayable: totalCT,
+      selfAmtTaxPaidDirect: prelimPaid,
+      selfBalanceTaxPayable: wholeEuro(balanceDue),
+      declareSelfAssessment: "true",
+    })}
+  </SelfAssessmentCt>
+  <SummaryCalculation>
+    ${xmlEl("SummaryCalculation", {
+      tradingIncome: totalIncome,
+      totalIncome: totalIncome,
+      totalDeductions: totalDeductions,
+      totalTax: totalCT,
+      totalAmountPayable: wholeEuro(balanceDue),
+    })}
+    ${xmlEl("TaxableIncomeAtRate", {
+      amountChargeableAtRate: tradingProfit,
+      percentageRate: "12.5",
+      amountPayableAtRate: ctAt125,
+      taxIdentifier: "Trading",
+      taxOrder: 1,
+    })}
+  </SummaryCalculation>
 </FormCt1>`;
 }
 
 /** Generate CT1 XML and trigger download */
 export function generateCT1Xml(data: CT1ReportData, options: CT1XmlOptions): void {
   const xml = buildCT1Xml(data, options);
-  const company = data.meta.companyName.replace(/\s+/g, "_");
+  const company = options.companyName.replace(/\s+/g, "_");
   saveXml(xml, `CT1_${company}_${data.meta.taxYear}.xml`);
 }

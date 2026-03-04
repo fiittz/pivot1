@@ -44,7 +44,7 @@ export function buildRCTXml(summary: RCTSummary, options: RCTXmlOptions): string
     .join("\n");
 
   return `${xmlDeclaration()}
-<FormRCT xmlns="http://www.revenue.ie/schemas/rct">
+<FormRCT xmlns="http://www.ros.ie/schemas/rct/">
   <Principal>
     ${xmlTag("TaxRef", options.principalTaxRef)}
     ${xmlTag("Name", options.principalName)}

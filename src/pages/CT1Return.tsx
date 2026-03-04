@@ -92,6 +92,7 @@ const CT1Return = () => {
       periodEnd: `${taxYearStr}-12-31`,
       companyRegNo: profile?.cro_number || "",
       taxRefNo: profile?.tax_ref || "",
+      companyName: profile?.business_name || "Company",
       isCloseCompany: ct1.isCloseCompany,
       rctCredit: ct1.rctPrepayment,
       preliminaryCTPaid: savedCT1?.preliminaryCTPaid ?? 0,

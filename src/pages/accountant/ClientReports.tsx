@@ -154,6 +154,7 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
         periodEnd: endDate,
         companyRegNo: (onboarding?.company_registration_number as string) ?? "",
         taxRefNo: (onboarding?.tax_reference_number as string) ?? "",
+        companyName,
         isCloseCompany: true,
         rctCredit: ct1Data.rctPrepayment ?? 0,
       });

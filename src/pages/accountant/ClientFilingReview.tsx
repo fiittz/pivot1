@@ -185,6 +185,7 @@ const ClientFilingReview = () => {
           periodEnd: filing.tax_period_end,
           companyRegNo: (onboarding?.company_registration_number as string) ?? "",
           taxRefNo: (onboarding?.tax_reference_number as string) ?? "",
+          companyName: clientName,
           isCloseCompany: true,
           rctCredit: (snapshot.rctPrepayment as number) ?? 0,
         });

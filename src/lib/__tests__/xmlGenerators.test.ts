@@ -6,7 +6,7 @@ vi.mock("file-saver", () => ({
 }));
 
 import { saveAs } from "file-saver";
-import { escXml, xmlTag, xmlDeclaration, wholeEuro, centEuro, fmtRevDate, saveXml } from "@/lib/reports/xmlHelpers";
+import { escXml, xmlTag, xmlDeclaration, wholeEuro, centEuro, fmtRevDate, saveXml, xmlEl } from "@/lib/reports/xmlHelpers";
 import { buildVATXml, generateVATXml } from "@/lib/reports/xml/vatXml";
 import { buildCT1Xml, generateCT1Xml } from "@/lib/reports/xml/ct1Xml";
 import { buildForm11Xml, generateForm11Xml } from "@/lib/reports/xml/form11Xml";
@@ -77,6 +77,43 @@ describe("xmlTag", () => {
     expect(xmlTag("Credit", 1875, { name: "Personal" })).toBe(
       '<Credit name="Personal">1875</Credit>',
     );
+  });
+});
+
+describe("xmlEl", () => {
+  it("generates self-closing element with attributes", () => {
+    expect(xmlEl("TradeProfits", { profityear: 70000 })).toBe(
+      '<TradeProfits profityear="70000"/>',
+    );
+  });
+
+  it("handles multiple attributes", () => {
+    const result = xmlEl("Details", { surname: "Murphy", firstname: "Alice" });
+    expect(result).toContain('surname="Murphy"');
+    expect(result).toContain('firstname="Alice"');
+    expect(result).toMatch(/^<Details .+\/>$/);
+  });
+
+  it("omits null values", () => {
+    expect(xmlEl("Test", { a: "1", b: null })).toBe('<Test a="1"/>');
+  });
+
+  it("omits undefined values", () => {
+    expect(xmlEl("Test", { a: "1", b: undefined })).toBe('<Test a="1"/>');
+  });
+
+  it("returns empty string when all values are null/undefined", () => {
+    expect(xmlEl("Test", { a: null, b: undefined })).toBe("");
+  });
+
+  it("escapes special characters in attribute values", () => {
+    expect(xmlEl("Co", { name: "O'Brien & Co" })).toBe(
+      '<Co name="O&apos;Brien &amp; Co"/>',
+    );
+  });
+
+  it("handles boolean values", () => {
+    expect(xmlEl("Flag", { active: true })).toBe('<Flag active="true"/>');
   });
 });
 
@@ -153,9 +190,9 @@ describe("buildVATXml", () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
   });
 
-  it("has VAT3 root element with namespace", () => {
+  it("has VAT3 root element with correct namespace", () => {
     const xml = buildVATXml(makeVATData(), vatOptions);
-    expect(xml).toContain('<VAT3 xmlns="http://www.revenue.ie/schemas/vat3"');
+    expect(xml).toContain('<VAT3 xmlns="http://www.ros.ie/schemas/vat3/"');
     expect(xml).toContain("</VAT3>");
   });
 
@@ -239,6 +276,7 @@ describe("buildCT1Xml", () => {
     periodEnd: "2024-12-31",
     companyRegNo: "123456",
     taxRefNo: "1234567T",
+    companyName: "Test Company Ltd",
     isCloseCompany: false,
     preliminaryCTPaid: 5000,
     rctCredit: 0,
@@ -249,29 +287,49 @@ describe("buildCT1Xml", () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
   });
 
-  it("has FormCt1 root with currency and formversion", () => {
+  it("has FormCt1 root with correct namespace, currency, formversion and language", () => {
     const xml = buildCT1Xml(makeCT1Data(), ct1Options);
-    expect(xml).toContain('<FormCt1 xmlns="http://www.revenue.ie/schemas/ct1" currency="E" formversion="25">');
+    expect(xml).toContain('<FormCt1 xmlns="http://www.ros.ie/schemas/formct1/v25/"');
+    expect(xml).toContain('currency="E"');
+    expect(xml).toContain('formversion="25"');
+    expect(xml).toContain('language="EN"');
     expect(xml).toContain("</FormCt1>");
   });
 
-  it("maps trading income fields", () => {
+  it("includes CompanyDetails with referencenumber and companyname attributes", () => {
     const xml = buildCT1Xml(makeCT1Data(), ct1Options);
-    expect(xml).toContain("<TotalTradingIncome>100000</TotalTradingIncome>");
-    expect(xml).toContain("<AllowableDeductions>30000</AllowableDeductions>");
-    expect(xml).toContain("<TradingProfit>70000</TradingProfit>");
+    expect(xml).toContain('referencenumber="1234567T"');
+    expect(xml).toContain('companyname="Test Company Ltd"');
   });
 
-  it("includes CT computation", () => {
+  it("includes TradingResults with TradeProfits", () => {
     const xml = buildCT1Xml(makeCT1Data(), ct1Options);
-    expect(xml).toContain("<CTRate>12.5</CTRate>");
-    expect(xml).toContain("<TotalCTLiability>8750</TotalCTLiability>");
+    expect(xml).toContain('<TradeProfits profityear="70000"/>');
   });
 
-  it("calculates balance due correctly", () => {
+  it("includes SelfAssessmentCt with tax figures", () => {
     const xml = buildCT1Xml(makeCT1Data(), ct1Options);
-    // 8750 - 5000 - 0 = 3750
-    expect(xml).toContain("<BalanceDue>3750</BalanceDue>");
+    expect(xml).toContain('selfTaxCharge="8750"');
+    expect(xml).toContain('selfAmtTaxPaidDirect="5000"');
+    expect(xml).toContain('selfBalanceTaxPayable="3750"');
+    expect(xml).toContain('declareSelfAssessment="true"');
+  });
+
+  it("includes SummaryCalculation with totals", () => {
+    const xml = buildCT1Xml(makeCT1Data(), ct1Options);
+    expect(xml).toContain('tradingIncome="100000"');
+    expect(xml).toContain('totalIncome="100000"');
+    expect(xml).toContain('totalDeductions="30000"');
+    expect(xml).toContain('totalTax="8750"');
+    expect(xml).toContain('totalAmountPayable="3750"');
+  });
+
+  it("includes TaxableIncomeAtRate for 12.5% trading rate", () => {
+    const xml = buildCT1Xml(makeCT1Data(), ct1Options);
+    expect(xml).toContain('amountChargeableAtRate="70000"');
+    expect(xml).toContain('percentageRate="12.5"');
+    expect(xml).toContain('amountPayableAtRate="8750"');
+    expect(xml).toContain('taxIdentifier="Trading"');
   });
 
   it("omits close company surcharge when not applicable", () => {
@@ -284,14 +342,12 @@ describe("buildCT1Xml", () => {
     data.totalCTLiability = 10750; // 8750 CT + 2000 surcharge
     const xml = buildCT1Xml(data, { ...ct1Options, isCloseCompany: true });
     expect(xml).toContain("<CloseCompanySurcharge>");
-    expect(xml).toContain("<SurchargeApplicable>Y</SurchargeApplicable>");
-    expect(xml).toContain("<SurchargeAmount>2000</SurchargeAmount>");
+    expect(xml).toContain('section440="2000"');
   });
 
-  it("includes company identifiers", () => {
-    const xml = buildCT1Xml(makeCT1Data(), ct1Options);
-    expect(xml).toContain("<CompanyRegNo>123456</CompanyRegNo>");
-    expect(xml).toContain("<TaxRefNo>1234567T</TaxRefNo>");
+  it("supports custom language option", () => {
+    const xml = buildCT1Xml(makeCT1Data(), { ...ct1Options, language: "GA" });
+    expect(xml).toContain('language="GA"');
   });
 });
 
@@ -311,6 +367,7 @@ describe("generateCT1Xml", () => {
       periodEnd: "2024-12-31",
       companyRegNo: "123456",
       taxRefNo: "1234567T",
+      companyName: "Test Company Ltd",
       isCloseCompany: false,
     });
     expect(saveAs).toHaveBeenCalledWith(expect.any(Blob), "CT1_Test_Company_Ltd_2024.xml");
@@ -410,55 +467,62 @@ describe("buildForm11Xml", () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
   });
 
-  it("has Form11 root with formversion and period", () => {
+  it("has Form11 root with correct namespace, currency, formversion and language", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain('<Form11 xmlns="http://www.revenue.ie/schemas/form11" formversion="26"');
+    expect(xml).toContain('<Form11 xmlns="http://www.ros.ie/schemas/form11/v26/"');
+    expect(xml).toContain('currency="E"');
+    expect(xml).toContain('formversion="26"');
+    expect(xml).toContain('language="EN"');
     expect(xml).toContain('periodstart="01/01/2024"');
     expect(xml).toContain('periodend="31/12/2024"');
+    expect(xml).toContain("</Form11>");
   });
 
-  it("maps personal details correctly", () => {
+  it("includes Personal Details with attribute-based elements", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain("<PPSN>1234567T</PPSN>");
-    expect(xml).toContain("<FirstName>Alice</FirstName>");
-    expect(xml).toContain("<Surname>Murphy</Surname>");
-    expect(xml).toContain("<MaritalStatus>S</MaritalStatus>");
+    expect(xml).toContain('surname="Murphy"');
+    expect(xml).toContain('firstname="Alice"');
+    expect(xml).toContain('ppsnself="1234567T"');
   });
 
-  it("maps marital status codes", () => {
+  it("uses numeric marital status codes", () => {
     const data = makeForm11Data();
+    expect(buildForm11Xml(data)).toContain('status="1"');
+
     data.input.maritalStatus = "married";
-    expect(buildForm11Xml(data)).toContain("<MaritalStatus>M</MaritalStatus>");
+    expect(buildForm11Xml(data)).toContain('status="2"');
 
     data.input.maritalStatus = "civil_partner";
-    expect(buildForm11Xml(data)).toContain("<MaritalStatus>C</MaritalStatus>");
+    expect(buildForm11Xml(data)).toContain('status="3"');
 
     data.input.maritalStatus = "widowed";
-    expect(buildForm11Xml(data)).toContain("<MaritalStatus>W</MaritalStatus>");
+    expect(buildForm11Xml(data)).toContain('status="4"');
 
     data.input.maritalStatus = "separated";
-    expect(buildForm11Xml(data)).toContain("<MaritalStatus>P</MaritalStatus>");
+    expect(buildForm11Xml(data)).toContain('status="5"');
   });
 
-  it("includes PAYE section", () => {
+  it("includes Trade section with TradeInfo and TradeCapital", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain("<Salary>50000</Salary>");
-    expect(xml).toContain("<Dividends>5000</Dividends>");
-    expect(xml).toContain("<BenefitInKind>2000</BenefitInKind>");
-    expect(xml).toContain("<MileageAllowance>1200</MileageAllowance>");
+    expect(xml).toContain('tradeno="1"');
+    expect(xml).toContain('profityear="65000"');
+    expect(xml).toContain('adjustednetprofit="65000"');
+    expect(xml).toContain('machinery="5000"');
   });
 
-  it("includes trade section", () => {
+  it("includes Paye Employments with amtit", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain("<GrossIncome>100000</GrossIncome>");
-    expect(xml).toContain("<AllowableExpenses>30000</AllowableExpenses>");
-    expect(xml).toContain("<CapitalAllowances>5000</CapitalAllowances>");
-    expect(xml).toContain("<ScheduleD>65000</ScheduleD>");
+    expect(xml).toContain('amtit="57000"');
+  });
+
+  it("includes BenefitInKind", () => {
+    const xml = buildForm11Xml(makeForm11Data());
+    expect(xml).toContain('otheramtself="2000"');
   });
 
   it("omits rental section when no rental income", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).not.toContain("<RentalIncome>");
+    expect(xml).not.toContain("<Rental>");
   });
 
   it("includes rental section when rental income exists", () => {
@@ -467,9 +531,9 @@ describe("buildForm11Xml", () => {
     data.input.rentalExpenses = 3000;
     data.result.rentalProfit = 9000;
     const xml = buildForm11Xml(data);
-    expect(xml).toContain("<RentalIncome>");
-    expect(xml).toContain("<GrossRental>12000</GrossRental>");
-    expect(xml).toContain("<NetRentalProfit>9000</NetRentalProfit>");
+    expect(xml).toContain("<Rental>");
+    expect(xml).toContain('rentself="12000"');
+    expect(xml).toContain('netrentself="9000"');
   });
 
   it("omits CGT section when not applicable", () => {
@@ -481,44 +545,48 @@ describe("buildForm11Xml", () => {
     const data = makeForm11Data();
     data.result.cgtApplicable = true;
     data.result.cgtGains = 50000;
+    data.result.cgtLosses = 0;
+    data.result.cgtExemption = 1270;
     data.result.cgtPayable = 16091;
     const xml = buildForm11Xml(data);
     expect(xml).toContain("<CapitalGains>");
-    expect(xml).toContain("<TotalGains>50000</TotalGains>");
-    expect(xml).toContain("<CGTPayable>16091</CGTPayable>");
+    expect(xml).toContain('gainself="50000"');
+    expect(xml).toContain('chargeablegainself="48730"');
   });
 
-  it("includes income tax bands", () => {
+  it("includes charitable donations in ChargesDeductions", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain("<Amount>42000</Amount>");
-    expect(xml).toContain("<Rate>20.0</Rate>");
-    expect(xml).toContain("<Tax>8400</Tax>");
+    expect(xml).toContain('payment="500"');
   });
 
-  it("includes tax credits with name attribute", () => {
-    const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain('<Credit name="Personal">1875</Credit>');
-    expect(xml).toContain('<Credit name="PAYE">1875</Credit>');
-  });
-
-  it("includes USC section", () => {
-    const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain("<Exempt>N</Exempt>");
-    expect(xml).toContain("<TotalUSC>335</TotalUSC>");
-  });
-
-  it("marks USC exempt when applicable", () => {
+  it("uses empty ChargesDeductions when no donations", () => {
     const data = makeForm11Data();
-    data.result.uscExempt = true;
+    data.input.charitableDonations = 0;
     const xml = buildForm11Xml(data);
-    expect(xml).toContain("<Exempt>Y</Exempt>");
+    expect(xml).toContain("<ChargesDeductions/>");
   });
 
-  it("includes summary totals", () => {
+  it("includes SelfAssessmentIT with all tax figures", () => {
     const xml = buildForm11Xml(makeForm11Data());
-    expect(xml).toContain("<TotalLiability>35702</TotalLiability>");
-    expect(xml).toContain("<PreliminaryTaxPaid>15000</PreliminaryTaxPaid>");
-    expect(xml).toContain("<BalanceDue>20702</BalanceDue>");
+    expect(xml).toContain('selfamtincomeorprofit="112000"');
+    expect(xml).toContain('selfincometaxcharge="30775"');
+    expect(xml).toContain('selfusccharge="335"');
+    expect(xml).toContain('selfprsicharge="4592"');
+    expect(xml).toContain('selftotaltaxcharge="35702"');
+    expect(xml).toContain('selfamttaxpayable="35702"');
+    expect(xml).toContain('selfamttaxpaiddirect="15000"');
+    expect(xml).toContain('selfbalancetaxpayable="20702"');
+    expect(xml).toContain('declareselfassessment="true"');
+  });
+
+  it("includes SummaryCalculation Income breakdown", () => {
+    const xml = buildForm11Xml(makeForm11Data());
+    expect(xml).toContain("<SummaryCalculation>");
+    expect(xml).toContain("<Income>");
+    expect(xml).toContain('description="Trade 1"');
+    expect(xml).toContain('amount="65000"');
+    // Emoluments
+    expect(xml).toMatch(/Emoluments.*amount="57000"/);
   });
 });
 
@@ -641,10 +709,10 @@ describe("buildRCTXml", () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
   });
 
-  it("has FormRCT root element", () => {
+  it("has FormRCT root element with correct namespace", () => {
     const { summary, options } = makeRCTData();
     const xml = buildRCTXml(summary, options);
-    expect(xml).toContain("<FormRCT");
+    expect(xml).toContain('<FormRCT xmlns="http://www.ros.ie/schemas/rct/"');
     expect(xml).toContain("</FormRCT>");
   });
 

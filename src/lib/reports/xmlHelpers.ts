@@ -44,6 +44,16 @@ export function fmtRevDate(iso: string): string {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+/** Generate a self-closing XML element with attributes. Omits null/undefined values. */
+export function xmlEl(name: string, attrs: Record<string, string | number | boolean | null | undefined>): string {
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined) continue;
+    parts.push(`${k}="${escXml(String(v))}"`);
+  }
+  return parts.length ? `<${name} ${parts.join(" ")}/>` : "";
+}
+
 /** Trigger browser download of an XML string */
 export function saveXml(xml: string, filename: string): void {
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });

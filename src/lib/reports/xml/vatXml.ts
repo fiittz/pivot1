@@ -20,7 +20,7 @@ export function buildVATXml(data: VATReportData, options: VATXmlOptions): string
   const netVat = wholeEuro(data.netVat);
 
   return `${xmlDeclaration()}
-<VAT3 xmlns="http://www.revenue.ie/schemas/vat3" version="1.5">
+<VAT3 xmlns="http://www.ros.ie/schemas/vat3/" version="1.5">
   ${xmlTag("VATNumber", options.vatNumber)}
   ${xmlTag("PeriodStart", fmtRevDate(options.periodStart))}
   ${xmlTag("PeriodEnd", fmtRevDate(options.periodEnd))}
