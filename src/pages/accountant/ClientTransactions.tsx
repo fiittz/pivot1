@@ -156,14 +156,16 @@ const ClientTransactions = ({
 
   // Build receipt lookup map by transaction_id
   const receiptMap = useMemo(() => {
-    const map = new Map<string, { vendor_name: string | null; amount: number | null; receipt_date: string | null }>();
+    const map = new Map<string, { vendor_name: string | null; amount: number | null; receipt_date: string | null; purchase_description: string | null }>();
     for (const r of receipts as Record<string, unknown>[]) {
       const txId = r.transaction_id as string | null;
       if (txId) {
+        const ocr = r.ocr_data as Record<string, unknown> | null;
         map.set(txId, {
           vendor_name: r.vendor_name as string | null,
           amount: r.amount as number | null,
           receipt_date: r.receipt_date as string | null,
+          purchase_description: (ocr?.purchase_description as string | null) ?? null,
         });
       }
     }
@@ -523,6 +525,22 @@ const ClientTransactions = ({
           </div>
         </div>
       ),
+    },
+    {
+      id: "receipt_desc",
+      header: "Description",
+      width: "w-40",
+      accessorFn: (row) => {
+        const receipt = receiptMap.get(row.id);
+        if (!receipt?.purchase_description) {
+          return <span className="text-xs text-muted-foreground/40">{"\u2014"}</span>;
+        }
+        return (
+          <span className="text-xs text-muted-foreground truncate block">
+            {receipt.purchase_description}
+          </span>
+        );
+      },
     },
     {
       id: "net",
