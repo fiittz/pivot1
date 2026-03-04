@@ -307,7 +307,19 @@ serve(async (req) => {
       console.warn("Google OAuth credentials not set — skipping calendar sync");
     }
 
-    // Step 2: Send reminders
+    // Step 2: Fetch calendar settings for reminder toggles
+    const { data: calSettings } = await supabase
+      .from("calendar_settings")
+      .select("reminder_24h_enabled, reminder_1h_enabled, reminder_10m_enabled")
+      .single();
+
+    const reminderToggles: Record<string, boolean> = {
+      "24h": calSettings?.reminder_24h_enabled ?? true,
+      "1h": calSettings?.reminder_1h_enabled ?? true,
+      "10m": calSettings?.reminder_10m_enabled ?? true,
+    };
+
+    // Step 3: Send reminders
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY not configured");
       return new Response(
@@ -327,6 +339,12 @@ serve(async (req) => {
     ];
 
     for (const w of windows) {
+      // Skip this reminder type if disabled in settings
+      if (!reminderToggles[w.type]) {
+        console.log(`Skipping ${w.type} reminders (disabled in settings)`);
+        continue;
+      }
+
       const windowStart = new Date(now.getTime() + w.minMs * 60_000).toISOString();
       const windowEnd = new Date(now.getTime() + w.maxMs * 60_000).toISOString();
 

@@ -4,6 +4,7 @@ import AccountantsTab from "@/components/admin/AccountantsTab";
 import OverviewTab from "@/components/admin/OverviewTab";
 import PipelineTab from "@/components/admin/PipelineTab";
 import DemosTab from "@/components/admin/DemosTab";
+import CalendarTab from "@/components/admin/CalendarTab";
 
 export default function AdminDashboard() {
   return (
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="demos">Demos</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="accountants">Accountants</TabsTrigger>
             <TabsTrigger value="whitelist">Whitelist</TabsTrigger>
           </TabsList>
@@ -36,6 +38,9 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="demos" className="mt-6">
             <DemosTab />
+          </TabsContent>
+          <TabsContent value="calendar" className="mt-6">
+            <CalendarTab />
           </TabsContent>
           <TabsContent value="accountants" className="mt-6">
             <AccountantsTab />

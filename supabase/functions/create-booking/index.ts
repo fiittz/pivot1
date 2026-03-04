@@ -11,10 +11,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Availability rules (must match get-available-slots)
-const START_HOUR = 10;
-const END_HOUR = 17;
-const SLOT_MINUTES = 30;
 const TIMEZONE = "Europe/Dublin";
 
 function getDublinDay(date: Date): number {
@@ -212,27 +208,44 @@ serve(async (req) => {
       );
     }
 
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Fetch calendar settings from DB
+    const { data: settings, error: settingsError } = await supabase
+      .from("calendar_settings")
+      .select("*")
+      .single();
+
+    if (settingsError || !settings) {
+      console.error("Failed to load calendar settings:", settingsError);
+      return new Response(
+        JSON.stringify({ error: "Failed to load calendar settings" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Validate slot is within availability rules
     const dayOfWeek = getDublinDay(scheduledDate);
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    const availableDays: number[] = settings.available_days;
+    if (!availableDays.includes(dayOfWeek)) {
       return new Response(
-        JSON.stringify({ error: "Bookings are only available Monday to Friday" }),
+        JSON.stringify({ error: "Bookings are not available on this day" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const hour = getDublinHour(scheduledDate);
     const minute = getDublinMinute(scheduledDate);
-    if (hour < START_HOUR || hour >= END_HOUR) {
+    if (hour < settings.start_hour || hour >= settings.end_hour) {
       return new Response(
-        JSON.stringify({ error: "Slot is outside business hours (10:00–17:00)" }),
+        JSON.stringify({ error: `Slot is outside available hours (${settings.start_hour}:00–${settings.end_hour}:00)` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    if (minute % SLOT_MINUTES !== 0) {
+    if (minute % settings.slot_minutes !== 0) {
       return new Response(
-        JSON.stringify({ error: "Slots must be on 30-minute boundaries" }),
+        JSON.stringify({ error: `Slots must be on ${settings.slot_minutes}-minute boundaries` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -245,9 +258,7 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Rate limit: max 3 bookings per email per hour
+    // Rate limit: max bookings per email per hour (from settings)
     const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
     const { count, error: countError } = await supabase
       .from("demo_bookings")
@@ -257,7 +268,7 @@ serve(async (req) => {
 
     if (countError) {
       console.error("Rate limit check error:", countError);
-    } else if ((count ?? 0) >= 3) {
+    } else if ((count ?? 0) >= settings.rate_limit_per_hour) {
       return new Response(
         JSON.stringify({ error: "Too many bookings. Please try again later." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },

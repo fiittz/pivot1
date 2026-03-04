@@ -14,12 +14,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Availability: Mon–Fri, 10:00–17:00 Dublin time, 30-min slots
-const START_HOUR = 9;
-const END_HOUR = 21;
-const SLOT_MINUTES = 30;
-const LOOKAHEAD_DAYS = 20;
-const SAME_DAY_BUFFER_HOURS = 3;
 const TIMEZONE = "Europe/Dublin";
 
 function getDublinDate(date: Date): string {
@@ -149,6 +143,28 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Fetch calendar settings from DB
+    const { data: settings, error: settingsError } = await supabase
+      .from("calendar_settings")
+      .select("*")
+      .single();
+
+    if (settingsError || !settings) {
+      console.error("Failed to load calendar settings:", settingsError);
+      return new Response(
+        JSON.stringify({ error: "Failed to load calendar settings" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const START_HOUR = settings.start_hour;
+    const END_HOUR = settings.end_hour;
+    const SLOT_MINUTES = settings.slot_minutes;
+    const LOOKAHEAD_DAYS = settings.lookahead_days;
+    const SAME_DAY_BUFFER_HOURS = settings.same_day_buffer_hours;
+    const AVAILABLE_DAYS: number[] = settings.available_days;
+
     const now = new Date();
 
     const rangeStart = new Date(now);
@@ -203,7 +219,7 @@ serve(async (req) => {
       const date = new Date(now.getTime() + dayOffset * 24 * 60 * 60_000);
       const dayOfWeek = getDublinDay(date);
 
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      if (!AVAILABLE_DAYS.includes(dayOfWeek)) continue;
 
       const dateStr = getDublinDate(date);
       const daySlots: string[] = [];

@@ -61,6 +61,21 @@ export interface DemoBooking {
   created_at: string;
 }
 
+export interface CalendarSettings {
+  id: number;
+  start_hour: number;
+  end_hour: number;
+  slot_minutes: number;
+  lookahead_days: number;
+  same_day_buffer_hours: number;
+  available_days: number[];
+  rate_limit_per_hour: number;
+  reminder_24h_enabled: boolean;
+  reminder_1h_enabled: boolean;
+  reminder_10m_enabled: boolean;
+  updated_at: string;
+}
+
 // Display constants
 
 export const STAGE_LABELS: Record<CrmStage, string> = {
