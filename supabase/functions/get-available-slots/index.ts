@@ -15,8 +15,8 @@ const corsHeaders = {
 };
 
 // Availability: Mon–Fri, 10:00–17:00 Dublin time, 30-min slots
-const START_HOUR = 10;
-const END_HOUR = 17;
+const START_HOUR = 9;
+const END_HOUR = 21;
 const SLOT_MINUTES = 30;
 const LOOKAHEAD_DAYS = 20;
 const SAME_DAY_BUFFER_HOURS = 3;
