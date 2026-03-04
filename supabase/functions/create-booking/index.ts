@@ -108,7 +108,7 @@ function buildConfirmationEmail(name: string, scheduledAt: string, meetingUrl: s
                 Or copy this link: <a href="${meetingUrl}" style="color:#E8930C;word-break:break-all;">${meetingUrl}</a>
               </p>
               <p style="margin:20px 0 0;color:#333;font-size:15px;line-height:1.6;">
-                We'll send you reminders before the call. If you need to reschedule, visit <a href="https://balnce.ie/demo" style="color:#E8930C;font-weight:600;">balnce.ie/demo</a>.
+                We'll send you reminders before the call. If you need to reschedule, visit <a href="https://app.balnce.ie/demo" style="color:#E8930C;font-weight:600;">app.balnce.ie/demo</a>.
               </p>
               <p style="margin:16px 0 0;color:#333;font-size:15px;line-height:1.6;">
                 Looking forward to meeting you!<br>

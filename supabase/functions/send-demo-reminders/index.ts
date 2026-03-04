@@ -249,7 +249,7 @@ function buildReminderEmail(
                     </a>
                   </td>
                   <td align="center" style="padding:0 4px;">
-                    <a href="https://balnce.ie/demo" style="display:inline-block;padding:12px 28px;background:#6b7280;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;letter-spacing:0.5px;">
+                    <a href="https://app.balnce.ie/demo" style="display:inline-block;padding:12px 28px;background:#6b7280;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;letter-spacing:0.5px;">
                       Reschedule
                     </a>
                   </td>
