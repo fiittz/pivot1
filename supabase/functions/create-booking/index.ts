@@ -54,7 +54,7 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function buildConfirmationEmail(name: string, scheduledAt: string): string {
+function buildConfirmationEmail(name: string, scheduledAt: string, meetingUrl: string): string {
   const dateStr = formatDateTime(scheduledAt);
   return `<!DOCTYPE html>
 <html lang="en">
@@ -95,10 +95,22 @@ function buildConfirmationEmail(name: string, scheduledAt: string): string {
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 20px;color:#333;font-size:15px;line-height:1.6;">
-                We'll send you a meeting link and reminders before the call. If you need to reschedule, visit <a href="https://balnce.ie/demo" style="color:#E8930C;font-weight:600;">balnce.ie/demo</a>.
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 28px;">
+                    <a href="${meetingUrl}" style="display:inline-block;padding:14px 40px;background:#E8930C;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;letter-spacing:0.5px;">
+                      Join Meeting
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;color:#999;font-size:13px;line-height:1.6;">
+                Or copy this link: <a href="${meetingUrl}" style="color:#E8930C;word-break:break-all;">${meetingUrl}</a>
               </p>
-              <p style="margin:0;color:#333;font-size:15px;line-height:1.6;">
+              <p style="margin:20px 0 0;color:#333;font-size:15px;line-height:1.6;">
+                We'll send you reminders before the call. If you need to reschedule, visit <a href="https://balnce.ie/demo" style="color:#E8930C;font-weight:600;">balnce.ie/demo</a>.
+              </p>
+              <p style="margin:16px 0 0;color:#333;font-size:15px;line-height:1.6;">
                 Looking forward to meeting you!<br>
                 <strong>Jamie</strong>, Balnce
               </p>
@@ -117,6 +129,42 @@ function buildConfirmationEmail(name: string, scheduledAt: string): string {
   </table>
 </body>
 </html>`;
+}
+
+function buildIcsCalendarInvite(
+  bookingId: string,
+  name: string,
+  email: string,
+  scheduledAt: string,
+  meetingUrl: string,
+): string {
+  const start = new Date(scheduledAt);
+  const end = new Date(start.getTime() + 30 * 60_000);
+
+  const fmt = (d: Date) =>
+    d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+  const now = fmt(new Date());
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Balnce//Demo Booking//EN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${bookingId}@balnce.ie`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:Balnce Demo — ${name}`,
+    `DESCRIPTION:Demo with ${name} (${email})\\nJoin: ${meetingUrl}`,
+    `URL:${meetingUrl}`,
+    `ORGANIZER;CN=Jamie Fitzgerald:mailto:jamie@balnce.ie`,
+    `ATTENDEE;CN=${name}:mailto:${email}`,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
 }
 
 serve(async (req) => {
@@ -236,6 +284,10 @@ serve(async (req) => {
       );
     }
 
+    // Generate Jitsi meeting link
+    const roomId = crypto.randomUUID().slice(0, 8);
+    const meetingUrl = `https://meet.jit.si/balnce-demo-${roomId}`;
+
     // Insert booking
     const { data: booking, error: insertError } = await supabase
       .from("demo_bookings")
@@ -244,6 +296,7 @@ serve(async (req) => {
         invitee_email: email.toLowerCase().trim(),
         scheduled_at: scheduledDate.toISOString(),
         google_event_id: null,
+        meeting_url: meetingUrl,
         summary: "Balnce Demo",
       })
       .select("id")
@@ -257,10 +310,15 @@ serve(async (req) => {
       );
     }
 
-    // Send confirmation email via Resend
+    // Send emails via Resend
     if (RESEND_API_KEY) {
+      const isoStr = scheduledDate.toISOString();
+      const trimmedName = name.trim();
+      const trimmedEmail = email.toLowerCase().trim();
+
+      // 1. Confirmation email to prospect (with meeting link)
       try {
-        const html = buildConfirmationEmail(name.trim(), scheduledDate.toISOString());
+        const html = buildConfirmationEmail(trimmedName, isoStr, meetingUrl);
         const resendRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -270,20 +328,64 @@ serve(async (req) => {
           body: JSON.stringify({
             from: "Jamie from Balnce <jamie@balnce.ie>",
             reply_to: "jamie@balnce.ie",
-            to: [email.toLowerCase().trim()],
-            subject: `Your Balnce demo is booked — ${formatDateTime(scheduledDate.toISOString())}`,
+            to: [trimmedEmail],
+            subject: `Your Balnce demo is booked — ${formatDateTime(isoStr)}`,
             html,
           }),
         });
 
         if (!resendRes.ok) {
           const errText = await resendRes.text();
-          console.error("Resend error:", resendRes.status, errText);
+          console.error("Resend error (prospect):", resendRes.status, errText);
         } else {
-          console.log(`Confirmation email sent to ${email}`);
+          console.log(`Confirmation email sent to ${trimmedEmail}`);
         }
       } catch (emailErr) {
-        console.error("Email send error:", emailErr);
+        console.error("Email send error (prospect):", emailErr);
+      }
+
+      // 2. Calendar invite (.ics) to Jamie via Titan
+      try {
+        const icsContent = buildIcsCalendarInvite(
+          booking.id,
+          trimmedName,
+          trimmedEmail,
+          isoStr,
+          meetingUrl,
+        );
+        const icsBase64 = btoa(icsContent);
+
+        const resendRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Balnce Bookings <jamie@balnce.ie>",
+            to: ["jamie@balnce.ie"],
+            subject: `New demo booked: ${trimmedName} — ${formatDateTime(isoStr)}`,
+            html: `<p><strong>${trimmedName}</strong> (${trimmedEmail}) booked a Balnce demo.</p>
+<p><strong>When:</strong> ${formatDateTime(isoStr)}</p>
+<p><strong>Meeting:</strong> <a href="${meetingUrl}">${meetingUrl}</a></p>`,
+            attachments: [
+              {
+                filename: "invite.ics",
+                content: icsBase64,
+                content_type: "text/calendar; method=PUBLISH",
+              },
+            ],
+          }),
+        });
+
+        if (!resendRes.ok) {
+          const errText = await resendRes.text();
+          console.error("Resend error (ics):", resendRes.status, errText);
+        } else {
+          console.log(`Calendar invite sent to jamie@balnce.ie`);
+        }
+      } catch (icsErr) {
+        console.error("ICS email error:", icsErr);
       }
     }
 
