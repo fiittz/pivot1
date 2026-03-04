@@ -45,3 +45,15 @@ verify_jwt = true
 
 [functions.store-filing-xml]
 verify_jwt = true
+
+[functions.send-demo-reminders]
+verify_jwt = false
+
+[functions.confirm-demo]
+verify_jwt = false
+
+[functions.get-available-slots]
+verify_jwt = false
+
+[functions.create-booking]
+verify_jwt = false

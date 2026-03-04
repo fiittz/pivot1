@@ -63,6 +63,7 @@ const TripClaimsManager = lazyWithRetry(() => import("./pages/TripClaimsManager"
 const ProfitAndLoss = lazyWithRetry(() => import("./pages/ProfitAndLoss"));
 const AgedDebtors = lazyWithRetry(() => import("./pages/AgedDebtors"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
+const BookDemo = lazyWithRetry(() => import("./pages/BookDemo"));
 
 // Admin pages (lazy-loaded)
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"));
@@ -96,6 +97,7 @@ const App = () => (
                     <Routes>
                       <Route path="/" element={<Welcome />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/demo" element={<BookDemo />} />
                       <Route
                         path="/onboarding"
                         element={
