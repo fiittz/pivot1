@@ -1,6 +1,5 @@
 import { useMyDocumentRequests } from "@/hooks/accountant/useDocumentRequests";
 import { Card, CardContent } from "@/components/ui/card";
-import { FolderSearch } from "lucide-react";
 
 /**
  * Banner shown on the business owner's dashboard when their accountant
@@ -15,10 +14,7 @@ export function DocumentRequestsBanner() {
   return (
     <Card className="border-[#E8930C]/30 bg-[#E8930C]/5">
       <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#E8930C]/10 flex items-center justify-center shrink-0">
-            <FolderSearch className="w-5 h-5 text-[#E8930C]" />
-          </div>
+        <div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-foreground">
               Your accountant needs {requests.length} document{requests.length !== 1 ? "s" : ""}

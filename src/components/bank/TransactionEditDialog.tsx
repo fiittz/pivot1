@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, MessageSquare, BookOpen, Camera } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useReceiptUrl } from "@/hooks/useReceiptUrl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -100,10 +100,7 @@ export default function TransactionEditDialog({ transaction, open, onOpenChange 
 
           {/* Receipt */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Camera className="w-4 h-4" />
-              Receipt
-            </Label>
+            <Label className="text-sm font-medium">Receipt</Label>
             {transaction.receipt_url ? (
               signedReceiptUrl ? (
                 <a href={signedReceiptUrl} target="_blank" rel="noopener noreferrer" className="block">
@@ -126,10 +123,7 @@ export default function TransactionEditDialog({ transaction, open, onOpenChange 
 
           {/* Account Selection */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Accounting Code
-            </Label>
+            <Label className="text-sm font-medium">Accounting Code</Label>
             <Select
               value={accountId || "unassigned"}
               onValueChange={(v) => setAccountId(v === "unassigned" ? null : v)}
@@ -179,10 +173,7 @@ export default function TransactionEditDialog({ transaction, open, onOpenChange 
 
           {/* Notes */}
           <div className="space-y-3">
-            <Label htmlFor="notes" className="text-sm font-medium flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Accounting Notes
-            </Label>
+            <Label htmlFor="notes" className="text-sm font-medium">Accounting Notes</Label>
             <Textarea
               id="notes"
               placeholder="Add a comment for accounting purposes..."

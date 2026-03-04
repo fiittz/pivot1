@@ -805,9 +805,8 @@ export default function ChatWidget() {
                     setLastToolUsed(null);
                     setShowHistory(false);
                   }}
-                  className="w-full text-left px-3 py-2.5 text-xs border-b border-border/50 hover:bg-muted/50 transition-colors flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium"
+                  className="w-full text-left px-3 py-2.5 text-xs border-b border-border/50 hover:bg-muted/50 transition-colors text-blue-600 dark:text-blue-400 font-medium"
                 >
-                  <MessageSquarePlus className="w-3.5 h-3.5" />
                   New chat
                 </button>
                 {conversations.map((convo) => (

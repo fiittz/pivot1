@@ -1,4 +1,3 @@
-import { Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -52,10 +51,7 @@ export function RevenueCalendar() {
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-5">
-          <Calendar className="w-5 h-5 text-muted-foreground" />
-          <h3 className="font-bold text-lg">Revenue Calendar</h3>
-        </div>
+        <h3 className="font-bold text-lg mb-5">Revenue Calendar</h3>
 
         <div className="space-y-4">
           {annualSchedule.map((q) => (

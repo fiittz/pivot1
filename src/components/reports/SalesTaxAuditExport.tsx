@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, FileSpreadsheet, Calendar } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -108,10 +108,7 @@ export function SalesTaxAuditExport({ variant = "outline", size = "default", cla
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
-            Sales Tax Audit Report
-          </DialogTitle>
+          <DialogTitle>Sales Tax Audit Report</DialogTitle>
           <DialogDescription>
             Export your transactions grouped by VAT rate for accounting purposes. This report follows the standard Irish
             VAT audit format.
@@ -152,8 +149,7 @@ export function SalesTaxAuditExport({ variant = "outline", size = "default", cla
           </div>
 
           <div className="bg-muted/50 rounded-lg p-3 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Calendar className="w-4 h-4" />
+            <div className="text-muted-foreground mb-1">
               Selected Period
             </div>
             <div className="font-medium">

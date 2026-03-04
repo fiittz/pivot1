@@ -13,7 +13,7 @@ import {
 } from "@/hooks/accountant/useDirectMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Send, Loader2, MessageSquare } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface ClientMessagesTabProps {
@@ -93,10 +93,7 @@ export default function ClientMessagesTab({ accountantClientId }: ClientMessages
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-base">Messages</CardTitle>
-          </div>
+          <CardTitle className="text-base">Messages</CardTitle>
           {unreadCount && unreadCount > 0 ? (
             <Badge variant="destructive" className="text-xs">
               {unreadCount} unread

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Loader2, X, FileText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -223,10 +223,7 @@ export function VATFinalisationWizard({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              VAT Finalisation — {periodLabel}
-            </DialogTitle>
+            <DialogTitle>VAT Finalisation — {periodLabel}</DialogTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
@@ -297,9 +294,7 @@ export function VATFinalisationWizard({
             >
               {finaliseReturn.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <ShieldCheck className="w-4 h-4 mr-2" />
-              )}
+              ) : null}
               Finalise VAT Return
             </Button>
           )}

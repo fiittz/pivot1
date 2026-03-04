@@ -1,7 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, ShieldCheck, Lock } from "lucide-react";
 import { VATWizardData } from "@/hooks/useVATWizard";
 
 interface ComplianceSectionProps {
@@ -21,17 +20,14 @@ export function ComplianceSection({ data, onUpdate }: ComplianceSectionProps) {
 
       {/* Flagged Transactions Review */}
       <div className="p-4 border rounded-lg space-y-3">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
-          <div className="flex-1">
-            <Label className="text-base font-medium">Flagged Transactions Review</Label>
-            <p className="text-sm text-muted-foreground mt-1">
-              You must confirm that you have reviewed all transactions that were flagged for attention during this VAT
-              period.
-            </p>
-          </div>
+        <div>
+          <Label className="text-base font-medium">Flagged Transactions Review</Label>
+          <p className="text-sm text-muted-foreground mt-1">
+            You must confirm that you have reviewed all transactions that were flagged for attention during this VAT
+            period.
+          </p>
         </div>
-        <div className="flex items-center space-x-2 ml-8">
+        <div className="flex items-center space-x-2">
           <Checkbox
             id="reviewed-flagged"
             checked={data.reviewed_flagged_transactions}
@@ -45,16 +41,13 @@ export function ComplianceSection({ data, onUpdate }: ComplianceSectionProps) {
 
       {/* Accuracy Confirmation */}
       <div className="p-4 border rounded-lg space-y-3">
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-green-600 mt-0.5" />
-          <div className="flex-1">
-            <Label className="text-base font-medium">Accuracy Confirmation</Label>
-            <p className="text-sm text-muted-foreground mt-1">
-              Confirm that the VAT calculations are accurate to the best of your knowledge.
-            </p>
-          </div>
+        <div>
+          <Label className="text-base font-medium">Accuracy Confirmation</Label>
+          <p className="text-sm text-muted-foreground mt-1">
+            Confirm that the VAT calculations are accurate to the best of your knowledge.
+          </p>
         </div>
-        <div className="flex items-center space-x-2 ml-8">
+        <div className="flex items-center space-x-2">
           <Checkbox
             id="confirm-accuracy"
             checked={data.confirm_accuracy}
@@ -68,17 +61,14 @@ export function ComplianceSection({ data, onUpdate }: ComplianceSectionProps) {
 
       {/* Period Lock */}
       <div className="p-4 border rounded-lg space-y-3">
-        <div className="flex items-start gap-3">
-          <Lock className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div className="flex-1">
-            <Label className="text-base font-medium">Lock VAT Period</Label>
-            <p className="text-sm text-muted-foreground mt-1">
-              Locking the period will prevent any further edits to transactions within this VAT period. This is
-              recommended once you've filed your return.
-            </p>
-          </div>
+        <div>
+          <Label className="text-base font-medium">Lock VAT Period</Label>
+          <p className="text-sm text-muted-foreground mt-1">
+            Locking the period will prevent any further edits to transactions within this VAT period. This is
+            recommended once you've filed your return.
+          </p>
         </div>
-        <div className="flex items-center space-x-2 ml-8">
+        <div className="flex items-center space-x-2">
           <Checkbox
             id="lock-period"
             checked={data.lock_period}

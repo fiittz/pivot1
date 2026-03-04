@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, ChevronDown, ChevronUp, Calendar, Info, FileText, Route } from "lucide-react";
+import { ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { DetectedTrip } from "@/lib/tripDetection";
@@ -87,12 +87,10 @@ const TripReviewPanel = ({
                 <Checkbox checked={isSelected} onCheckedChange={() => toggle(trip.id)} disabled={isProcessing} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                      <MapPin className="w-3 h-3" />
+                    <span className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
                       {trip.location}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
+                    <span className="text-xs text-muted-foreground">
                       {formatDate(trip.startDate, trip.endDate)}
                     </span>
                   </div>
@@ -105,13 +103,11 @@ const TripReviewPanel = ({
                     if (!match) return null;
                     return (
                       <div className="mt-1.5 space-y-1">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                          <FileText className="w-3 h-3" />
+                        <span className="inline-flex items-center px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                           Linked to {match.invoiceNumber} — {match.jobLocation} job
                         </span>
                         {match.suggestedSubsistence.allowance > 0 && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Info className="w-3 h-3" />
+                          <p className="text-xs text-muted-foreground">
                             Subsistence:{" "}
                             {match.suggestedSubsistence.nights > 0
                               ? `${match.suggestedSubsistence.nights} night${match.suggestedSubsistence.nights > 1 ? "s" : ""} @ €191 = ${formatCurrency(match.suggestedSubsistence.allowance)}`
@@ -119,8 +115,7 @@ const TripReviewPanel = ({
                           </p>
                         )}
                         {match.suggestedMileage.distanceKm > 0 && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Route className="w-3 h-3" />
+                          <p className="text-xs text-muted-foreground">
                             Mileage: {match.suggestedMileage.distanceKm} km @{" "}
                             {formatCurrency(match.suggestedMileage.allowance)}
                           </p>

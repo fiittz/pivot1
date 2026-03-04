@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ShieldCheck } from "lucide-react";
 
 interface FilingApprovalDialogProps {
   open: boolean;
@@ -46,10 +45,7 @@ export function FilingApprovalDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) { setConfirmed(false); setNotes(""); } onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#E8930C]" />
-            <DialogTitle>Approve Filing</DialogTitle>
-          </div>
+          <DialogTitle>Approve Filing</DialogTitle>
           <DialogDescription>
             You are approving the {filingLabel} return for{" "}
             <strong>{clientName}</strong> covering the period{" "}

@@ -1,6 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ClientStatusBadge } from "./ClientStatusBadge";
-import { Mail, Phone, Building2 } from "lucide-react";
 import type { AccountantClient, ClientStatus } from "@/types/accountant";
 
 interface ClientCardProps {
@@ -36,21 +35,12 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
             </div>
 
             <div className="mt-1.5 space-y-1 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{client.client_email}</span>
-              </div>
+              <span className="truncate block">{client.client_email}</span>
               {client.client_business_name && (
-                <div className="flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{client.client_business_name}</span>
-                </div>
+                <span className="truncate block">{client.client_business_name}</span>
               )}
               {client.client_phone && (
-                <div className="flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 shrink-0" />
-                  <span>{client.client_phone}</span>
-                </div>
+                <span>{client.client_phone}</span>
               )}
             </div>
           </div>

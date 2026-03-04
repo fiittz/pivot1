@@ -12,7 +12,6 @@ import {
   User,
   HelpCircle,
   Brain,
-  MessageSquare,
   Pencil,
   Camera,
 } from "lucide-react";
@@ -204,8 +203,7 @@ export default function AccountLedgerSection({
                   )}
                 </div>
                 {transaction.notes && (
-                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
-                    <MessageSquare className="w-3 h-3 shrink-0" />
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {transaction.notes}
                   </p>
                 )}
