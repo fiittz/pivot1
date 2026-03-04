@@ -372,7 +372,6 @@ serve(async (req) => {
               {
                 filename: "invite.ics",
                 content: icsBase64,
-                content_type: "text/calendar; method=PUBLISH",
               },
             ],
           }),
