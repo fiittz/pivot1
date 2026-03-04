@@ -57,3 +57,6 @@ verify_jwt = false
 
 [functions.create-booking]
 verify_jwt = false
+
+[functions.crm-briefing]
+verify_jwt = false
