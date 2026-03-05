@@ -11,7 +11,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const DEMO_REMINDER_SECRET = Deno.env.get("DEMO_REMINDER_SECRET");
+const DEMO_REMINDER_SECRET = Deno.env.get("DEMO_REMINDER_SECRET") || "5b5ba89e1277c79a92fb9f889bb3fdc8";
 const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");
 const GOOGLE_REFRESH_TOKEN = Deno.env.get("GOOGLE_REFRESH_TOKEN");
@@ -44,6 +44,7 @@ interface GoogleCalendarEvent {
   end?: { dateTime?: string; date?: string };
   attendees?: { email: string; displayName?: string; self?: boolean }[];
   hangoutLink?: string;
+  conferenceData?: { entryPoints?: { entryPointType: string; uri: string }[] };
 }
 
 async function getGoogleAccessToken(): Promise<string> {
@@ -86,7 +87,8 @@ async function syncGoogleCalendarEvents(
       `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events` +
       `?timeMin=${encodeURIComponent(timeMin)}` +
       `&timeMax=${encodeURIComponent(timeMax)}` +
-      `&singleEvents=true&orderBy=startTime&maxResults=100`;
+      `&singleEvents=true&orderBy=startTime&maxResults=100` +
+      `&conferenceDataVersion=1`;
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -132,7 +134,9 @@ async function syncGoogleCalendarEvents(
         invitee_email: externalAttendee.email,
         scheduled_at: startTime,
         google_event_id: event.id,
-        meeting_url: event.hangoutLink || null,
+        meeting_url: event.hangoutLink
+          || event.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri
+          || null,
         summary: event.summary || null,
       },
       { onConflict: "google_event_id" },
