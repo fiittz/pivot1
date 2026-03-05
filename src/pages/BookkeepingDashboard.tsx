@@ -10,6 +10,7 @@ import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { WidgetCustomizeSheet } from "@/components/dashboard/WidgetCustomizeSheet";
 import { DeadlinesWidget } from "@/components/dashboard/DeadlinesWidget";
 import { DocumentRequestsBanner } from "@/components/dashboard/DocumentRequestsBanner";
+import { InboundEmailCard } from "@/components/dashboard/InboundEmailCard";
 
 const BookkeepingDashboard = () => {
   const navigate = useNavigate();
@@ -413,6 +414,9 @@ const BookkeepingDashboard = () => {
             </div>
           </DashboardWidget>
         </div>
+
+        {/* Inbound Email Address */}
+        <InboundEmailCard />
 
         {/* Quick Uploads */}
         <div className="bg-card rounded-xl p-5 border flex flex-col md:flex-row items-center justify-between gap-4">

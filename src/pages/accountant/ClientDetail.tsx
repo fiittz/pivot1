@@ -28,7 +28,10 @@ import {
   Loader2,
   User,
   Wallet,
+  Inbox,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 
 type TaxView = "ct1" | "form11";
 
@@ -52,6 +55,12 @@ const ClientDetail = () => {
 
   const businessName = onboarding?.company_name ?? profile?.full_name ?? "Client";
   const email = profile?.email ?? "";
+
+  // Build the client's inbound email address
+  const inboundEmailCode = accountantClient?.inbound_email_code;
+  const inboundEmail = inboundEmailCode
+    ? `${(accountantClient?.client_name || "client").toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}-${inboundEmailCode}@in.balnce.ie`
+    : null;
 
   // Show toggle only when client has both company and personal tax accounts
   const hasBothAccountTypes = useMemo(() => {
@@ -112,6 +121,21 @@ const ClientDetail = () => {
                 <span className="flex items-center gap-1">
                   <Wallet className="w-3.5 h-3.5" /> {accounts.length} account{accounts.length !== 1 ? "s" : ""}
                 </span>
+              )}
+              {inboundEmail && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inboundEmail);
+                    toast.success("Inbound email copied");
+                  }}
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                  title="Click to copy inbound email"
+                >
+                  <Inbox className="w-3.5 h-3.5" />
+                  <span className="font-mono text-xs">{inboundEmail}</span>
+                  <Copy className="w-3 h-3" />
+                </button>
               )}
             </div>
           </div>
