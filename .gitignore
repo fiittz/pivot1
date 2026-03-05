@@ -52,3 +52,10 @@ ios/App/Pods/
 ios/DerivedData/
 *.keystore
 *.jks
+
+# Local assets and utility scripts
+Balnce_Investor_Deck.pptx
+penguin-logo.png
+get-token.html
+build_cashflow.py
+build_deck.py
