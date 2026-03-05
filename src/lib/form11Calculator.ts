@@ -3,6 +3,8 @@
 // Pure TypeScript, zero React / Supabase dependencies
 // ──────────────────────────────────────────────────────────────
 
+import { roundCent } from "@/lib/calc";
+
 // ── Tax Constants by Year ────────────────────────────────────
 // Source: Revenue.ie, Finance Acts 2023-2025
 
@@ -396,7 +398,7 @@ function calculateCredits(input: Form11Input, constants: TaxConstants): CreditLi
   if (input.medicalExpenses > 0) {
     lines.push({
       label: "Medical Expenses (20%)",
-      amount: Math.round(input.medicalExpenses * constants.medicalReliefRate * 100) / 100,
+      amount: roundCent(input.medicalExpenses * constants.medicalReliefRate),
     });
   }
 
@@ -412,7 +414,7 @@ function calculateCredits(input: Form11Input, constants: TaxConstants): CreditLi
   // Remote working — 30% of costs at marginal rate (treated as credit here)
   if (input.remoteWorkingCosts > 0) {
     const relief = input.remoteWorkingCosts * constants.remoteWorkingRate;
-    lines.push({ label: "Remote Working Relief (30%)", amount: Math.round(relief * 100) / 100 });
+    lines.push({ label: "Remote Working Relief (30%)", amount: roundCent(relief) });
   }
 
   return lines;
@@ -435,7 +437,7 @@ function calculateUSC(totalIncome: number, constants: TaxConstants): { bands: Ta
       label: `USC ${(band.rate * 100).toFixed(1)}%`,
       amount: taxable,
       rate: band.rate,
-      tax: Math.round(taxable * band.rate * 100) / 100,
+      tax: roundCent(taxable * band.rate),
     });
     remaining -= taxable;
   }
@@ -453,8 +455,8 @@ function calculatePRSI(assessableIncome: number, constants: TaxConstants) {
 
   return {
     assessable: assessableIncome,
-    calculated: Math.round(calculated * 100) / 100,
-    payable: Math.round(payable * 100) / 100,
+    calculated: roundCent(calculated),
+    payable: roundCent(payable),
   };
 }
 
@@ -470,7 +472,7 @@ function calculateCGT(input: Form11Input, constants: TaxConstants) {
     gains: input.capitalGains,
     losses: input.capitalLosses,
     exemption: constants.cgt.annualExemption,
-    payable: Math.round(taxable * constants.cgt.rate * 100) / 100,
+    payable: roundCent(taxable * constants.cgt.rate),
   };
 }
 
@@ -478,7 +480,7 @@ function calculateCGT(input: Form11Input, constants: TaxConstants) {
 export function calculateVehicleBIK(omv: number, businessKm: number, taxYear?: number): number {
   const constants = taxYear ? getTaxConstants(taxYear) : TAX_CONSTANTS;
   const band = constants.vehicleBIKBands.find((b) => businessKm <= b.maxKm)!;
-  return Math.round(omv * band.rate * 100) / 100;
+  return roundCent(omv * band.rate);
 }
 
 // ── Main Calculator ──────────────────────────────────────────
@@ -563,8 +565,8 @@ export function calculateForm11(input: Form11Input, taxYear?: number): Form11Res
   const cgt = calculateCGT(input, constants);
 
   // 8. Summary
-  const totalLiability = Math.round((netIncomeTax + totalUSC + prsi.payable + cgt.payable) * 100) / 100;
-  const balanceDue = Math.round((totalLiability - input.preliminaryTaxPaid) * 100) / 100;
+  const totalLiability = roundCent(netIncomeTax + totalUSC + prsi.payable + cgt.payable);
+  const balanceDue = roundCent(totalLiability - input.preliminaryTaxPaid);
 
   if (balanceDue < 0) {
     notes.push("Overpayment detected — you may be due a refund.");
@@ -592,16 +594,16 @@ export function calculateForm11(input: Form11Input, taxYear?: number): Form11Res
 
     // Income tax
     incomeTaxBands,
-    grossIncomeTax: Math.round(grossIncomeTax * 100) / 100,
+    grossIncomeTax: roundCent(grossIncomeTax),
 
     // Credits
     credits: creditLines,
     totalCredits,
-    netIncomeTax: Math.round(netIncomeTax * 100) / 100,
+    netIncomeTax: roundCent(netIncomeTax),
 
     // USC
     uscBands: usc.bands,
-    totalUSC: Math.round(totalUSC * 100) / 100,
+    totalUSC: roundCent(totalUSC),
     uscExempt: usc.exempt,
 
     // PRSI

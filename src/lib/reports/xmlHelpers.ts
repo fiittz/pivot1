@@ -1,4 +1,5 @@
 import { saveAs } from "file-saver";
+export { wholeEuro, centEuro, fmtRevDate } from "../calc";
 
 /** Escape XML special characters */
 export function escXml(str: string): string {
@@ -23,25 +24,6 @@ export function xmlTag(name: string, value: string | number | null | undefined, 
 /** Standard XML declaration */
 export function xmlDeclaration(): string {
   return `<?xml version="1.0" encoding="UTF-8"?>`;
-}
-
-/** Round to whole euro (Revenue uses integers for most monetary fields) */
-export function wholeEuro(n: number): number {
-  return Math.round(n);
-}
-
-/** Format to cent precision (RCT uses cent precision) */
-export function centEuro(n: number): string {
-  return n.toFixed(2);
-}
-
-/** Convert ISO date string to DD/MM/YYYY for Revenue */
-export function fmtRevDate(iso: string): string {
-  const d = new Date(iso);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
 }
 
 /** Generate a self-closing XML element with attributes. Omits null/undefined values. */
