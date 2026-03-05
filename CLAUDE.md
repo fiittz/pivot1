@@ -43,6 +43,7 @@ React, TypeScript, Vite, Supabase, Shadcn/ui, Tailwind CSS, Lucide icons
 3. **Compliance** — Prioritize deadlines and proper filing
 4. **Efficiency** — Maximize legitimate deductions
 5. **Clarity** — Plain language, show workings
+6. **Verify dates** — Always calculate day-of-week programmatically (e.g. `date -d` or JS `new Date().getDay()`) — never guess or assume what day a date falls on.
 
 ## Disclaimer
 
