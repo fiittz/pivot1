@@ -247,12 +247,32 @@ export function useClientProfile(clientUserId: string | null | undefined) {
 
 // ────────────────────────────────────────────
 // Update Transaction Category (mutation)
+// Records accountant correction for the learning system.
 // ────────────────────────────────────────────
 export function useUpdateTransactionCategory(clientUserId: string | null | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { transactionId: string; categoryId: string }) => {
+    mutationFn: async (input: {
+      transactionId: string;
+      categoryId: string;
+      /** Context needed for the learning system (optional — correction skipped if missing) */
+      correctionContext?: {
+        accountantId: string;
+        practiceId: string;
+        accountantClientId: string;
+        transactionDescription: string;
+        transactionAmount: number | null;
+        transactionType: string | null;
+        originalCategory: string | null;
+        originalCategoryId: string | null;
+        correctedCategory: string;
+        originalVatRate: number | null;
+        correctedVatRate: number | null;
+        clientIndustry: string | null;
+        clientBusinessType: string | null;
+      };
+    }) => {
       const { data, error } = await supabase
         .from("transactions")
         .update({ category_id: input.categoryId })
@@ -261,6 +281,21 @@ export function useUpdateTransactionCategory(clientUserId: string | null | undef
         .single();
 
       if (error) throw error;
+
+      // Fire-and-forget: record the accountant correction for the learning system
+      if (input.correctionContext && clientUserId) {
+        const { recordAccountantCorrection } = await import(
+          "@/services/accountantCorrectionService"
+        );
+        recordAccountantCorrection({
+          ...input.correctionContext,
+          clientUserId,
+          correctedCategoryId: input.categoryId,
+        }).catch((err: unknown) =>
+          console.error("[AccountantCorrection] Failed:", err),
+        );
+      }
+
       return data;
     },
     onSuccess: () => {

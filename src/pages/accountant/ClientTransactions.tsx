@@ -42,10 +42,12 @@ import {
   useClientCategories,
   useClientReceipts,
   useClientInvoices,
+  useClientOnboardingSettings,
 } from "@/hooks/accountant/useClientData";
 import { useUpdateTransactionCategory } from "@/hooks/accountant/useClientData";
 import { useCreateDocumentRequest } from "@/hooks/accountant/useDocumentRequests";
 import { useTableSelection } from "@/hooks/useTableSelection";
+import { useAuth } from "@/hooks/useAuth.tsx";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2,
@@ -136,6 +138,8 @@ const ClientTransactions = ({
     accountType,
   });
   const { data: categories = [] } = useClientCategories(clientUserId, undefined, accountType);
+  const { data: onboardingData } = useClientOnboardingSettings(clientUserId);
+  const { user, practice } = useAuth();
   const updateCategory = useUpdateTransactionCategory(clientUserId);
   const createDocRequest = useCreateDocumentRequest();
   const { data: receipts = [] } = useClientReceipts(clientUserId);
@@ -359,7 +363,29 @@ const ClientTransactions = ({
   };
 
   const handleCategoryChange = (txId: string, categoryId: string) => {
-    updateCategory.mutate({ transactionId: txId, categoryId });
+    const txn = transactions.find((t) => t.id === txId);
+    const newCat = (categories as Array<{ id: string; name: string }>).find((c) => c.id === categoryId);
+
+    const correctionContext =
+      user?.id && practice?.id && accountantClientId && txn && newCat
+        ? {
+            accountantId: user.id,
+            practiceId: practice.id,
+            accountantClientId,
+            transactionDescription: txn.description ?? "",
+            transactionAmount: txn.amount,
+            transactionType: txn.type,
+            originalCategory: txn.category?.name ?? null,
+            originalCategoryId: txn.category_id,
+            correctedCategory: newCat.name,
+            originalVatRate: txn.vat_rate ?? null,
+            correctedVatRate: txn.vat_rate ?? null,
+            clientIndustry: (onboardingData as Record<string, unknown>)?.industry as string | null ?? null,
+            clientBusinessType: (onboardingData as Record<string, unknown>)?.business_type as string | null ?? null,
+          }
+        : undefined;
+
+    updateCategory.mutate({ transactionId: txId, categoryId, correctionContext });
   };
 
   const handleRequestDocument = (row: TransactionRow, category: string) => {

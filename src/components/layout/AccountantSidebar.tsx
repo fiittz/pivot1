@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   MessageSquare,
   UserCog,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,6 +68,7 @@ const AccountantSidebar = () => {
     { path: "/accountant/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/accountant/clients", label: "Clients", icon: Users },
     { path: "/accountant/tasks", label: "Tasks", icon: CheckSquare, badge: openTaskCount || undefined },
+    { path: "/accountant/emails", label: "Inbound Emails", icon: Mail },
     { path: "/accountant/settings", label: "Settings", icon: Settings },
     { path: "/accountant/client-settings", label: "Client Settings", icon: UserCog },
   ];

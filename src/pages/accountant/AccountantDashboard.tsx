@@ -10,6 +10,7 @@ import { FilingDeadlineTimeline } from "@/components/accountant/dashboard/Filing
 import { TasksDueThisWeek } from "@/components/accountant/dashboard/TasksDueThisWeek";
 import { RecentActivityFeed } from "@/components/accountant/dashboard/RecentActivityFeed";
 import { RevenueCalendar } from "@/components/accountant/dashboard/RevenueCalendar";
+import SmartReviewQueue from "@/components/accountant/SmartReviewQueue";
 
 const AccountantDashboard = () => {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ const AccountantDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left column — 2/3 width */}
             <div className="lg:col-span-2 space-y-6">
+              <SmartReviewQueue />
               <FilingDeadlineTimeline />
               <TasksDueThisWeek />
               <RecentActivityFeed />

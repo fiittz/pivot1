@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { lookupVendor, type VendorLookupResult } from "./vendorLookupService";
 import { saveVendorCacheEntry, type VendorCacheEntry } from "./vendorCacheService";
+import { loadVendorIntelligence } from "./accountantCorrectionService";
 
 export interface EnrichmentProgress {
   total: number;
@@ -108,7 +109,53 @@ export async function enrichLowConfidenceTransactions(options: EnrichmentOptions
             return null;
           }
 
-          // 3b. Call AI vendor lookup
+          // 3b. Check accountant-verified vendor intelligence
+          const vendorPatternKey = cacheKey.split(/\s+/).filter((t: string) => t.length >= 2).slice(0, 3).join(" ");
+          const intelligence = await loadVendorIntelligence(vendorPatternKey, userIndustry);
+          if (intelligence.length > 0 && intelligence[0].confidence >= 90) {
+            const intel = intelligence[0];
+            // Save to user's cache so future lookups are instant
+            await saveVendorCacheEntry(userId, {
+              vendor_pattern: cacheKey,
+              normalized_name: vendor.description,
+              category: intel.corrected_category,
+              vat_type: intel.corrected_vat_rate === 23 ? "Standard 23%"
+                : intel.corrected_vat_rate === 13.5 ? "Reduced 13.5%"
+                : intel.corrected_vat_rate === 9 ? "Second Reduced 9%"
+                : intel.corrected_vat_rate === 0 ? "Zero" : "N/A",
+              vat_deductible: (intel.corrected_vat_rate ?? 0) > 0,
+              business_purpose: `Accountant-verified (${intel.accountant_count} accountants, ${intel.confidence}% confidence).`,
+              confidence: intel.confidence,
+              source: "accountant",
+              mcc_code: null,
+              sector: null,
+            });
+
+            // Update transactions
+            const { data: categories } = await supabase
+              .from("categories")
+              .select("id")
+              .eq("user_id", userId)
+              .ilike("name", `%${intel.corrected_category}%`)
+              .limit(1);
+
+            if (categories && categories.length > 0) {
+              await supabase
+                .from("transactions")
+                .update({
+                  category_id: categories[0].id,
+                  vat_rate: intel.corrected_vat_rate,
+                  notes: `[Accountant-verified] ${intel.accountant_count} accountants confirmed this category.`,
+                })
+                .in("id", vendor.txnIds);
+              progress.enriched++;
+            } else {
+              progress.skipped++;
+            }
+            return null;
+          }
+
+          // 3c. Call AI vendor lookup
           try {
             const aiResult = await lookupVendor(vendor.description, vendor.amount, userIndustry, userBusinessType);
 
@@ -117,7 +164,7 @@ export async function enrichLowConfidenceTransactions(options: EnrichmentOptions
               return null;
             }
 
-            // 3c. Save to vendor_cache
+            // 3d. Save to vendor_cache
             const { vat_type, vat_deductible } = mapAiVatRate(aiResult.vat_rate_suggestion);
             await saveVendorCacheEntry(userId, {
               vendor_pattern: cacheKey,
@@ -132,7 +179,7 @@ export async function enrichLowConfidenceTransactions(options: EnrichmentOptions
               sector: null,
             });
 
-            // 3d. Update transactions with this vendor
+            // 3e. Update transactions with this vendor
             const { data: categories } = await supabase
               .from("categories")
               .select("id, name")

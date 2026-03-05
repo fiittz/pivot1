@@ -78,7 +78,9 @@ const ClientDetail = lazyWithRetry(() => import("./pages/accountant/ClientDetail
 const AccountantTasks = lazyWithRetry(() => import("./pages/accountant/AccountantTasks"));
 const ClientFilingReview = lazyWithRetry(() => import("./pages/accountant/ClientFilingReview"));
 const ClientSettings = lazyWithRetry(() => import("./pages/accountant/ClientSettings"));
+const InboundEmailDashboard = lazyWithRetry(() => import("./pages/accountant/InboundEmailDashboard"));
 const AcceptInvite = lazyWithRetry(() => import("./pages/AcceptInvite"));
+const PeriodEndQuestionnaire = lazyWithRetry(() => import("./pages/PeriodEndQuestionnaire"));
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -395,6 +397,25 @@ const App = () => (
                             <RequireAccountant>
                               <ClientFilingReview />
                             </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/accountant/emails"
+                        element={
+                          <RequireAuth>
+                            <RequireAccountant>
+                              <InboundEmailDashboard />
+                            </RequireAccountant>
+                          </RequireAuth>
+                        }
+                      />
+                      {/* Client questionnaire (accessible when logged in) */}
+                      <Route
+                        path="/questionnaire/:id"
+                        element={
+                          <RequireAuth>
+                            <PeriodEndQuestionnaire />
                           </RequireAuth>
                         }
                       />

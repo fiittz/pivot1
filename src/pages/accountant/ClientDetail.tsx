@@ -19,6 +19,7 @@ import ClientNotesTab from "./ClientNotesTab";
 import ClientTasksTab from "./ClientTasksTab";
 import ClientFilingsTab from "./ClientFilingsTab";
 import ClientMessagesTab from "@/components/accountant/ClientMessagesTab";
+import { ClientReadinessBar } from "@/components/accountant/ClientReadinessBar";
 import {
   ArrowLeft,
   Building2,
@@ -160,11 +161,14 @@ const ClientDetail = () => {
 
           {/* Overview */}
           <TabsContent value="overview">
-            {taxView === "ct1" ? (
-              <ClientCT1Overview ct1Data={ct1Data} isLoading={ct1Data.isLoading || profileLoading} />
-            ) : (
-              <ClientForm11Overview clientUserId={clientId} />
-            )}
+            <div className="space-y-6">
+              <ClientReadinessBar clientUserId={clientId} />
+              {taxView === "ct1" ? (
+                <ClientCT1Overview ct1Data={ct1Data} isLoading={ct1Data.isLoading || profileLoading} />
+              ) : (
+                <ClientForm11Overview clientUserId={clientId} />
+              )}
+            </div>
           </TabsContent>
 
           {/* Transactions */}

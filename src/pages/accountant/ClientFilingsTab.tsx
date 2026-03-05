@@ -27,6 +27,7 @@ import {
   useClientFilings,
   useCreateFiling,
 } from "@/hooks/accountant/useFilingRecords";
+import { useIsReadyForFiling } from "@/components/accountant/ClientReadinessBar";
 import { useClientCT1Data } from "@/hooks/accountant/useClientCT1Data";
 import { useClientForm11Data } from "@/hooks/accountant/useClientForm11Data";
 import type { FilingRecord, FilingType, FilingStatus } from "@/types/accountant";
@@ -38,8 +39,10 @@ import {
   Clock,
   CheckCircle2,
   Send,
+  Lock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 
 interface ClientFilingsTabProps {
@@ -94,6 +97,7 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
   const navigate = useNavigate();
   const { data: filings = [], isLoading } = useClientFilings(accountantClientId);
   const createFiling = useCreateFiling();
+  const isReadyForFiling = useIsReadyForFiling(clientUserId);
   const ct1Data = useClientCT1Data(clientUserId);
   const form11Data = useClientForm11Data(clientUserId, 1);
   const { toast } = useToast();
@@ -248,14 +252,26 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
         onSearchChange={setSearch}
         searchPlaceholder="Search filings..."
         actions={
-          <Button
-            onClick={() => setCreateOpen(true)}
-            size="sm"
-            className="h-8 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white gap-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Filing
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  onClick={() => setCreateOpen(true)}
+                  size="sm"
+                  disabled={!isReadyForFiling}
+                  className="h-8 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white gap-1 disabled:opacity-50"
+                >
+                  {isReadyForFiling ? <Plus className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                  Filing
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!isReadyForFiling && (
+              <TooltipContent>
+                <p>All readiness steps must be complete before creating a filing</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
         }
       />
 
