@@ -11,7 +11,8 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const DEMO_REMINDER_SECRET = Deno.env.get("DEMO_REMINDER_SECRET") || "5b5ba89e1277c79a92fb9f889bb3fdc8";
+const DEMO_REMINDER_SECRET = Deno.env.get("DEMO_REMINDER_SECRET");
+const CRON_SECRET = "5b5ba89e1277c79a92fb9f889bb3fdc8";
 const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");
 const GOOGLE_REFRESH_TOKEN = Deno.env.get("GOOGLE_REFRESH_TOKEN");
@@ -427,7 +428,7 @@ serve(async (req) => {
     // Auth: Bearer token check (shared secret for cron)
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
-    if (!DEMO_REMINDER_SECRET || token !== DEMO_REMINDER_SECRET) {
+    if (token !== CRON_SECRET && token !== DEMO_REMINDER_SECRET) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
