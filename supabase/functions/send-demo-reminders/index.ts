@@ -15,8 +15,10 @@ const DEMO_REMINDER_SECRET = Deno.env.get("DEMO_REMINDER_SECRET") || "5b5ba89e12
 const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");
 const GOOGLE_REFRESH_TOKEN = Deno.env.get("GOOGLE_REFRESH_TOKEN");
+const TITAN_ICAL_URL = Deno.env.get("TITAN_ICAL_URL");
 const OWNER_EMAIL = "mybpsinfo@gmail.com";
 const CALENDAR_IDS = [OWNER_EMAIL, "jamie@balnce.ie"];
+const OWN_EMAILS = new Set(CALENDAR_IDS.map((e) => e.toLowerCase()));
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -79,7 +81,6 @@ async function syncGoogleCalendarEvents(
 
   let synced = 0;
   let cancelled = 0;
-  const ownEmails = new Set(CALENDAR_IDS.map((e) => e.toLowerCase()));
 
   for (const calId of CALENDAR_IDS) {
     const calendarId = encodeURIComponent(calId);
@@ -106,7 +107,7 @@ async function syncGoogleCalendarEvents(
   for (const event of events) {
     // Find first external attendee (not one of our own calendars)
     const externalAttendee = event.attendees?.find(
-      (a) => !ownEmails.has(a.email.toLowerCase()) && !a.self,
+      (a) => !OWN_EMAILS.has(a.email.toLowerCase()) && !a.self,
     );
 
     // Skip events with no external attendees (internal blocks, personal events)
@@ -151,6 +152,143 @@ async function syncGoogleCalendarEvents(
   } // end calendar loop
 
   return { synced, cancelled };
+}
+
+// ── Titan iCal sync ─────────────────────────────────────────────────
+
+function parseICalDate(val: string, params: string): string {
+  const tzMatch = params.match(/TZID=([^:;]+)/);
+  const tz = tzMatch ? tzMatch[1] : null;
+
+  if (val.endsWith("Z")) {
+    return new Date(
+      val.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, "$1-$2-$3T$4:$5:$6Z"),
+    ).toISOString();
+  }
+
+  if (val.includes("T")) {
+    const iso = val.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, "$1-$2-$3T$4:$5:$6");
+    if (tz) {
+      const d = new Date(iso);
+      const utcStr = d.toLocaleString("en-US", { timeZone: "UTC" });
+      const tzStr = d.toLocaleString("en-US", { timeZone: tz });
+      const offset = new Date(tzStr).getTime() - new Date(utcStr).getTime();
+      return new Date(d.getTime() - offset).toISOString();
+    }
+    return new Date(iso).toISOString();
+  }
+
+  return val.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+}
+
+interface TitanParsedEvent {
+  uid: string;
+  summary: string;
+  start: string;
+  attendees: { email: string; name: string | null }[];
+  meetingUrl: string | null;
+}
+
+function parseTitanICal(icalText: string, now: Date, maxDate: Date): TitanParsedEvent[] {
+  const events: TitanParsedEvent[] = [];
+  const blocks = icalText.split("BEGIN:VEVENT");
+
+  for (let i = 1; i < blocks.length; i++) {
+    const block = blocks[i].split("END:VEVENT")[0];
+    const unfolded = block.replace(/\r?\n[ \t]/g, "");
+    const lines = unfolded.split(/\r?\n/);
+
+    let summary = "";
+    let dtstart = "";
+    let dtstartParams = "";
+    let uid = "";
+    let meetingUrl: string | null = null;
+    const attendees: { email: string; name: string | null }[] = [];
+
+    for (const line of lines) {
+      if (line.startsWith("SUMMARY:")) {
+        summary = line.substring(8).trim();
+      } else if (line.startsWith("DTSTART")) {
+        const colonIdx = line.indexOf(":");
+        dtstartParams = line.substring(0, colonIdx);
+        dtstart = line.substring(colonIdx + 1).trim();
+      } else if (line.startsWith("UID:")) {
+        uid = line.substring(4).trim();
+      } else if (line.startsWith("X-TITAN-MEET:")) {
+        meetingUrl = line.substring(13).trim();
+      } else if (line.startsWith("ATTENDEE")) {
+        const emailMatch = line.match(/mailto:([^\s;]+)/i);
+        const cnMatch = line.match(/CN=([^;:]+)/);
+        if (emailMatch) {
+          attendees.push({
+            email: emailMatch[1],
+            name: cnMatch ? cnMatch[1].trim() : null,
+          });
+        }
+      }
+    }
+
+    if (!dtstart || !uid) continue;
+
+    try {
+      const startStr = parseICalDate(dtstart, dtstartParams);
+      const startDate = new Date(startStr);
+      if (startDate < now || startDate > maxDate) continue;
+
+      // Only include events with external attendees (actual demos)
+      const externalAttendees = attendees.filter(
+        (a) => !OWN_EMAILS.has(a.email.toLowerCase()),
+      );
+      if (externalAttendees.length === 0) continue;
+
+      events.push({ uid, summary: summary || "(no title)", start: startStr, attendees: externalAttendees, meetingUrl });
+    } catch {
+      continue;
+    }
+  }
+
+  return events;
+}
+
+async function syncTitanEvents(
+  supabase: ReturnType<typeof createClient>,
+): Promise<{ synced: number }> {
+  if (!TITAN_ICAL_URL) return { synced: 0 };
+
+  const icalRes = await fetch(TITAN_ICAL_URL, { redirect: "follow" });
+  if (!icalRes.ok) {
+    console.error(`Titan iCal fetch failed: ${icalRes.status}`);
+    return { synced: 0 };
+  }
+
+  const icalText = await icalRes.text();
+  const now = new Date();
+  const maxDate = new Date(now.getTime() + 30 * 24 * 60 * 60_000);
+  const events = parseTitanICal(icalText, now, maxDate);
+
+  let synced = 0;
+  for (const event of events) {
+    const attendee = event.attendees[0];
+    const { error } = await supabase.from("demo_bookings").upsert(
+      {
+        invitee_name: attendee.name || attendee.email.split("@")[0],
+        invitee_email: attendee.email,
+        scheduled_at: event.start,
+        google_event_id: event.uid,
+        meeting_url: event.meetingUrl || null,
+        summary: event.summary || null,
+      },
+      { onConflict: "google_event_id" },
+    );
+
+    if (error) {
+      console.error("Titan upsert error:", error);
+    } else {
+      synced++;
+    }
+  }
+
+  return { synced };
 }
 
 // ── Email template ─────────────────────────────────────────────────
@@ -311,6 +449,15 @@ serve(async (req) => {
       console.warn("Google OAuth credentials not set — skipping calendar sync");
     }
 
+    // Step 1b: Sync events from Titan iCal
+    let titanSyncResult = { synced: 0 };
+    try {
+      titanSyncResult = await syncTitanEvents(supabase);
+      console.log(`Titan iCal sync: ${titanSyncResult.synced} upserted`);
+    } catch (err) {
+      console.error("Titan iCal sync error (continuing to reminders):", err);
+    }
+
     // Step 2: Fetch calendar settings for reminder toggles
     const { data: calSettings } = await supabase
       .from("calendar_settings")
@@ -404,7 +551,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        sync: syncResult,
+        sync: { google: syncResult, titan: titanSyncResult },
         reminders_processed: results.length,
         results,
       }),
