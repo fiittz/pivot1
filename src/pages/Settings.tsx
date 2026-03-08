@@ -27,7 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
 import PenguinIcon from "@/components/PenguinIcon";
 import Logo from "@/components/Logo";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
 import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
@@ -438,7 +438,7 @@ const Settings = () => {
   ];
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Business Info Dialog */}
       <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
         <DialogContent className="sm:max-w-md">
@@ -804,7 +804,7 @@ const Settings = () => {
           <p className="text-xs text-muted-foreground">Version 1.0.0</p>
         </div>
       </main>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

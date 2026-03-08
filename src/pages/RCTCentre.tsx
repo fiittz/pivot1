@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Receipt, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 
 type View = "dashboard" | "add-contract";
 
@@ -59,7 +59,7 @@ const RCTCentre = () => {
 
   if (view === "add-contract") {
     return (
-      <AppLayout>
+      <ClientLayout>
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <button onClick={() => setView("dashboard")} className="p-2 -ml-2">
@@ -126,12 +126,12 @@ const RCTCentre = () => {
             </Button>
           </div>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Header */}
       <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -227,7 +227,7 @@ const RCTCentre = () => {
           ))}
         </div>
       </main>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

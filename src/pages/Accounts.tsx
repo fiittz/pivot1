@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { toast } from "sonner";
 import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount } from "@/hooks/useAccounts";
 
@@ -168,7 +168,7 @@ const Accounts = () => {
   const isSelectMode = selectedIds.size > 0;
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Single Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
@@ -444,7 +444,7 @@ const Accounts = () => {
           </div>
         </div>
       )}
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

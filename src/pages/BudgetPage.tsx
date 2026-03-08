@@ -1,7 +1,7 @@
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { useBudgets } from "@/hooks/useBudgets";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import BudgetSetupCard from "@/components/budget/BudgetSetupCard";
 import BudgetProgressCard from "@/components/budget/BudgetProgressCard";
 import BudgetForecastChart from "@/components/budget/BudgetForecastChart";
@@ -17,7 +17,7 @@ export default function BudgetPage() {
   }));
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Budgets & Forecasting</h2>
@@ -40,6 +40,6 @@ export default function BudgetPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 }

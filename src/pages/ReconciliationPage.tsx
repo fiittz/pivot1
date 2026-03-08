@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { useReconciliation } from "@/hooks/useReconciliation";
 import { toast } from "sonner";
 
@@ -133,16 +133,16 @@ export default function ReconciliationPage() {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="max-w-5xl mx-auto px-6 py-12 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Reconciliation</h2>
@@ -371,6 +371,6 @@ export default function ReconciliationPage() {
           </table>
         </div>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 }

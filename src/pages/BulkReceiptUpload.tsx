@@ -6,7 +6,7 @@ import { useBulkReceiptUpload } from "@/hooks/useBulkReceiptUpload";
 import { BulkReceiptGrid } from "@/components/receipt/BulkReceiptGrid";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 
 const BulkReceiptUpload = () => {
   const navigate = useNavigate();
@@ -96,7 +96,7 @@ const BulkReceiptUpload = () => {
   const queuedCount = files.filter((f) => f.status === "queued").length;
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Header */}
       <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ const BulkReceiptUpload = () => {
         {/* Receipt grid */}
         <BulkReceiptGrid files={files} onRemove={removeFile} onManualMatch={manualMatch} phase={phase} />
       </main>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

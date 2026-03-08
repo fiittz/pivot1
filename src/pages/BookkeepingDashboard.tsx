@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTransactions, useUnmatchedTransactions } from "@/hooks/useTransactions";
 import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { OnboardingProgressCard } from "@/components/dashboard/OnboardingProgressCard";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
@@ -123,7 +123,7 @@ const BookkeepingDashboard = () => {
   });
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
         {/* Header row */}
         <div className="flex items-center justify-between">
@@ -446,7 +446,7 @@ const BookkeepingDashboard = () => {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

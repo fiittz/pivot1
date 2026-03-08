@@ -11,7 +11,7 @@ import {
   Loader2,
   FileText,
 } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -122,20 +122,20 @@ const CT1Return = () => {
 
   if (ct1.isLoading) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading CT1 data...</span>
           </div>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   if (totalIncome === 0 && totalExpenses === 0) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertTriangle className="w-10 h-10 text-muted-foreground" />
           <p className="text-muted-foreground">
@@ -145,12 +145,12 @@ const CT1Return = () => {
             Back to Tax Centre
           </Button>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -382,7 +382,7 @@ const CT1Return = () => {
           </div>
         </main>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

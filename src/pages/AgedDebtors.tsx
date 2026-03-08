@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Clock, AlertTriangle, Loader2, FileText } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,20 +119,20 @@ const AgedDebtors = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading invoice data...</span>
           </div>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   if (!invoices || invoices.length === 0) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <FileText className="w-10 h-10 text-muted-foreground" />
           <p className="text-muted-foreground">No invoices found.</p>
@@ -140,12 +140,12 @@ const AgedDebtors = () => {
             Back to Reports
           </Button>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -255,7 +255,7 @@ const AgedDebtors = () => {
           </div>
         </main>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

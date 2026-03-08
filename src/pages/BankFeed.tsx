@@ -85,7 +85,7 @@ import {
   type CompanyInfo,
   type ExportOptions,
 } from "@/lib/exportTransactions";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import {
   BusinessBankExportQuestionnaire,
   DirectorExportQuestionnaire,
@@ -262,7 +262,12 @@ const BankFeed = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<"ledger" | "uploads" | "reports">("ledger");
+  const activeTab = (searchParams.get("tab") || "ledger") as "ledger" | "uploads" | "reports";
+  const setActiveTab = (tab: "ledger" | "uploads" | "reports") => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    setSearchParams(next, { replace: true });
+  };
   const [reportsSubTab, setReportsSubTab] = useState<"pnl" | "balance" | "vat" | "abridged" | "audit" | "vatcentre">(
     "pnl",
   );
@@ -1253,7 +1258,7 @@ const BankFeed = () => {
   }, [accountFilteredTransactions, accounts]);
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
@@ -1391,81 +1396,37 @@ const BankFeed = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Header */}
-      <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
-        <div className="flex items-center justify-between">
-          {/* Left spacer */}
-          <div className="w-24" />
-
-          {/* Center - title */}
-          <div className="flex-1 text-center">
-            <h1 className="font-semibold text-xl">Transactions</h1>
+      <div className="space-y-5">
+        {/* Selection toolbar */}
+        {selectionMode && (
+          <div className="flex items-center gap-2 justify-end">
+            <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs">
+              Select All
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeleteAllDialog(true)}
+              className="text-destructive hover:text-destructive text-xs"
+            >
+              Delete All
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={selectedIds.size === 0}
+              className="text-destructive hover:text-destructive h-8 w-8"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={clearSelection} className="h-8 w-8">
+              <X className="w-4 h-4" />
+            </Button>
           </div>
-
-          {/* Right - actions */}
-          <div className="w-24 flex justify-end">
-            {!selectionMode ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectionMode(true)}
-                className="text-muted-foreground"
-              >
-                Select
-              </Button>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs">
-                  All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDeleteAllDialog(true)}
-                  className="text-destructive hover:text-destructive text-xs"
-                >
-                  Delete All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={selectedIds.size === 0}
-                  className="text-destructive hover:text-destructive h-8 w-8"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={clearSelection} className="h-8 w-8">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="px-6 py-6 max-w-5xl mx-auto space-y-5">
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as "ledger" | "uploads" | "reports")}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-3 mb-5">
-            <TabsTrigger value="ledger" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Ledger
-            </TabsTrigger>
-            <TabsTrigger value="uploads" className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4" />
-              Uploads
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Reports
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="ledger" className="space-y-5">
+        )}
+        {activeTab === "ledger" && (
+          <div className="space-y-5">
             {/* Bank Account Card with Selector */}
             <div className="bg-card rounded-2xl p-6 card-shadow animate-fade-in relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
@@ -1881,13 +1842,17 @@ const BankFeed = () => {
                 )}
               </div>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="uploads" className="space-y-5">
+        {activeTab === "uploads" && (
+          <div className="space-y-5">
             <ImportBatchesPanel />
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="reports" className="space-y-5">
+        {activeTab === "reports" && (
+          <div className="space-y-5">
             {/* Reports Header with Account Selector and Export */}
             <div className="flex items-center justify-between">
               <DropdownMenu>
@@ -3298,9 +3263,9 @@ const BankFeed = () => {
                 </div>
               </TabsContent>
             </Tabs>
-          </TabsContent>
-        </Tabs>
-      </main>
+          </div>
+        )}
+      </div>
 
       {/* Export Questionnaire Dialogs */}
       <BusinessBankExportQuestionnaire
@@ -3393,7 +3358,7 @@ const BankFeed = () => {
 
       <FloatingActionBar selectedIds={selectedIds} onClearSelection={clearSelection} />
       <BankConnectionWizard open={showBankWizard} onOpenChange={setShowBankWizard} />
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

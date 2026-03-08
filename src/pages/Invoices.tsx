@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, FileText, Clock, CheckCircle, Download } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -189,7 +189,7 @@ const Invoices = () => {
   };
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         <PageHeader
           title="Invoices"
@@ -293,7 +293,7 @@ const Invoices = () => {
           )}
         </main>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

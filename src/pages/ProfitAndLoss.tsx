@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, TrendingUp, TrendingDown, BarChart3, Loader2, AlertTriangle } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -91,20 +91,20 @@ const ProfitAndLoss = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading P&L data...</span>
           </div>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   if (totalRevenue === 0 && totalExpenses === 0) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertTriangle className="w-10 h-10 text-muted-foreground" />
           <p className="text-muted-foreground">No transaction data available. Please import bank feeds first.</p>
@@ -112,12 +112,12 @@ const ProfitAndLoss = () => {
             Back to Reports
           </Button>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -206,7 +206,7 @@ const ProfitAndLoss = () => {
           </div>
         </main>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

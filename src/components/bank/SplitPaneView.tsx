@@ -33,10 +33,10 @@ export default function SplitPaneView({ transactions, bankAccountType }: Props) 
 
   return (
     <>
-      <div className="bg-card rounded-xl border overflow-hidden" style={{ height: "calc(100vh - 360px)", minHeight: 400 }}>
+      <div className="bg-card rounded-xl border overflow-hidden" style={{ height: "calc(100vh - 280px)", minHeight: 400 }}>
         <ResizablePanelGroup direction="horizontal">
           {/* Left: Transaction list */}
-          <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={45}>
             <div className="h-full overflow-y-auto">
               {transactions.map((t) => {
                 const isSelected = t.id === selectedId;

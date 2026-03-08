@@ -29,7 +29,7 @@ import {
   getVATPeriodsForYear,
 } from "@/hooks/useVATData";
 import { format, parseISO, differenceInDays, addDays } from "date-fns";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { VATFinalisationWizard } from "@/components/vat/VATFinalisationWizard";
 import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
 import { Globe, MessageSquare } from "lucide-react";
@@ -140,7 +140,7 @@ const VATCentre = () => {
   const isLoading = summaryLoading || returnsLoading;
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Header */}
       <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -659,7 +659,7 @@ const VATCentre = () => {
           />
         )}
       </main>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building, Package, CreditCard, Landmark, AlertTriangle, Loader2, ChevronRight } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -181,20 +181,20 @@ const BalanceSheet = () => {
 
   if (ct1.isLoading) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading balance sheet data...</span>
           </div>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   if (!bsInput) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertTriangle className="w-10 h-10 text-muted-foreground" />
           <p className="text-muted-foreground">
@@ -204,12 +204,12 @@ const BalanceSheet = () => {
             Back to Tax Centre
           </Button>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -422,7 +422,7 @@ const BalanceSheet = () => {
           </div>
         </main>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

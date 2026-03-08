@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,20 +112,20 @@ const Form11Return = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex items-center justify-center min-h-[60vh]">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Calculating tax position...</span>
           </div>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   if (!result || !input) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertTriangle className="w-10 h-10 text-muted-foreground" />
           <p className="text-muted-foreground">
@@ -135,14 +135,14 @@ const Form11Return = () => {
             Back to Tax Centre
           </Button>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   const isRefund = result.balanceDue < 0;
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -402,7 +402,7 @@ const Form11Return = () => {
           </div>
         </main>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

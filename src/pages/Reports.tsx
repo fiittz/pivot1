@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { BarChart3, Calendar, Building2, User, FileText, ChevronRight } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { SalesTaxAuditExport } from "@/components/reports/SalesTaxAuditExport";
 import { VATReturnReport } from "@/components/reports/VATReturnReport";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ const Reports = () => {
   };
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -220,7 +220,7 @@ const Reports = () => {
         detectedBIK={[]}
         assessmentBasis="single"
       />
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

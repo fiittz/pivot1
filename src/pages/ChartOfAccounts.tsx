@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Search, Plus, ChevronDown, ChevronRight, Pencil } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +133,7 @@ const ChartOfAccounts = () => {
   };
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1 p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -313,7 +313,7 @@ const ChartOfAccounts = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

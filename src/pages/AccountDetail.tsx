@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format, startOfMonth, endOfMonth, subMonths, startOfYear } from "date-fns";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { useAccounts } from "@/hooks/useAccounts";
@@ -421,7 +421,7 @@ const AccountDetail = () => {
 
   if (!account) {
     return (
-      <AppLayout>
+      <ClientLayout>
         <div className="flex items-center justify-center h-full">
           <Card>
             <CardContent className="p-6">
@@ -429,12 +429,12 @@ const AccountDetail = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </ClientLayout>
     );
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Header */}
       <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
         <div className="flex items-center gap-4">
@@ -1122,7 +1122,7 @@ const AccountDetail = () => {
           </TabsContent>
         </Tabs>
       </main>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

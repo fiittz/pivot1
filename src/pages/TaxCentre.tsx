@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Calculator,
 } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -281,7 +281,7 @@ const TaxCentre = () => {
   };
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -596,7 +596,7 @@ const TaxCentre = () => {
           return "single";
         })()}
       />
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

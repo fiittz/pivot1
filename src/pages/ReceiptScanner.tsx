@@ -12,7 +12,7 @@ import { useExpenseCategories } from "@/hooks/useCategories";
 import { categorizeTransaction, calculateVat, VAT_RATES } from "@/services/categorization";
 import { useAccountLookup } from "@/hooks/useAccountLookup";
 import { toast } from "sonner";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 
 const parseVatRateToNumeric = (vatRateStr: string): number => {
   const num = parseFloat(
@@ -188,7 +188,7 @@ const ReceiptScanner = () => {
   }
 
   return (
-    <AppLayout>
+    <ClientLayout>
       {/* Header */}
       <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -326,7 +326,7 @@ const ReceiptScanner = () => {
           isSaving={isSaving}
         />
       )}
-    </AppLayout>
+    </ClientLayout>
   );
 };
 

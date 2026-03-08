@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Upload, Sparkles, Loader2, Paperclip, AlertTriangle, Camera, X, Files } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 import * as LucideIcons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -394,7 +394,7 @@ const AddExpense = () => {
   };
 
   return (
-    <AppLayout>
+    <ClientLayout>
       <div className="flex-1">
         {/* Header */}
         <header className="bg-background px-6 py-4 card-shadow sticky top-0 z-10">
@@ -763,7 +763,7 @@ const AddExpense = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </AppLayout>
+    </ClientLayout>
   );
 };
 
