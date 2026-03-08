@@ -559,6 +559,11 @@ const Welcome = () => {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <div className="text-center py-4 text-[10px] text-muted-foreground">
+        <a href="/privacy" className="hover:underline">Privacy Policy</a>
+      </div>
     </div>
   );
 };

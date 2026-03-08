@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Circle, AlertTriangle, Shield, Brain, Eye, FileCheck, Scale, Clock } from "lucide-react";
+import AIIncidentPanel from "./AIIncidentPanel";
 
 interface ComplianceItem {
   id: string;
@@ -154,15 +155,15 @@ const COMPLIANCE_CHECKLIST: ComplianceItem[] = [
     id: "privacy_disclosure",
     title: "AI features disclosed in privacy policy",
     article: "Art. 50 + GDPR Art. 13",
-    status: "action_needed",
-    detail: "Privacy policy needs updating to list specific AI features: categorisation, matching, OCR, triage, vendor lookup.",
+    status: "compliant",
+    detail: "Privacy policy at /privacy lists all 6 AI systems with descriptions, data processed, user rights, and GDPR basis.",
   },
   {
     id: "incident_reporting",
     title: "Serious incident reporting process",
     article: "Art. 62",
-    status: "action_needed",
-    detail: "No formal incident reporting process for AI failures. Need to establish monitoring and reporting procedures.",
+    status: "compliant",
+    detail: "AI incident reporting panel in admin dashboard. Create, investigate, resolve, and close incidents with audit trail.",
   },
 ];
 
@@ -327,6 +328,19 @@ export default function AIComplianceTab() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Incident Reporting */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            AI Incident Log (Article 62)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AIIncidentPanel />
         </CardContent>
       </Card>
     </div>

@@ -83,6 +83,7 @@ const AcceptInvite = lazyWithRetry(() => import("./pages/AcceptInvite"));
 const PeriodEndQuestionnaire = lazyWithRetry(() => import("./pages/PeriodEndQuestionnaire"));
 const BudgetPage = lazyWithRetry(() => import("./pages/BudgetPage"));
 const ReconciliationPage = lazyWithRetry(() => import("./pages/ReconciliationPage"));
+const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -100,6 +101,7 @@ const App = () => (
                   <Suspense fallback={<div>Loading...</div>}>
                     <Routes>
                       <Route path="/" element={<Welcome />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/demo" element={<BookDemo />} />
                       <Route
