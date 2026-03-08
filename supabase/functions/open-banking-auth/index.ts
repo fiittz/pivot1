@@ -76,8 +76,9 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+      console.error("[OpenBanking] Auth error:", authError?.message, "token length:", token.length);
+      return new Response(JSON.stringify({ error: `Unauthorized: ${authError?.message || "no user"}` }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -87,14 +88,14 @@ serve(async (req) => {
 
     if (!institution_name || !country) {
       return new Response(JSON.stringify({ error: "institution_name and country required" }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!ENABLE_BANKING_APP_ID || !ENABLE_BANKING_PRIVATE_KEY_B64) {
       return new Response(JSON.stringify({ error: "Open banking not configured" }), {
-        status: 503,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -128,7 +129,7 @@ serve(async (req) => {
         "Psu-User-Agent": req.headers.get("user-agent") || "Balnce/2.0",
       },
       body: JSON.stringify({
-        access: { valid_until: validUntil.toISOString().split("T")[0] },
+        access: { valid_until: validUntil.toISOString() },
         aspsp: { name: institution_name, country },
         state,
         redirect_url: `${SITE_URL}/bank`,
@@ -139,8 +140,8 @@ serve(async (req) => {
     if (!authResponse.ok) {
       const errText = await authResponse.text();
       console.error("[OpenBanking] Auth failed:", authResponse.status, errText);
-      return new Response(JSON.stringify({ error: "Bank authorization failed", detail: errText }), {
-        status: 502,
+      return new Response(JSON.stringify({ error: `Bank authorization failed (${authResponse.status}): ${errText}` }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -153,8 +154,8 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("[OpenBanking] Error:", error);
-    return new Response(JSON.stringify({ error: "Open banking auth failed" }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: `Open banking auth failed: ${error.message || error}` }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

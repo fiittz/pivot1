@@ -30,7 +30,7 @@ const BASE_BANKS = [
 
 // Add sandbox test bank in dev mode
 export const IRISH_BANKS = import.meta.env.DEV
-  ? [...BASE_BANKS, { name: "Mock ASPSP", country: "XX", logo: "🧪", fullName: "Sandbox Test Bank" }]
+  ? [...BASE_BANKS, { name: "Mock ASPSP", country: "FI", logo: "🧪", fullName: "Sandbox Test Bank" }]
   : BASE_BANKS;
 
 export function useOpenBanking() {
@@ -61,7 +61,14 @@ export function useOpenBanking() {
         body: { institution_name: institutionName, country },
       });
 
-      if (error) throw error;
+      if (error) {
+        const ctx = (error as any).context;
+        if (ctx instanceof Response) {
+          const body = await ctx.json().catch(() => null);
+          if (body?.error) throw new Error(body.error);
+        }
+        throw new Error(error.message || "Edge function error");
+      }
       if (data?.error) throw new Error(data.error);
 
       return data as { auth_url: string; state: string };
