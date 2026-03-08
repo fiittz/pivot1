@@ -11,6 +11,9 @@ import { TasksDueThisWeek } from "@/components/accountant/dashboard/TasksDueThis
 import { RecentActivityFeed } from "@/components/accountant/dashboard/RecentActivityFeed";
 import { RevenueCalendar } from "@/components/accountant/dashboard/RevenueCalendar";
 import SmartReviewQueue from "@/components/accountant/SmartReviewQueue";
+import { usePracticeKPIs } from "@/hooks/accountant/usePracticeKPIs";
+import { PracticeHealthCards } from "@/components/accountant/dashboard/PracticeHealthCards";
+import { ClientHealthTable } from "@/components/accountant/dashboard/ClientHealthTable";
 
 const AccountantDashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +21,7 @@ const AccountantDashboard = () => {
   const { data: taskCounts } = useAccountantTaskCounts();
   const { data: filingCounts } = useFilingCounts();
 
+  const { data: practiceKPIs } = usePracticeKPIs();
   const openTasks = (taskCounts?.todo ?? 0) + (taskCounts?.in_progress ?? 0);
   const pendingFilings = (filingCounts?.draft ?? 0) + (filingCounts?.in_review ?? 0);
   const hasClients = (counts?.total ?? 0) > 0;
@@ -58,6 +62,15 @@ const AccountantDashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* Practice Health KPIs */}
+        {practiceKPIs && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Practice Health</h3>
+            <PracticeHealthCards kpis={practiceKPIs} />
+            <ClientHealthTable rows={practiceKPIs.clientHealthRows} />
+          </div>
+        )}
 
         {hasClients ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

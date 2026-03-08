@@ -9,6 +9,7 @@ export type WidgetId =
   | "pending_tasks"
   | "income_vs_expenses_chart"
   | "automation_insights"
+  | "ai_insights"
   | "rct_overview"
   | "construction_materials_labour"
   | "tax_deadlines"
@@ -18,6 +19,11 @@ export type WidgetId =
 export type WidgetCategory = "overview" | "financial" | "tasks" | "charts" | "construction" | "bookkeeping";
 
 export type WidgetPreferences = Partial<Record<WidgetId, boolean>>;
+
+export interface DashboardPreferences {
+  visibility: WidgetPreferences;
+  order?: WidgetId[];
+}
 
 export interface WidgetDefinition {
   id: WidgetId;
@@ -154,6 +160,13 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     label: "Chart of Accounts",
     description: "View and manage your income and expense categories",
     category: "bookkeeping",
+    defaultVisible: true,
+  },
+  {
+    id: "ai_insights",
+    label: "Smart Insights",
+    description: "AI-powered anomaly detection and transaction insights",
+    category: "tasks",
     defaultVisible: true,
   },
 ];

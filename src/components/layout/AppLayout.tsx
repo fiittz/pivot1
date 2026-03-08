@@ -5,6 +5,7 @@ import { DemoModeBanner } from "./DemoModeBanner";
 import { isDemoMode } from "@/lib/mockData";
 import JobProgressIndicator from "./JobProgressIndicator";
 import ChatWidget from "@/components/chat/ChatWidget";
+import MobileQuickActions from "./MobileQuickActions";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -40,6 +41,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <BottomNav />
         <JobProgressIndicator />
+        <MobileQuickActions />
         <ChatWidget />
       </div>
     </div>

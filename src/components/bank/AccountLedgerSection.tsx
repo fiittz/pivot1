@@ -22,6 +22,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import TransactionEditDialog from "./TransactionEditDialog";
 import TransactionRowActions from "./TransactionRowActions";
 import InlineCategoryPicker from "./InlineCategoryPicker";
+import TransactionStatusDot from "./TransactionStatusDot";
 
 interface Transaction {
   id: string;
@@ -183,6 +184,7 @@ export default function AccountLedgerSection({
                 />
               )}
 
+              <TransactionStatusDot transaction={transaction} />
               <div
                 className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                   transaction.type === "income" ? "bg-green-100" : "bg-red-100"

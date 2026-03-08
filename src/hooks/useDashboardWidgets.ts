@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isDemoMode } from "@/lib/mockData";
-import { WidgetId, WidgetPreferences, WidgetDefinition, WIDGET_DEFINITIONS } from "@/types/dashboardWidgets";
+import { WidgetId, WidgetPreferences, WidgetDefinition, WIDGET_DEFINITIONS, DashboardPreferences } from "@/types/dashboardWidgets";
 
 interface OnboardingSettings {
   vat_registered: boolean | null;
@@ -38,6 +38,7 @@ function buildDefaults(settings: OnboardingSettings): WidgetPreferences {
 export function useDashboardWidgets() {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<WidgetPreferences | null>(null);
+  const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(WIDGET_DEFINITIONS.map((w) => w.id));
   const [onboardingSettings, setOnboardingSettings] = useState<OnboardingSettings>({
     vat_registered: null,
     rct_registered: null,
@@ -89,9 +90,16 @@ export function useDashboardWidgets() {
         .eq("id", user.id)
         .maybeSingle();
 
-      const stored = profile?.dashboard_widget_preferences as WidgetPreferences | null;
+      const stored = profile?.dashboard_widget_preferences as DashboardPreferences | WidgetPreferences | null;
       if (stored && typeof stored === "object") {
-        setPreferences(stored);
+        // Support both old format (flat WidgetPreferences) and new format (DashboardPreferences)
+        if ("visibility" in stored) {
+          const dp = stored as DashboardPreferences;
+          setPreferences(dp.visibility);
+          if (dp.order) setWidgetOrder(dp.order);
+        } else {
+          setPreferences(stored as WidgetPreferences);
+        }
       } else {
         // Use defaults based on business type
         setPreferences(buildDefaults(settings));
@@ -106,14 +114,15 @@ export function useDashboardWidgets() {
   const defaults = useMemo(() => buildDefaults(onboardingSettings), [onboardingSettings]);
 
   const persist = useCallback(
-    async (next: WidgetPreferences) => {
+    async (next: WidgetPreferences, order?: WidgetId[]) => {
       if (!user) return;
+      const payload: DashboardPreferences = { visibility: next, order: order || widgetOrder };
       await supabase
         .from("profiles")
-        .update({ dashboard_widget_preferences: next as unknown as Record<string, unknown> })
+        .update({ dashboard_widget_preferences: payload as unknown as Record<string, unknown> })
         .eq("id", user.id);
     },
-    [user],
+    [user, widgetOrder],
   );
 
   const toggleWidget = useCallback(
@@ -129,9 +138,19 @@ export function useDashboardWidgets() {
   );
 
   const resetToDefaults = useCallback(() => {
+    const defaultOrder = WIDGET_DEFINITIONS.map((w) => w.id);
     setPreferences(defaults);
-    persist(defaults);
+    setWidgetOrder(defaultOrder);
+    persist(defaults, defaultOrder);
   }, [defaults, persist]);
+
+  const reorderWidgets = useCallback(
+    (newOrder: WidgetId[]) => {
+      setWidgetOrder(newOrder);
+      persist(preferences ?? defaults, newOrder);
+    },
+    [preferences, defaults, persist],
+  );
 
   const isWidgetVisible = useCallback(
     (id: WidgetId): boolean => {
@@ -154,5 +173,7 @@ export function useDashboardWidgets() {
     resetToDefaults,
     isWidgetVisible,
     availableWidgets,
+    widgetOrder,
+    reorderWidgets,
   };
 }

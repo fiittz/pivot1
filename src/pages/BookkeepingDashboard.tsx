@@ -11,6 +11,10 @@ import { WidgetCustomizeSheet } from "@/components/dashboard/WidgetCustomizeShee
 import { DeadlinesWidget } from "@/components/dashboard/DeadlinesWidget";
 import { DocumentRequestsBanner } from "@/components/dashboard/DocumentRequestsBanner";
 import { InboundEmailCard } from "@/components/dashboard/InboundEmailCard";
+import InsightsWidget from "@/components/dashboard/InsightsWidget";
+import DashboardGrid from "@/components/dashboard/DashboardGrid";
+import SortableWidget from "@/components/dashboard/SortableWidget";
+import { WidgetId } from "@/types/dashboardWidgets";
 
 const BookkeepingDashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +28,8 @@ const BookkeepingDashboard = () => {
     resetToDefaults,
     isWidgetVisible,
     availableWidgets,
+    widgetOrder,
+    reorderWidgets,
   } = useDashboardWidgets();
 
   const isVatRegistered = onboarding?.vat_registered ?? true;
@@ -118,187 +124,146 @@ const BookkeepingDashboard = () => {
         <OnboardingProgressCard />
         <DocumentRequestsBanner />
 
-        {/* Top cards grid */}
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {/* Bank Feed Status */}
-          <DashboardWidget
-            widgetId="bank_feed_status"
-            isVisible={isWidgetVisible("bank_feed_status")}
-            isLoading={widgetsLoading}
-          >
-            <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank feed</p>
-                  <h2 className="text-base font-semibold">Business Accounts</h2>
-                </div>
-                <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Live</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {transactions.length ? "Latest balances synced" : "Import a CSV to get started"}
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-1 w-fit text-xs"
-                onClick={() => navigate("/bank")}
-              >
-                View Transactions
-              </Button>
-            </div>
-          </DashboardWidget>
-
-          {/* Uncategorised Transactions */}
-          <DashboardWidget
-            widgetId="uncategorised_transactions"
-            isVisible={isWidgetVisible("uncategorised_transactions")}
-            isLoading={widgetsLoading}
-          >
-            <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Review</p>
-              <h2 className="text-base font-semibold">Transactions to Review</h2>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold">{uncategorisedCount}</span>
-                <span className="text-xs text-muted-foreground">need attention</span>
-              </div>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                {(transactions as Record<string, unknown>[])
-                  .filter((t) => !t.category_id)
-                  .slice(0, 3)
-                  .map((t) => (
-                    <div key={t.id as string} className="flex items-center justify-between border rounded-lg px-2 py-1">
-                      <span className="truncate max-w-[60%]">{t.description as string}</span>
-                      <span className="font-medium">€{Number(t.amount || 0).toFixed(2)}</span>
-                    </div>
-                  ))}
-                {!transactions.length && <p>No transactions yet. Import a CSV to get started.</p>}
-              </div>
-              <Button
-                size="sm"
-                className="mt-1 w-fit text-xs"
-                onClick={() => navigate("/bank")}
-              >
-                Review Now
-              </Button>
-            </div>
-          </DashboardWidget>
-
-          {/* VAT Position */}
-          <DashboardWidget
-            widgetId="vat_overview"
-            isVisible={isWidgetVisible("vat_overview")}
-            isLoading={widgetsLoading}
-          >
-            <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">VAT</p>
-              <h2 className="text-base font-semibold">VAT Position</h2>
-              {isVatRegistered ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">VAT on Sales</span>
-                    <span className="font-medium">€0.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">VAT on Purchases</span>
-                    <span className="font-medium">€0.00</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2 mt-1">
-                    <span className="font-medium">Net VAT</span>
-                    <span className="font-bold">€0.00</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 w-fit text-xs"
-                    onClick={() => navigate("/vat")}
-                  >
-                    Open VAT Report
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  You're not VAT-registered — no VAT tracking needed.
-                </p>
-              )}
-            </div>
-          </DashboardWidget>
-
-          {/* RCT Position */}
-          {showRctCards && (
-            <DashboardWidget
-              widgetId="rct_overview"
-              isVisible={isWidgetVisible("rct_overview")}
-              isLoading={widgetsLoading}
-            >
-              <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">RCT</p>
-                <h2 className="text-base font-semibold">RCT Overview</h2>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">RCT withheld</span>
-                    <span className="font-medium">€0.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">RCT to pay</span>
-                    <span className="font-medium">€0.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reverse charge applied</span>
-                    <span className="font-medium">0 invoices</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 w-fit text-xs"
-                    onClick={() => navigate("/rct")}
-                  >
-                    Open RCT Centre
-                  </Button>
-                </div>
-              </div>
-            </DashboardWidget>
-          )}
-
-          {/* Pending Tasks */}
-          <DashboardWidget
-            widgetId="pending_tasks"
-            isVisible={isWidgetVisible("pending_tasks")}
-            isLoading={widgetsLoading}
-          >
-            <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Tasks</p>
-                  <h2 className="text-base font-semibold">Pending Tasks</h2>
-                </div>
-                <span className="px-2 py-1 rounded-full bg-muted text-xs font-medium">
-                  {uncategorisedCount + (unmatchedTransactions?.length || 0)} items
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>{uncategorisedCount} transactions need review</p>
-                <p>{unmatchedTransactions?.length || 0} receipts / unmatched items</p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="mt-1 w-fit text-xs"
-                onClick={() => navigate("/tasks")}
-              >
-                Open Tasks
-              </Button>
-            </div>
-          </DashboardWidget>
-
-          {/* Deadlines */}
-          <DashboardWidget
-            widgetId="tax_deadlines"
-            isVisible={isWidgetVisible("tax_deadlines")}
-            isLoading={widgetsLoading}
-          >
-            <DeadlinesWidget />
-          </DashboardWidget>
-        </div>
+        {/* Top cards grid — draggable */}
+        <DashboardGrid
+          widgetOrder={widgetOrder.filter((id) => [
+            "bank_feed_status", "uncategorised_transactions", "vat_overview",
+            "rct_overview", "pending_tasks", "tax_deadlines", "ai_insights",
+          ].includes(id))}
+          onReorder={(newOrder) => {
+            // Merge reordered subset back into full order
+            const subset = new Set(newOrder);
+            const merged = widgetOrder.filter((id) => !subset.has(id as WidgetId));
+            const firstIdx = widgetOrder.findIndex((id) => subset.has(id as WidgetId));
+            merged.splice(firstIdx >= 0 ? firstIdx : merged.length, 0, ...newOrder as WidgetId[]);
+            reorderWidgets(merged as WidgetId[]);
+          }}
+          renderWidget={(widgetId) => {
+            switch (widgetId) {
+              case "bank_feed_status":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="bank_feed_status" isVisible={isWidgetVisible("bank_feed_status")} isLoading={widgetsLoading}>
+                      <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank feed</p>
+                            <h2 className="text-base font-semibold">Business Accounts</h2>
+                          </div>
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Live</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{transactions.length ? "Latest balances synced" : "Import a CSV to get started"}</p>
+                        <Button variant="outline" size="sm" className="mt-1 w-fit text-xs" onClick={() => navigate("/bank")}>View Transactions</Button>
+                      </div>
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "uncategorised_transactions":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="uncategorised_transactions" isVisible={isWidgetVisible("uncategorised_transactions")} isLoading={widgetsLoading}>
+                      <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Review</p>
+                        <h2 className="text-base font-semibold">Transactions to Review</h2>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-bold">{uncategorisedCount}</span>
+                          <span className="text-xs text-muted-foreground">need attention</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {(transactions as Record<string, unknown>[]).filter((t) => !t.category_id).slice(0, 3).map((t) => (
+                            <div key={t.id as string} className="flex items-center justify-between border rounded-lg px-2 py-1">
+                              <span className="truncate max-w-[60%]">{t.description as string}</span>
+                              <span className="font-medium">€{Number(t.amount || 0).toFixed(2)}</span>
+                            </div>
+                          ))}
+                          {!transactions.length && <p>No transactions yet. Import a CSV to get started.</p>}
+                        </div>
+                        <Button size="sm" className="mt-1 w-fit text-xs" onClick={() => navigate("/bank")}>Review Now</Button>
+                      </div>
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "vat_overview":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="vat_overview" isVisible={isWidgetVisible("vat_overview")} isLoading={widgetsLoading}>
+                      <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">VAT</p>
+                        <h2 className="text-base font-semibold">VAT Position</h2>
+                        {isVatRegistered ? (
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between"><span className="text-muted-foreground">VAT on Sales</span><span className="font-medium">€0.00</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">VAT on Purchases</span><span className="font-medium">€0.00</span></div>
+                            <div className="flex justify-between border-t pt-2 mt-1"><span className="font-medium">Net VAT</span><span className="font-bold">€0.00</span></div>
+                            <Button size="sm" variant="outline" className="mt-2 w-fit text-xs" onClick={() => navigate("/vat")}>Open VAT Report</Button>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">You're not VAT-registered — no VAT tracking needed.</p>
+                        )}
+                      </div>
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "rct_overview":
+                if (!showRctCards) return null;
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="rct_overview" isVisible={isWidgetVisible("rct_overview")} isLoading={widgetsLoading}>
+                      <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">RCT</p>
+                        <h2 className="text-base font-semibold">RCT Overview</h2>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between"><span className="text-muted-foreground">RCT withheld</span><span className="font-medium">€0.00</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">RCT to pay</span><span className="font-medium">€0.00</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Reverse charge applied</span><span className="font-medium">0 invoices</span></div>
+                          <Button size="sm" variant="outline" className="mt-2 w-fit text-xs" onClick={() => navigate("/rct")}>Open RCT Centre</Button>
+                        </div>
+                      </div>
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "pending_tasks":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="pending_tasks" isVisible={isWidgetVisible("pending_tasks")} isLoading={widgetsLoading}>
+                      <div className="bg-card rounded-xl p-5 border flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Tasks</p>
+                            <h2 className="text-base font-semibold">Pending Tasks</h2>
+                          </div>
+                          <span className="px-2 py-1 rounded-full bg-muted text-xs font-medium">{uncategorisedCount + (unmatchedTransactions?.length || 0)} items</span>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <p>{uncategorisedCount} transactions need review</p>
+                          <p>{unmatchedTransactions?.length || 0} receipts / unmatched items</p>
+                        </div>
+                        <Button size="sm" variant="outline" className="mt-1 w-fit text-xs" onClick={() => navigate("/tasks")}>Open Tasks</Button>
+                      </div>
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "tax_deadlines":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="tax_deadlines" isVisible={isWidgetVisible("tax_deadlines")} isLoading={widgetsLoading}>
+                      <DeadlinesWidget />
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "ai_insights":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="ai_insights" isVisible={isWidgetVisible("ai_insights")} isLoading={widgetsLoading}>
+                      <InsightsWidget />
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              default:
+                return null;
+            }
+          }}
+        />
 
         {/* Construction-specific widgets */}
         {isRctIndustry && constructionStats && (

@@ -119,6 +119,13 @@ import { getIndustryGroup } from "@/lib/industryGroups";
 import { getReliefSuggestions, type SuggestionContext } from "@/lib/reliefSuggestions";
 import ReliefSuggestionsPanel from "@/components/bank/ReliefSuggestionsPanel";
 import BusinessExpenseReviewDialog from "@/components/bank/BusinessExpenseReviewDialog";
+import LedgerFilterBar from "@/components/bank/LedgerFilterBar";
+import { useLedgerFilters } from "@/hooks/useLedgerFilters";
+import BankConnectionWizard from "@/components/bank/BankConnectionWizard";
+import SplitPaneView from "@/components/bank/SplitPaneView";
+import TransactionDataGrid from "@/components/bank/TransactionDataGrid";
+import TransactionStatusDot from "@/components/bank/TransactionStatusDot";
+import { List, Grid3X3, Columns, LayoutGrid } from "lucide-react";
 
 type FilterType = "all" | "income" | "expense" | "uncategorized";
 type AccountType = "limited_company" | "sole_trader" | "directors_personal_tax";
@@ -271,6 +278,13 @@ const BankFeed = () => {
   const [pendingExportType, setPendingExportType] = useState<"excel" | "pdf" | null>(null);
   const [pendingVATExportType, setPendingVATExportType] = useState<"excel" | "pdf" | null>(null);
   const [showBusinessReview, setShowBusinessReview] = useState(false);
+  const [showBankWizard, setShowBankWizard] = useState(false);
+  const [viewMode, setViewMode] = useState<"category" | "grid" | "split">(() => {
+    const saved = localStorage.getItem("balnce-ledger-view-mode");
+    // Default: split on desktop, category on mobile
+    if (saved && ["category", "grid", "split"].includes(saved)) return saved as "category" | "grid" | "split";
+    return window.innerWidth >= 768 ? "split" : "category";
+  });
 
   const { data: accounts } = useAccounts();
   const createAccountMutation = useCreateAccount();
@@ -466,6 +480,9 @@ const BankFeed = () => {
 
     return transactions.filter((t) => t.account_id === selectedAccountId);
   }, [transactions, selectedAccountId, accounts]);
+
+  // Advanced filtering
+  const ledgerFilters = useLedgerFilters(accountFilteredTransactions as Record<string, unknown>[]);
 
   // Calculate counts based on filtered transactions
   const uncategorizedCount = accountFilteredTransactions?.filter((t) => !t.category_id).length || 0;
@@ -1528,6 +1545,10 @@ const BankFeed = () => {
                       Import CSV
                     </Button>
                   )}
+                  <Button variant="outline" size="sm" onClick={() => setShowBankWizard(true)}>
+                    <Landmark className="w-4 h-4 mr-2" />
+                    Connect Bank
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => navigate("/receipts/bulk")}>
                     <Receipt className="w-4 h-4 mr-2" />
                     Upload Receipts
@@ -1624,7 +1645,45 @@ const BankFeed = () => {
               ))}
             </div>
 
-            {/* Category Ledger Sections */}
+            {/* Advanced Search & Filters */}
+            <LedgerFilterBar
+              searchText={ledgerFilters.filters.searchText}
+              onSearchChange={ledgerFilters.setSearchText}
+              dateRange={ledgerFilters.filters.dateRange}
+              onDateRangeChange={ledgerFilters.setDateRange}
+              amountRange={ledgerFilters.filters.amountRange}
+              onAmountRangeChange={ledgerFilters.setAmountRange}
+              categoryFilter={ledgerFilters.filters.categoryFilter}
+              onCategoryFilterChange={ledgerFilters.setCategoryFilter}
+              sortField={ledgerFilters.filters.sortField}
+              onSortFieldChange={ledgerFilters.setSortField}
+              sortDirection={ledgerFilters.filters.sortDirection}
+              onSortDirectionChange={ledgerFilters.setSortDirection}
+              onClearFilters={ledgerFilters.clearFilters}
+              activeFilterCount={ledgerFilters.activeFilterCount}
+            />
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5 w-fit">
+              {([
+                { mode: "category" as const, icon: LayoutGrid, label: "Category" },
+                { mode: "grid" as const, icon: Grid3X3, label: "Grid" },
+                { mode: "split" as const, icon: Columns, label: "Split", desktopOnly: true },
+              ] as const).map(({ mode, icon: Icon, label, desktopOnly }) => (
+                <button
+                  key={mode}
+                  onClick={() => { setViewMode(mode); localStorage.setItem("balnce-ledger-view-mode", mode); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    desktopOnly ? "hidden md:flex" : "flex"
+                  } ${viewMode === mode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Transaction Views */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -1639,6 +1698,16 @@ const BankFeed = () => {
                     : "Select or create an account to import transactions"}
                 </p>
               </div>
+            ) : viewMode === "grid" ? (
+              <TransactionDataGrid
+                transactions={ledgerFilters.filteredTransactions as any}
+                bankAccountType={selectedAccount?.account_type}
+              />
+            ) : viewMode === "split" ? (
+              <SplitPaneView
+                transactions={ledgerFilters.filteredTransactions as any}
+                bankAccountType={selectedAccount?.account_type}
+              />
             ) : (
               <div className="space-y-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
                 {/* Income Section */}
@@ -3306,6 +3375,7 @@ const BankFeed = () => {
       )}
 
       <FloatingActionBar selectedIds={selectedIds} onClearSelection={clearSelection} />
+      <BankConnectionWizard open={showBankWizard} onOpenChange={setShowBankWizard} />
     </AppLayout>
   );
 };
