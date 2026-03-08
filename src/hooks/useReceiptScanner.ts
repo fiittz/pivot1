@@ -71,7 +71,7 @@ export const useReceiptScanner = (): UseReceiptScannerReturn => {
 
       // Extract base64 data and MIME type (remove data:image/...;base64, prefix)
       const base64Data = imageData.split(",")[1];
-      const mimeType = imageData.split(",")[0]?.match(/:(.*?);/)?.[1] || "image/jpeg";
+      const mimeType = imageData.split(",")[0]?.match(/:([^;]*);/)?.[1] || "image/jpeg";
 
       const result: ReceiptResult = await processReceipt(base64Data, categories || undefined, mimeType);
 

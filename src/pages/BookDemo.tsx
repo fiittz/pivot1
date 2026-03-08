@@ -71,7 +71,7 @@ const BookDemo = () => {
       toast.error("Please enter your name");
       return;
     }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
       toast.error("Please enter a valid email");
       return;
     }

@@ -59,7 +59,7 @@ const ClientDetail = () => {
   // Build the client's inbound email address
   const inboundEmailCode = accountantClient?.inbound_email_code;
   const inboundEmail = inboundEmailCode
-    ? `${(accountantClient?.client_name || "client").toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}-${inboundEmailCode}@in.balnce.ie`
+    ? `${(accountantClient?.client_name || "client").toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/(?:^-|-$)/g, "")}-${inboundEmailCode}@in.balnce.ie`
     : null;
 
   // Show toggle only when client has both company and personal tax accounts

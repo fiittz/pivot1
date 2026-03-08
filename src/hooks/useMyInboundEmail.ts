@@ -28,7 +28,7 @@ export function useMyInboundEmail() {
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "-")
         .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
+        .replace(/(?:^-|-$)/g, "");
 
       return `${slug}-${data.inbound_email_code}@in.balnce.ie`;
     },

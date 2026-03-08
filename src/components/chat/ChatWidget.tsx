@@ -483,10 +483,10 @@ export default function ChatWidget() {
       parsedCall: { id: string; name: string; arguments: string } | null;
     } => {
       const RAW_TOOL_PATTERNS = [
-        /### Function<[^>]*>(\w+)\s*(?:json\s*)?\s*(\{[\s\S]*?\})\s*#?/i,
-        /<\|tool_call\|>\s*(\w+)\s*(\{[\s\S]*?\})/i,
-        /<tool_call>\s*(\w+)\s*(\{[\s\S]*?\})/i,
-        /\u{FF1C}[^>]*tool[^>]*\u{FF1E}\s*(\w+)\s*(\{[\s\S]*?\})/iu,
+        /### Function<[^>]*>(\w+) *(?:json *)? *(\{[\s\S]*?\}) *#?/i,
+        /<\|tool_call\|> *(\w+) *(\{[\s\S]*?\})/i,
+        /<tool_call> *(\w+) *(\{[\s\S]*?\})/i,
+        /\u{FF1C}[^>]*tool[^>]*\u{FF1E} *(\w+) *(\{[\s\S]*?\})/iu,
       ];
       for (const pattern of RAW_TOOL_PATTERNS) {
         const match = accumulated.match(pattern);

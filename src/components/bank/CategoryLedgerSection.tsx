@@ -232,7 +232,7 @@ export default function CategoryLedgerSection({
                 <p className={`font-semibold ${transaction.type === "income" ? "text-green-600" : ""}`}>
                   {transaction.type === "income" ? "+" : "-"}€{Math.abs(transaction.amount).toFixed(2)}
                 </p>
-                {transaction.vat_amount && transaction.vat_amount > 0 && (
+                {!!transaction.vat_amount && transaction.vat_amount > 0 && (
                   <span className="text-xs text-muted-foreground">VAT €{transaction.vat_amount.toFixed(2)}</span>
                 )}
               </div>

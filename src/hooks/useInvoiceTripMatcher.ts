@@ -342,9 +342,7 @@ export function useInvoiceTripMatcher(opts?: UseInvoiceTripMatcherOptions) {
           ? Math.round(
               (nights * SUBSISTENCE_RATES.overnight.day_rate + days * SUBSISTENCE_RATES.day_trip.ten_hours) * 100,
             ) / 100
-          : subsistenceMethod === "flat" && nights > 0
-            ? Math.round(days * SUBSISTENCE_RATES.day_trip.ten_hours * 100) / 100 // extra day meals not included in flat overnight
-            : Math.round(days * SUBSISTENCE_RATES.day_trip.ten_hours * 100) / 100;
+          : Math.round(days * SUBSISTENCE_RATES.day_trip.ten_hours * 100) / 100;
 
       const totalRevenueAllowance = subsistenceAllowance + mileageAllowance;
       // Positive = company owes director (director paid out of pocket more than CSV expenses)

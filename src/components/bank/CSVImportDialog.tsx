@@ -98,7 +98,7 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
     let cleaned = value.trim();
     if (!cleaned) return 0;
     // Handle parenthetical negatives: (50.00) → -50.00
-    cleaned = cleaned.replace(/\((.+)\)/, "-$1");
+    cleaned = cleaned.replace(/\(([^)]+)\)/, "-$1");
     // Handle DR/CR suffixes common in Irish bank CSVs
     const isDebit = /\bDR\b/i.test(cleaned);
     const isCredit = /\bCR\b/i.test(cleaned);
@@ -289,7 +289,7 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
         const parsed = lines.map((line) => {
           // For tab-delimited files, simple split is sufficient
           if (delimiter === "\t") {
-            return line.split("\t").map((cell) => cell.trim().replace(/^"|"$/g, ""));
+            return line.split("\t").map((cell) => cell.trim().replace(/(?:^"|"$)/g, ""));
           }
 
           // Handle quoted CSV values for comma/semicolon-delimited
@@ -828,6 +828,25 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
             userBusinessType: onboarding?.business_type || profile?.business_type || "",
             onProgress: setEnrichmentProgress,
           }).catch((err) => console.error("[PostImportEnrichment] Error:", err));
+        }
+
+        // Fire-and-forget: Magic Match nudge — auto-links receipts + emails user about unmatched expenses
+        if (user?.id && createdTransactions.length > 0) {
+          const expenseTxnIds = createdTransactions
+            .filter((t) => t.type === "expense")
+            .map((t) => t.id);
+          if (expenseTxnIds.length > 0) {
+            supabase.functions
+              .invoke("magic-match-nudge", {
+                body: { user_id: user.id, transaction_ids: expenseTxnIds },
+              })
+              .then((res) => {
+                if (res.data?.matched > 0) {
+                  toast.success(`Magic Match: ${res.data.matched} receipt${res.data.matched > 1 ? "s" : ""} auto-linked`);
+                }
+              })
+              .catch((err) => console.error("[MagicMatch] Error:", err));
+          }
         }
       }
     }

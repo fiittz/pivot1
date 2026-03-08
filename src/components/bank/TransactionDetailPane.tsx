@@ -69,7 +69,7 @@ export default function TransactionDetailPane({ transaction, bankAccountType, on
         <p className={`text-3xl font-bold ${isIncome ? "text-green-600" : ""}`}>
           {isIncome ? "+" : "-"}€{Math.abs(transaction.amount).toFixed(2)}
         </p>
-        {transaction.vat_amount && transaction.vat_amount > 0 && (
+        {!!transaction.vat_amount && transaction.vat_amount > 0 && (
           <p className="text-sm text-muted-foreground mt-1">
             VAT: €{transaction.vat_amount.toFixed(2)}
           </p>

@@ -40,7 +40,7 @@ export default function BusinessExpenseReviewDialog({
 
   const stripReviewTag = (notes: string | null): string => {
     if (!notes) return "";
-    return notes.replace(/\s*\[PENDING_BUSINESS_REVIEW\]/g, "").trim();
+    return notes.replace(/ *\[PENDING_BUSINESS_REVIEW\]/g, "").trim();
   };
 
   const handleBusiness = async (txn: Transaction) => {

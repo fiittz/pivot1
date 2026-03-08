@@ -62,3 +62,4 @@ build_deck.py
 
 # MCP server config (contains local paths)
 .mcp.json
+.scannerwork/

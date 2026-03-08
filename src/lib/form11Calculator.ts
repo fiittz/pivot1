@@ -151,7 +151,7 @@ const TAX_CONSTANTS_BY_YEAR: Record<number, TaxConstants> = {
 export function getTaxConstants(year: number): TaxConstants {
   if (TAX_CONSTANTS_BY_YEAR[year]) return TAX_CONSTANTS_BY_YEAR[year];
   // Fall back to closest year we have
-  const years = Object.keys(TAX_CONSTANTS_BY_YEAR).map(Number).sort();
+  const years = Object.keys(TAX_CONSTANTS_BY_YEAR).map(Number).sort((a, b) => a - b);
   const closest = years.reduce((prev, curr) => (Math.abs(curr - year) < Math.abs(prev - year) ? curr : prev));
   return TAX_CONSTANTS_BY_YEAR[closest];
 }

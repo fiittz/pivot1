@@ -59,7 +59,7 @@ const ClientSettings = () => {
       toast.error("Please enter the client's email address");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
       toast.error("Please enter a valid email address");
       return;
     }
