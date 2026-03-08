@@ -120,6 +120,7 @@ import { getReliefSuggestions, type SuggestionContext } from "@/lib/reliefSugges
 import ReliefSuggestionsPanel from "@/components/bank/ReliefSuggestionsPanel";
 import BusinessExpenseReviewDialog from "@/components/bank/BusinessExpenseReviewDialog";
 import LedgerFilterBar from "@/components/bank/LedgerFilterBar";
+import AIDisclosureBanner from "@/components/bank/AIDisclosureBanner";
 import { useLedgerFilters } from "@/hooks/useLedgerFilters";
 import BankConnectionWizard from "@/components/bank/BankConnectionWizard";
 import SplitPaneView from "@/components/bank/SplitPaneView";
@@ -1644,6 +1645,9 @@ const BankFeed = () => {
                 </button>
               ))}
             </div>
+
+            {/* EU AI Act Art. 50 — Transparency Disclosure */}
+            <AIDisclosureBanner />
 
             {/* Advanced Search & Filters */}
             <LedgerFilterBar

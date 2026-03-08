@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Tag, Brain, Check } from "lucide-react";
+import { Brain, Check } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useCategories } from "@/hooks/useCategories";
@@ -13,6 +14,7 @@ interface InlineCategoryPickerProps {
   currentCategoryId: string | null;
   transactionDescription?: string;
   currentVatRate?: number | null;
+  isAiSuggested?: boolean;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   bankAccountType?: string;
@@ -24,6 +26,7 @@ export default function InlineCategoryPicker({
   currentCategoryId,
   transactionDescription,
   currentVatRate,
+  isAiSuggested,
   isOpen,
   onOpenChange,
   bankAccountType,
@@ -67,6 +70,16 @@ export default function InlineCategoryPicker({
             currentCategory ? "bg-muted hover:bg-muted/80" : "bg-purple-100 text-purple-700 hover:bg-purple-200"
           }`}
         >
+          {isAiSuggested && currentCategory && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Brain className="w-3 h-3 text-blue-500 flex-shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                AI-suggested category — click to change
+              </TooltipContent>
+            </Tooltip>
+          )}
           {currentCategory ? currentCategory.name : "Uncategorized"}
         </button>
       </PopoverTrigger>

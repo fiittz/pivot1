@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { ArrowUpRight, ArrowDownLeft, Camera, CheckCircle2, Tag, FileText, Loader2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Brain, Camera, CheckCircle2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReceiptUrl } from "@/hooks/useReceiptUrl";
 import InlineCategoryPicker from "./InlineCategoryPicker";
@@ -43,6 +43,7 @@ export default function TransactionDetailPane({ transaction, bankAccountType, on
   }
 
   const isIncome = transaction.type === "income";
+  const isAiSuggested = !!(transaction.notes?.includes("[Auto-matched]") || transaction.notes?.includes("[AI]"));
 
   return (
     <div className="p-5 space-y-5 animate-fade-in">
@@ -84,10 +85,16 @@ export default function TransactionDetailPane({ transaction, bankAccountType, on
           currentCategoryId={transaction.category_id}
           transactionDescription={transaction.description}
           currentVatRate={transaction.vat_amount}
+          isAiSuggested={isAiSuggested}
           isOpen={categorizingOpen}
           onOpenChange={setCategorizingOpen}
           bankAccountType={bankAccountType}
         />
+        {isAiSuggested && (
+          <p className="text-[10px] text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1">
+            <Brain className="w-3 h-3" /> AI-suggested — click to change
+          </p>
+        )}
       </div>
 
       {/* Status */}

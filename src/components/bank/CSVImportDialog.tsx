@@ -779,7 +779,7 @@ const CSVImportDialog = ({ onImportComplete, selectedFinancialAccountId }: CSVIm
                     category_id: matchedCategory.id,
                     vat_rate: vatRateNum,
                     vat_amount: vatCalc.vatAmount,
-                    notes: (explanation.trim() + pendingReviewTag).trim(),
+                    notes: (`[AI] ${explanation.trim()}${pendingReviewTag}`).trim(),
                     is_reconciled: false,
                   });
                   return true;
