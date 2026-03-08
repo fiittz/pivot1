@@ -81,6 +81,7 @@ const ClientSettings = lazyWithRetry(() => import("./pages/accountant/ClientSett
 const InboundEmailDashboard = lazyWithRetry(() => import("./pages/accountant/InboundEmailDashboard"));
 const AcceptInvite = lazyWithRetry(() => import("./pages/AcceptInvite"));
 const PeriodEndQuestionnaire = lazyWithRetry(() => import("./pages/PeriodEndQuestionnaire"));
+const BudgetPage = lazyWithRetry(() => import("./pages/BudgetPage"));
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -297,6 +298,14 @@ const App = () => (
                         element={
                           <RequireAuth>
                             <Reports />
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/budgets"
+                        element={
+                          <RequireAuth>
+                            <BudgetPage />
                           </RequireAuth>
                         }
                       />

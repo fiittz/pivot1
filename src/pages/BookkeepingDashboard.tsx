@@ -12,8 +12,12 @@ import { DeadlinesWidget } from "@/components/dashboard/DeadlinesWidget";
 import { DocumentRequestsBanner } from "@/components/dashboard/DocumentRequestsBanner";
 import { InboundEmailCard } from "@/components/dashboard/InboundEmailCard";
 import InsightsWidget from "@/components/dashboard/InsightsWidget";
+import AILearningWidget from "@/components/dashboard/AILearningWidget";
+import BookkeepingScoreWidget from "@/components/dashboard/BookkeepingScoreWidget";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
 import SortableWidget from "@/components/dashboard/SortableWidget";
+import { useCategorizationStats } from "@/hooks/useCategorizationStats";
+import { useAchievements } from "@/hooks/useAchievements";
 import { WidgetId } from "@/types/dashboardWidgets";
 
 const BookkeepingDashboard = () => {
@@ -107,6 +111,17 @@ const BookkeepingDashboard = () => {
     return { materials, labour, subcontractors, fuel, totalJobCost };
   }, [isRctIndustry, transactions]);
 
+  const catStats = useCategorizationStats(transactions as never[]);
+  const { score: bkScore } = useAchievements({
+    totalCategorized: autoCatStats.autoPercent > 0 ? Math.round(transactions.length * autoCatStats.autoPercent / 100) : 0,
+    totalReceipts: 0,
+    totalMatched: 0,
+    totalImports: transactions.length > 0 ? 1 : 0,
+    vatReturnsCompleted: 0,
+    allOnboardingDone: false,
+    hasZeroUncategorised: uncategorisedCount === 0 && transactions.length > 0,
+  });
+
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
@@ -129,6 +144,7 @@ const BookkeepingDashboard = () => {
           widgetOrder={widgetOrder.filter((id) => [
             "bank_feed_status", "uncategorised_transactions", "vat_overview",
             "rct_overview", "pending_tasks", "tax_deadlines", "ai_insights",
+            "ai_learning", "bookkeeping_score",
           ].includes(id))}
           onReorder={(newOrder) => {
             // Merge reordered subset back into full order
@@ -256,6 +272,27 @@ const BookkeepingDashboard = () => {
                   <SortableWidget key={widgetId} id={widgetId}>
                     <DashboardWidget widgetId="ai_insights" isVisible={isWidgetVisible("ai_insights")} isLoading={widgetsLoading}>
                       <InsightsWidget />
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "ai_learning":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="ai_learning" isVisible={isWidgetVisible("ai_learning")} isLoading={widgetsLoading}>
+                      <AILearningWidget
+                        categorizationRate={catStats.categorizationRate}
+                        aiAccuracy={catStats.aiAccuracy}
+                        confidenceDistribution={catStats.confidenceDistribution}
+                        totalTransactions={catStats.totalTransactions}
+                      />
+                    </DashboardWidget>
+                  </SortableWidget>
+                );
+              case "bookkeeping_score":
+                return (
+                  <SortableWidget key={widgetId} id={widgetId}>
+                    <DashboardWidget widgetId="bookkeeping_score" isVisible={isWidgetVisible("bookkeeping_score")} isLoading={widgetsLoading}>
+                      <BookkeepingScoreWidget score={bkScore} />
                     </DashboardWidget>
                   </SortableWidget>
                 );

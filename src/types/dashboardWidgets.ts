@@ -14,7 +14,9 @@ export type WidgetId =
   | "construction_materials_labour"
   | "tax_deadlines"
   | "eu_international_overview"
-  | "chart_of_accounts";
+  | "chart_of_accounts"
+  | "ai_learning"
+  | "bookkeeping_score";
 
 export type WidgetCategory = "overview" | "financial" | "tasks" | "charts" | "construction" | "bookkeeping";
 
@@ -167,6 +169,20 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     label: "Smart Insights",
     description: "AI-powered anomaly detection and transaction insights",
     category: "tasks",
+    defaultVisible: true,
+  },
+  {
+    id: "ai_learning",
+    label: "AI Learning",
+    description: "AI categorisation accuracy and confidence distribution",
+    category: "overview",
+    defaultVisible: true,
+  },
+  {
+    id: "bookkeeping_score",
+    label: "Bookkeeping Score",
+    description: "Your gamified bookkeeping progress and achievements",
+    category: "overview",
     defaultVisible: true,
   },
 ];
