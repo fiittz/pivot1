@@ -20,13 +20,18 @@ export interface BankConnection {
 }
 
 // Irish banks supported by Enable Banking
-export const IRISH_BANKS = [
+const BASE_BANKS = [
   { name: "AIB", country: "IE", logo: "🏦", fullName: "Allied Irish Banks" },
   { name: "Bank of Ireland", country: "IE", logo: "🏦", fullName: "Bank of Ireland" },
   { name: "Permanent TSB", country: "IE", logo: "🏦", fullName: "Permanent TSB" },
   { name: "Revolut", country: "IE", logo: "🔄", fullName: "Revolut" },
   { name: "N26", country: "DE", logo: "🟢", fullName: "N26" },
-] as const;
+];
+
+// Add sandbox test bank in dev mode
+export const IRISH_BANKS = import.meta.env.DEV
+  ? [...BASE_BANKS, { name: "Mock ASPSP", country: "XX", logo: "🧪", fullName: "Sandbox Test Bank" }]
+  : BASE_BANKS;
 
 export function useOpenBanking() {
   const { user } = useAuth();
