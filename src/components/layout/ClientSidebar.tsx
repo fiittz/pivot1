@@ -19,6 +19,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import PenguinIcon from "@/components/PenguinIcon";
 
 interface NavItem {
@@ -44,8 +46,23 @@ const ClientSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { data: onboarding } = useOnboardingSettings();
+
+  // Only show Tax & Compliance when accountant has sent approved reports
+  const { data: approvedReports } = useQuery({
+    queryKey: ["client-reports", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_reports")
+        .select("id, report_type")
+        .in("status", ["sent", "acknowledged"]);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const hasApprovedReports = (approvedReports?.length || 0) > 0;
 
   const isRctIndustry = [
     "construction",
@@ -156,7 +173,6 @@ const ClientSidebar = () => {
         <PenguinIcon className="w-8 h-8" />
         <div>
           <span className="text-lg font-semibold text-foreground tracking-tight">Balnce</span>
-          <span className="text-[9px] text-muted-foreground block -mt-0.5 font-['IBM_Plex_Mono'] uppercase tracking-widest">v2</span>
         </div>
       </div>
 
@@ -185,11 +201,15 @@ const ClientSidebar = () => {
           {bookkeepingItems.filter((i) => !i.hidden).map(renderNavItem)}
         </div>
 
-        {/* Tax & Compliance */}
-        <SectionLabel>Tax & Compliance</SectionLabel>
-        <div className="space-y-0.5">
-          {taxItems.filter((i) => !i.hidden).map(renderNavItem)}
-        </div>
+        {/* Tax & Compliance — only shown when accountant has approved reports */}
+        {hasApprovedReports && (
+          <>
+            <SectionLabel>Tax & Compliance</SectionLabel>
+            <div className="space-y-0.5">
+              {taxItems.filter((i) => !i.hidden).map(renderNavItem)}
+            </div>
+          </>
+        )}
 
         {/* Insights */}
         <SectionLabel>Insights</SectionLabel>
