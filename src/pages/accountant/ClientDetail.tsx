@@ -19,7 +19,20 @@ import ClientNotesTab from "./ClientNotesTab";
 import ClientTasksTab from "./ClientTasksTab";
 import ClientFilingsTab from "./ClientFilingsTab";
 import ClientMessagesTab from "@/components/accountant/ClientMessagesTab";
+import AuditTrailPanel from "@/components/accountant/AuditTrailPanel";
+import { TrialBalanceView } from "@/components/accountant/TrialBalanceView";
+import { MultiYearComparison } from "@/components/accountant/MultiYearComparison";
+import { ProfitAndLossView } from "@/components/accountant/ProfitAndLossView";
+import { DebtorCreditorWorkingPaper } from "@/components/accountant/DebtorCreditorWorkingPaper";
 import { ClientReadinessBar } from "@/components/accountant/ClientReadinessBar";
+import { FixedAssetRegister } from "@/components/accountant/FixedAssetRegister";
+import { BankReconciliationView } from "@/components/accountant/BankReconciliationView";
+import { OnboardingChecklist } from "@/components/accountant/OnboardingChecklist";
+import { VATReturnsView } from "@/components/accountant/VATReturnsView";
+import { PayrollTab } from "@/components/accountant/PayrollTab";
+import { CapTableView } from "@/components/accountant/CapTableView";
+import { PaymentsOverview } from "@/components/accountant/PaymentsOverview";
+import { RCTManager } from "@/components/accountant/RCTManager";
 import {
   ArrowLeft,
   Building2,
@@ -30,8 +43,10 @@ import {
   Wallet,
   Inbox,
   Copy,
+  Sparkles,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useToggleCopilot } from "@/hooks/accountant/useCopilot";
+import { Switch } from "@/components/ui/switch";
 
 type TaxView = "ct1" | "form11";
 
@@ -52,6 +67,9 @@ const ClientDetail = () => {
   const ct1Data = useClientCT1Data(clientId);
   const { data: accountantClient } = useAccountantClientByUserId(clientId);
   const accountantClientId = accountantClient?.id;
+
+  const toggleCopilot = useToggleCopilot();
+  const copilotEnabled = accountantClient?.copilot_enabled ?? false;
 
   const businessName = onboarding?.company_name ?? profile?.full_name ?? "Client";
   const email = profile?.email ?? "";
@@ -139,16 +157,31 @@ const ClientDetail = () => {
               )}
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSendPasswordReset}
-            disabled={isSendingReset || !email}
-            className="shrink-0 gap-1.5"
-          >
-            {isSendingReset ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-            Send Password Reset
-          </Button>
+          <div className="flex items-center gap-3 shrink-0">
+            {accountantClientId && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Sparkles className={`w-3.5 h-3.5 ${copilotEnabled ? "text-[#E8930C]" : "text-muted-foreground"}`} />
+                <span className="text-xs text-muted-foreground">Co-Pilot</span>
+                <Switch
+                  checked={copilotEnabled}
+                  onCheckedChange={(checked) =>
+                    toggleCopilot.mutate({ accountantClientId, enabled: checked })
+                  }
+                  disabled={toggleCopilot.isPending}
+                />
+              </label>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendPasswordReset}
+              disabled={isSendingReset || !email}
+              className="shrink-0 gap-1.5"
+            >
+              {isSendingReset ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+              Send Password Reset
+            </Button>
+          </div>
         </div>
 
         {/* Tax view toggle — only when client has both account types */}
@@ -179,8 +212,21 @@ const ClientDetail = () => {
             <TabsTrigger value="reports">Reports</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="trial-balance">Trial Balance</TabsTrigger>
+            <TabsTrigger value="pnl">P&amp;L</TabsTrigger>
+            <TabsTrigger value="aged-debtors">Debtors &amp; Creditors</TabsTrigger>
+            <TabsTrigger value="comparison">Year Comparison</TabsTrigger>
+            <TabsTrigger value="assets">Assets</TabsTrigger>
+            <TabsTrigger value="bank-rec">Bank Rec</TabsTrigger>
+            <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+            <TabsTrigger value="cap-table">Cap Table</TabsTrigger>
+            <TabsTrigger value="vat">VAT</TabsTrigger>
+            <TabsTrigger value="payroll">Payroll</TabsTrigger>
+            {onboarding?.rct_registered && <TabsTrigger value="rct">RCT</TabsTrigger>}
             <TabsTrigger value="filings">Filings</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>
 
           {/* Overview */}
@@ -203,6 +249,8 @@ const ClientDetail = () => {
               accountType={hasBothAccountTypes ? (taxView === "ct1" ? "limited_company" : "directors_personal_tax") : undefined}
               isVatRegistered={!!onboarding?.vat_registered}
               isRctRegistered={!!onboarding?.rct_registered}
+              initialCategoryFilter={searchParams.get("category") ?? undefined}
+              onClearCategoryFilter={() => setSearchParams({ tab: "transactions" }, { replace: true })}
             />
           </TabsContent>
 
@@ -234,6 +282,142 @@ const ClientDetail = () => {
             )}
           </TabsContent>
 
+          {/* Trial Balance */}
+          <TabsContent value="trial-balance">
+            {accountantClientId && clientId ? (
+              <TrialBalanceView
+                clientUserId={clientId}
+                accountantClientId={accountantClientId}
+                taxYear={new Date().getFullYear() - 1}
+                clientName={profile?.business_name ?? accountantClient?.client_name}
+                onDrillDown={(accountName) => {
+                  setSearchParams({ tab: "transactions", category: accountName }, { replace: true });
+                }}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* P&L */}
+          <TabsContent value="pnl">
+            {clientId ? (
+              <ProfitAndLossView
+                clientUserId={clientId}
+                taxYear={new Date().getFullYear() - 1}
+                clientName={profile?.business_name ?? accountantClient?.client_name}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Debtors & Creditors */}
+          <TabsContent value="aged-debtors">
+            {clientId && accountantClientId ? (
+              <DebtorCreditorWorkingPaper
+                clientUserId={clientId}
+                accountantClientId={accountantClientId}
+                taxYear={new Date().getFullYear() - 1}
+                clientName={profile?.business_name ?? accountantClient?.client_name}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Year Comparison */}
+          <TabsContent value="comparison">
+            {clientId ? (
+              <MultiYearComparison
+                clientUserId={clientId}
+                currentTaxYear={new Date().getFullYear() - 1}
+                clientName={profile?.business_name ?? accountantClient?.client_name}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Fixed Assets */}
+          <TabsContent value="assets">
+            {clientId ? (
+              <FixedAssetRegister clientUserId={clientId} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Bank Reconciliation */}
+          <TabsContent value="bank-rec">
+            {clientId ? (
+              <BankReconciliationView
+                clientUserId={clientId}
+                taxYear={new Date().getFullYear() - 1}
+                clientName={profile?.business_name ?? accountantClient?.client_name}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Onboarding */}
+          <TabsContent value="onboarding">
+            {accountantClientId ? (
+              <OnboardingChecklist accountantClientId={accountantClientId} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Cap Table */}
+          <TabsContent value="cap-table">
+            {clientId ? (
+              <CapTableView clientUserId={clientId} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* VAT */}
+          <TabsContent value="vat">
+            {clientId ? (
+              <VATReturnsView
+                clientUserId={clientId}
+                taxYear={new Date().getFullYear() - 1}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Payroll */}
+          <TabsContent value="payroll">
+            {clientId ? (
+              <PayrollTab
+                clientUserId={clientId}
+                taxYear={new Date().getFullYear() - 1}
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* RCT — only for construction, forestry, meat processing clients */}
+          {onboarding?.rct_registered && (
+            <TabsContent value="rct">
+              {clientId && accountantClientId ? (
+                <RCTManager
+                  clientUserId={clientId}
+                  accountantClientId={accountantClientId}
+                  clientName={businessName}
+                />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">Loading...</div>
+              )}
+            </TabsContent>
+          )}
+
           {/* Filings */}
           <TabsContent value="filings">
             {accountantClientId && clientId ? (
@@ -243,10 +427,28 @@ const ClientDetail = () => {
             )}
           </TabsContent>
 
+          {/* Payments */}
+          <TabsContent value="payments">
+            {clientId ? (
+              <PaymentsOverview clientUserId={clientId} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
           {/* Messages */}
           <TabsContent value="messages">
             {accountantClientId ? (
               <ClientMessagesTab accountantClientId={accountantClientId} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            )}
+          </TabsContent>
+
+          {/* Audit */}
+          <TabsContent value="audit">
+            {clientId ? (
+              <AuditTrailPanel clientUserId={clientId} />
             ) : (
               <div className="text-center py-12 text-muted-foreground">Loading...</div>
             )}

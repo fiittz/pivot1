@@ -85,6 +85,14 @@ export interface QuestionnaireData {
   directorsLoanDirection: "owed_to" | "owed_by" | undefined;
   prepaymentsAmount: number;
   accrualsAmount: number;
+  // Opening balances for accrual adjustments (prior year closing = this year opening)
+  openingPrepayments: number;
+  openingAccruals: number;
+  // Accrued income & deferred income
+  accruedIncomeAmount: number;
+  openingAccruedIncome: number;
+  deferredIncomeAmount: number;
+  openingDeferredIncome: number;
   depreciationConfirmed: boolean;
 
   // Section 11: Close Company & Related Parties
@@ -217,6 +225,12 @@ const initialData: QuestionnaireData = {
   directorsLoanDirection: undefined,
   prepaymentsAmount: 0,
   accrualsAmount: 0,
+  openingPrepayments: 0,
+  openingAccruals: 0,
+  accruedIncomeAmount: 0,
+  openingAccruedIncome: 0,
+  deferredIncomeAmount: 0,
+  openingDeferredIncome: 0,
   depreciationConfirmed: false,
   isCloseCompany: false,
   distributedProfitsSufficiently: false,
@@ -1273,28 +1287,117 @@ export function BusinessBankExportQuestionnaire({
             <Separator />
 
             {/* Prepayments & Accruals */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="font-medium text-sm">Prepayments & Accruals</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm">Prepaid expenses at period end</Label>
-                  <Input
-                    type="number"
-                    value={data.prepaymentsAmount || ""}
-                    onChange={(e) => updateData("prepaymentsAmount", parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    className="mt-1"
-                  />
+              <p className="text-xs text-muted-foreground">
+                Enter opening (start of year) and closing (end of year) balances. The difference adjusts your trading profit.
+              </p>
+
+              {/* Prepaid Expenses */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prepaid Expenses (asset — e.g. insurance paid in advance)</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Opening balance</Label>
+                    <Input
+                      type="number"
+                      value={data.openingPrepayments || ""}
+                      onChange={(e) => updateData("openingPrepayments", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Closing balance</Label>
+                    <Input
+                      type="number"
+                      value={data.prepaymentsAmount || ""}
+                      onChange={(e) => updateData("prepaymentsAmount", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm">Accrued expenses at period end</Label>
-                  <Input
-                    type="number"
-                    value={data.accrualsAmount || ""}
-                    onChange={(e) => updateData("accrualsAmount", parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    className="mt-1"
-                  />
+              </div>
+
+              {/* Accrued Expenses */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Accrued Expenses (liability — e.g. utility bills owing)</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Opening balance</Label>
+                    <Input
+                      type="number"
+                      value={data.openingAccruals || ""}
+                      onChange={(e) => updateData("openingAccruals", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Closing balance</Label>
+                    <Input
+                      type="number"
+                      value={data.accrualsAmount || ""}
+                      onChange={(e) => updateData("accrualsAmount", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Accrued Income */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Accrued Income (asset — work done but not yet invoiced)</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Opening balance</Label>
+                    <Input
+                      type="number"
+                      value={data.openingAccruedIncome || ""}
+                      onChange={(e) => updateData("openingAccruedIncome", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Closing balance</Label>
+                    <Input
+                      type="number"
+                      value={data.accruedIncomeAmount || ""}
+                      onChange={(e) => updateData("accruedIncomeAmount", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Deferred Income */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deferred Income (liability — payments received for work not yet done)</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Opening balance</Label>
+                    <Input
+                      type="number"
+                      value={data.openingDeferredIncome || ""}
+                      onChange={(e) => updateData("openingDeferredIncome", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Closing balance</Label>
+                    <Input
+                      type="number"
+                      value={data.deferredIncomeAmount || ""}
+                      onChange={(e) => updateData("deferredIncomeAmount", parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1533,7 +1636,21 @@ export function BusinessBankExportQuestionnaire({
       case 14: {
         const totalIncome = detectedIncome.reduce((s, i) => s + i.amount, 0);
         const addBacks = data.addBackDepreciation + data.addBackEntertainment + data.addBackOther;
-        const adjustedProfit = totalIncome - expenseSummary.allowable + addBacks - data.lessCapitalAllowances;
+
+        // Accrual adjustments (matching principle)
+        // Prepayments: closing - opening = increase in prepayments = reduce expenses (add to profit)
+        const prepaymentAdj = (data.prepaymentsAmount || 0) - (data.openingPrepayments || 0);
+        // Accruals: closing - opening = increase in accruals = increase expenses (reduce profit)
+        const accrualAdj = (data.accrualsAmount || 0) - (data.openingAccruals || 0);
+        // Accrued income: closing - opening = increase = add to income
+        const accruedIncomeAdj = (data.accruedIncomeAmount || 0) - (data.openingAccruedIncome || 0);
+        // Deferred income: closing - opening = increase = reduce income
+        const deferredIncomeAdj = (data.deferredIncomeAmount || 0) - (data.openingDeferredIncome || 0);
+
+        const netAccrualAdj = prepaymentAdj - accrualAdj + accruedIncomeAdj - deferredIncomeAdj;
+        const hasAccrualAdj = prepaymentAdj !== 0 || accrualAdj !== 0 || accruedIncomeAdj !== 0 || deferredIncomeAdj !== 0;
+
+        const adjustedProfit = totalIncome - expenseSummary.allowable + addBacks - data.lessCapitalAllowances + netAccrualAdj;
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -1543,7 +1660,7 @@ export function BusinessBankExportQuestionnaire({
               Trading Profit Adjustment
             </h3>
             <p className="text-sm text-muted-foreground">
-              Adjust book profit to taxable profit by adding back non-deductible items and deducting capital allowances.
+              Adjust book profit to taxable profit by adding back non-deductible items, deducting capital allowances, and applying accrual adjustments.
             </p>
 
             <div className="space-y-3">
@@ -1598,7 +1715,7 @@ export function BusinessBankExportQuestionnaire({
 
               <Separator />
 
-              <div className="bg-primary/5 rounded-lg p-3">
+              <div className="bg-primary/5 rounded-lg p-3 space-y-0.5">
                 <div className="flex justify-between text-sm">
                   <span>Gross income</span>
                   <span className="font-mono">{formatCurrency(totalIncome)}</span>
@@ -1609,12 +1726,50 @@ export function BusinessBankExportQuestionnaire({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Add: Non-deductible add-backs</span>
-                  <span className="font-mono text-red-600">+{formatCurrency(addBacks)}</span>
+                  <span className="font-mono">+{formatCurrency(addBacks)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Less: Capital allowances</span>
                   <span className="font-mono text-green-600">-{formatCurrency(data.lessCapitalAllowances)}</span>
                 </div>
+                {hasAccrualAdj && (
+                  <>
+                    <Separator />
+                    <p className="text-xs font-medium text-muted-foreground pt-1">Accrual Adjustments</p>
+                    {prepaymentAdj !== 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Prepayment movement</span>
+                        <span className={`font-mono ${prepaymentAdj > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {prepaymentAdj > 0 ? "+" : ""}{formatCurrency(prepaymentAdj)}
+                        </span>
+                      </div>
+                    )}
+                    {accrualAdj !== 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Accrued expenses movement</span>
+                        <span className={`font-mono ${accrualAdj > 0 ? "text-red-600" : "text-green-600"}`}>
+                          {accrualAdj > 0 ? "-" : "+"}{formatCurrency(Math.abs(accrualAdj))}
+                        </span>
+                      </div>
+                    )}
+                    {accruedIncomeAdj !== 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Accrued income movement</span>
+                        <span className={`font-mono ${accruedIncomeAdj > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {accruedIncomeAdj > 0 ? "+" : ""}{formatCurrency(accruedIncomeAdj)}
+                        </span>
+                      </div>
+                    )}
+                    {deferredIncomeAdj !== 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Deferred income movement</span>
+                        <span className={`font-mono ${deferredIncomeAdj > 0 ? "text-red-600" : "text-green-600"}`}>
+                          {deferredIncomeAdj > 0 ? "-" : "+"}{formatCurrency(Math.abs(deferredIncomeAdj))}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
                 <Separator />
                 <div className="flex justify-between text-sm font-semibold mt-2">
                   <span>Adjusted Taxable Profit</span>

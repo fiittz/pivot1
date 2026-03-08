@@ -110,9 +110,30 @@ export function assembleCT1ReportData(
     sections.push({ title: "Capital Allowances", rows: capAllowanceRows });
   }
 
+  // ── Accrual Adjustments ──────────────────────────────
+  const closingPrepayments = (questionnaire?.prepaymentsAmount as number) ?? 0;
+  const openingPrepayments = (questionnaire?.openingPrepayments as number) ?? 0;
+  const closingAccruals = (questionnaire?.accrualsAmount as number) ?? 0;
+  const openingAccruals = (questionnaire?.openingAccruals as number) ?? 0;
+  const closingAccruedIncome = (questionnaire?.accruedIncomeAmount as number) ?? 0;
+  const openingAccruedIncome = (questionnaire?.openingAccruedIncome as number) ?? 0;
+  const closingDeferredIncome = (questionnaire?.deferredIncomeAmount as number) ?? 0;
+  const openingDeferredIncome = (questionnaire?.openingDeferredIncome as number) ?? 0;
+
+  // Prepayment increase = reduce expenses = add to profit
+  const prepaymentAdj = closingPrepayments - openingPrepayments;
+  // Accrual increase = increase expenses = reduce profit
+  const accrualAdj = closingAccruals - openingAccruals;
+  // Accrued income increase = add to income
+  const accruedIncomeAdj = closingAccruedIncome - openingAccruedIncome;
+  // Deferred income increase = reduce income
+  const deferredIncomeAdj = closingDeferredIncome - openingDeferredIncome;
+
+  const netAccrualAdj = prepaymentAdj - accrualAdj + accruedIncomeAdj - deferredIncomeAdj;
+
   // ── Trading Profit Adjustment ─────────────────────────
   const travelDeduction = ct1.directorsLoanTravel;
-  const tradingProfit = totalIncome - ct1.expenseSummary.allowable - capitalAllowancesTotal - travelDeduction;
+  const tradingProfit = totalIncome - ct1.expenseSummary.allowable - capitalAllowancesTotal - travelDeduction + netAccrualAdj;
 
   const tradingProfitRows = [
     { label: "Total Income", value: fmtEuro(totalIncome) },
@@ -121,6 +142,18 @@ export function assembleCT1ReportData(
   ];
   if (travelDeduction > 0) {
     tradingProfitRows.push({ label: "Less: Directors' Travel Allowance", value: fmtEuro(travelDeduction) });
+  }
+  if (prepaymentAdj !== 0) {
+    tradingProfitRows.push({ label: "Prepayment adjustment", value: fmtEuro(prepaymentAdj) });
+  }
+  if (accrualAdj !== 0) {
+    tradingProfitRows.push({ label: "Accrued expenses adjustment", value: fmtEuro(-accrualAdj) });
+  }
+  if (accruedIncomeAdj !== 0) {
+    tradingProfitRows.push({ label: "Accrued income adjustment", value: fmtEuro(accruedIncomeAdj) });
+  }
+  if (deferredIncomeAdj !== 0) {
+    tradingProfitRows.push({ label: "Deferred income adjustment", value: fmtEuro(-deferredIncomeAdj) });
   }
   tradingProfitRows.push({ label: "Adjusted Trading Profit", value: fmtEuro(Math.max(0, tradingProfit)) });
 

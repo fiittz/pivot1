@@ -241,9 +241,11 @@ export type Database = {
           currency: string | null
           iban: string | null
           id: string
+          is_cash: boolean
           is_default: boolean | null
           name: string
           sort_code: string | null
+          tax_scope: string
           updated_at: string | null
           user_id: string
         }
@@ -256,9 +258,11 @@ export type Database = {
           currency?: string | null
           iban?: string | null
           id?: string
+          is_cash?: boolean
           is_default?: boolean | null
           name: string
           sort_code?: string | null
+          tax_scope?: string
           updated_at?: string | null
           user_id: string
         }
@@ -271,9 +275,11 @@ export type Database = {
           currency?: string | null
           iban?: string | null
           id?: string
+          is_cash?: boolean
           is_default?: boolean | null
           name?: string
           sort_code?: string | null
+          tax_scope?: string
           updated_at?: string | null
           user_id?: string
         }
@@ -1484,6 +1490,7 @@ export type Database = {
           invoice_type: string | null
           line_items: Json | null
           notes: string | null
+          payment_method: string | null
           rct_amount: number | null
           rct_enabled: boolean | null
           rct_rate: number | null
@@ -1512,6 +1519,7 @@ export type Database = {
           invoice_type?: string | null
           line_items?: Json | null
           notes?: string | null
+          payment_method?: string | null
           rct_amount?: number | null
           rct_enabled?: boolean | null
           rct_rate?: number | null
@@ -1540,6 +1548,7 @@ export type Database = {
           invoice_type?: string | null
           line_items?: Json | null
           notes?: string | null
+          payment_method?: string | null
           rct_amount?: number | null
           rct_enabled?: boolean | null
           rct_rate?: number | null

@@ -46,6 +46,7 @@ const BankFeed = lazyWithRetry(() => import("./pages/BankFeed"));
 const VATCentre = lazyWithRetry(() => import("./pages/VATCentre"));
 const RCTCentre = lazyWithRetry(() => import("./pages/RCTCentre"));
 const TaxCentre = lazyWithRetry(() => import("./pages/TaxCentre"));
+const Finalization = lazyWithRetry(() => import("./pages/Finalization"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
 const BulkProcessor = lazyWithRetry(() => import("./pages/BulkProcessor"));
 const Reports = lazyWithRetry(() => import("./pages/Reports"));
@@ -237,6 +238,14 @@ const App = () => (
                         element={
                           <RequireAuth>
                             <CT1Return />
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/finalization"
+                        element={
+                          <RequireAuth>
+                            <Finalization />
                           </RequireAuth>
                         }
                       />

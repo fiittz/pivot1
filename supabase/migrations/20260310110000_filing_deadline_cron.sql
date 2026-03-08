@@ -1,0 +1,24 @@
+-- Filing deadline cron setup
+--
+-- Set up in Supabase Dashboard > Database > Cron Jobs:
+--
+-- 1. filing-deadline-check-daily
+--    Schedule: 0 8 * * * (daily at 08:00 UTC)
+--    Command: SELECT net.http_post(
+--      url := 'https://ystgzxtxplhxuwsthmbj.supabase.co/functions/v1/filing-deadline-check',
+--      headers := '{"Content-Type": "application/json", "Authorization": "Bearer <CRON_SECRET>"}'::jsonb,
+--      body := '{}'::jsonb
+--    );
+--
+-- 2. send-notifications-5min (if not already set up)
+--    Schedule: */5 * * * * (every 5 minutes)
+--    Command: SELECT net.http_post(
+--      url := 'https://ystgzxtxplhxuwsthmbj.supabase.co/functions/v1/send-notifications',
+--      headers := '{"Content-Type": "application/json", "Authorization": "Bearer <SERVICE_ROLE_KEY>"}'::jsonb,
+--      body := '{}'::jsonb
+--    );
+--
+-- Replace <CRON_SECRET> and <SERVICE_ROLE_KEY> with actual values from Supabase secrets.
+-- This file is documentation only — crons must be set up via dashboard or SQL editor.
+
+SELECT 1; -- no-op migration

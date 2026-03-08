@@ -88,6 +88,19 @@ export async function recordAccountantCorrection(
     // Try to promote to global if multiple accountants agree
     await tryPromoteToGlobal();
 
+    // Fire-and-forget: trigger the diagnostic agent to figure out WHY we got it wrong
+    triggerCorrectionAnalysis({
+      correctionId: existing?.id || null,
+      vendorPattern,
+      transactionDescription: input.transactionDescription,
+      originalCategory: input.originalCategory,
+      correctedCategory: input.correctedCategory,
+      clientUserId: input.clientUserId,
+      transactionAmount: input.transactionAmount,
+      originalVatRate: input.originalVatRate,
+      correctedVatRate: input.correctedVatRate,
+    });
+
     console.log(
       `[AccountantCorrections] Recorded: "${vendorPattern}" → ${input.correctedCategory} (accountant: ${input.accountantId})`,
     );
@@ -175,6 +188,46 @@ export async function loadAccountantCorrections(
     console.error("[AccountantCorrections] Load error:", error);
     return [];
   }
+}
+
+/**
+ * Fire-and-forget: trigger the diagnostic agent to analyse why the
+ * original categorisation was wrong. The agent uses web search, receipt OCR,
+ * onboarding cross-reference, and VAT rules to determine root cause.
+ */
+function triggerCorrectionAnalysis(input: {
+  correctionId: string | null;
+  vendorPattern: string;
+  transactionDescription: string;
+  originalCategory: string | null;
+  correctedCategory: string;
+  clientUserId: string;
+  transactionAmount: number | null;
+  originalVatRate: number | null;
+  correctedVatRate: number | null;
+}): void {
+  supabase.functions
+    .invoke("analyse-correction", {
+      body: {
+        correction_id: input.correctionId,
+        vendor_pattern: input.vendorPattern,
+        transaction_description: input.transactionDescription,
+        original_category: input.originalCategory,
+        corrected_category: input.correctedCategory,
+        client_user_id: input.clientUserId,
+        transaction_amount: input.transactionAmount,
+        original_vat_rate: input.originalVatRate,
+        corrected_vat_rate: input.correctedVatRate,
+      },
+    })
+    .then((res) => {
+      if (res.data?.ok) {
+        console.log(`[CorrectionAnalysis] Analysis complete for "${input.vendorPattern}": ${res.data.analysis?.root_cause}`);
+      }
+    })
+    .catch((err) => {
+      console.error("[CorrectionAnalysis] Failed:", err);
+    });
 }
 
 /**

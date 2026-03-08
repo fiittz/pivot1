@@ -82,6 +82,7 @@ export interface AccountantClient {
   fee_frequency: string | null;
   year_end_month: number | null;
   inbound_email_code: string | null;
+  copilot_enabled: boolean;
   created_at: string;
   updated_at: string;
 }

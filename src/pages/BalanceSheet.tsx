@@ -75,9 +75,23 @@ const BalanceSheet = () => {
       ? ct1.vehicleAsset.depreciation.annualAllowance
       : (savedCT1.capitalAllowancesMotorVehicles ?? 0);
     const capitalAllowancesTotal = (savedCT1.capitalAllowancesPlant ?? 0) + motorVehicleAllowance;
+    // Accrual adjustments (matching principle)
+    const closingPrepayments = savedCT1.prepaymentsAmount ?? 0;
+    const openingPrepayments = savedCT1.openingPrepayments ?? 0;
+    const closingAccruals = savedCT1.accrualsAmount ?? 0;
+    const openingAccruals = savedCT1.openingAccruals ?? 0;
+    const closingAccruedIncome = savedCT1.accruedIncomeAmount ?? 0;
+    const openingAccruedIncome = savedCT1.openingAccruedIncome ?? 0;
+    const closingDeferredIncome = savedCT1.deferredIncomeAmount ?? 0;
+    const openingDeferredIncome = savedCT1.openingDeferredIncome ?? 0;
+    const netAccrualAdj = (closingPrepayments - openingPrepayments)
+      - (closingAccruals - openingAccruals)
+      + (closingAccruedIncome - openingAccruedIncome)
+      - (closingDeferredIncome - openingDeferredIncome);
+
     const tradingProfit = Math.max(
       0,
-      totalIncome - ct1.expenseSummary.allowable - capitalAllowancesTotal - ct1.directorsLoanTravel,
+      totalIncome - ct1.expenseSummary.allowable - capitalAllowancesTotal - ct1.directorsLoanTravel + netAccrualAdj,
     );
     const lossesForward = savedCT1.lossesForward ?? 0;
     const taxableProfit = Math.max(0, tradingProfit - lossesForward);
@@ -108,7 +122,11 @@ const BalanceSheet = () => {
       return (companyAcct?.balance ?? 0) + netCash;
     })();
     const rctPrepayment = ct1.rctPrepayment;
+    const prepayments = closingPrepayments;
+    const accruedIncome = closingAccruedIncome;
     const directorsLoanTravel = ct1.netDirectorsLoan > 0 ? ct1.netDirectorsLoan : 0;
+    const accruedExpenses = closingAccruals;
+    const deferredIncome = closingDeferredIncome;
     const creditors = savedCT1.liabilitiesCreditors ?? savedCT1.tradeCreditorsTotal ?? 0;
     const taxation = ctLiability;
     const bankOverdraft = 0;
@@ -121,8 +139,8 @@ const BalanceSheet = () => {
     // Direct P&L computation doesn't reconcile because bank income is net of RCT (withheld at
     // source) while RCT appears as a separate current asset.
     const totalFixedAssets = landBuildings + plantMachinery + motorVehicles + fixturesFittings;
-    const totalCurrentAssets = stock + debtors + cash + bankBalance + rctPrepayment;
-    const totalCurrentLiabilities = creditors + taxation + bankOverdraft + directorsLoanTravel;
+    const totalCurrentAssets = stock + debtors + cash + bankBalance + rctPrepayment + prepayments + accruedIncome;
+    const totalCurrentLiabilities = creditors + taxation + bankOverdraft + directorsLoanTravel + accruedExpenses + deferredIncome;
     const totalLongTermLiabilities = bankLoans + directorsLoans;
     const retainedProfits = totalFixedAssets + totalCurrentAssets - totalCurrentLiabilities - totalLongTermLiabilities - shareCapital;
 
@@ -136,7 +154,11 @@ const BalanceSheet = () => {
       cash,
       bankBalance,
       rctPrepayment,
+      prepayments,
+      accruedIncome,
       directorsLoanTravel,
+      accruedExpenses,
+      deferredIncome,
       creditors,
       taxation,
       bankOverdraft,
@@ -169,9 +191,13 @@ const BalanceSheet = () => {
   const fixedAssets = bsInput
     ? bsInput.landBuildings + bsInput.plantMachinery + bsInput.motorVehicles + bsInput.fixturesFittings
     : 0;
-  const currentAssets = bsInput ? bsInput.stock + bsInput.debtors + bsInput.cash + bsInput.bankBalance : 0;
+  const currentAssets = bsInput
+    ? bsInput.stock + bsInput.debtors + bsInput.cash + bsInput.bankBalance
+      + (bsInput.rctPrepayment ?? 0) + (bsInput.prepayments ?? 0) + (bsInput.accruedIncome ?? 0)
+    : 0;
   const currentLiabilities = bsInput
     ? bsInput.creditors + bsInput.taxation + bsInput.bankOverdraft + (bsInput.directorsLoanTravel ?? 0)
+      + (bsInput.accruedExpenses ?? 0) + (bsInput.deferredIncome ?? 0)
     : 0;
   const netCurrentAssets = currentAssets - currentLiabilities;
   const longTermLiabilities = bsInput ? bsInput.bankLoans + bsInput.directorsLoans : 0;
@@ -276,6 +302,22 @@ const BalanceSheet = () => {
                   </p>
                 </>
               )}
+              {(bsInput.prepayments ?? 0) > 0 && (
+                <>
+                  <Row label="Prepayments" amount={bsInput.prepayments} />
+                  <p className="text-xs text-muted-foreground pl-1">
+                    Expenses paid in advance — recognised when consumed
+                  </p>
+                </>
+              )}
+              {(bsInput.accruedIncome ?? 0) > 0 && (
+                <>
+                  <Row label="Accrued Income" amount={bsInput.accruedIncome} />
+                  <p className="text-xs text-muted-foreground pl-1">
+                    Income earned but not yet invoiced or received
+                  </p>
+                </>
+              )}
               <Divider />
               <Row label="Total Current Assets" amount={currentAssets} bold />
             </CardContent>
@@ -293,6 +335,22 @@ const BalanceSheet = () => {
               <Row label="Creditors" amount={bsInput.creditors} />
               <Row label="Taxation" amount={bsInput.taxation} />
               {bsInput.bankOverdraft > 0 && <Row label="Bank Overdraft" amount={bsInput.bankOverdraft} />}
+              {(bsInput.accruedExpenses ?? 0) > 0 && (
+                <>
+                  <Row label="Accrued Expenses" amount={bsInput.accruedExpenses} />
+                  <p className="text-xs text-muted-foreground pl-1">
+                    Expenses incurred but not yet paid
+                  </p>
+                </>
+              )}
+              {(bsInput.deferredIncome ?? 0) > 0 && (
+                <>
+                  <Row label="Deferred Income" amount={bsInput.deferredIncome} />
+                  <p className="text-xs text-muted-foreground pl-1">
+                    Income received in advance — recognised when earned
+                  </p>
+                </>
+              )}
               {(bsInput.directorsLoanTravel ?? 0) > 0 && (
                 <div>
                   <Row label="Director's Loan" amount={bsInput.directorsLoanTravel} />

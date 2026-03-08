@@ -15,10 +15,12 @@ export interface AbridgedAccountsInput {
   wip: number;
   debtors: number;
   prepayments: number;
+  accruedIncome: number; // Income earned but not yet received
   cashAtBank: number;
   // Current Liabilities
   creditors: number;
   accruals: number;
+  deferredIncome: number; // Income received but not yet earned
   taxation: number; // CT liability
   // Long-term Liabilities
   bankLoans: number;
@@ -121,9 +123,10 @@ export function assembleAbridgedAccountsData(
   // ── 4. Abridged Balance Sheet (Schedule 3A) ─────────────
   const fixedAssets = input.fixedAssetsTangible;
 
-  const currentAssets = input.stock + input.wip + input.debtors + input.prepayments + input.cashAtBank;
+  const currentAssets = input.stock + input.wip + input.debtors + input.prepayments
+    + (input.accruedIncome ?? 0) + input.cashAtBank;
 
-  const currentLiabilities = input.creditors + input.accruals + input.taxation;
+  const currentLiabilities = input.creditors + input.accruals + (input.deferredIncome ?? 0) + input.taxation;
 
   const netCurrentAssets = currentAssets - currentLiabilities;
 
@@ -146,14 +149,18 @@ export function assembleAbridgedAccountsData(
       ...(input.wip > 0 ? [{ label: "  Work-in-progress", value: fmtEuro(input.wip) }] : []),
       { label: "  Debtors", value: fmtEuro(input.debtors) },
       ...(input.prepayments > 0
-        ? [{ label: "  Prepayments and accrued income", value: fmtEuro(input.prepayments) }]
+        ? [{ label: "  Prepayments", value: fmtEuro(input.prepayments) }]
+        : []),
+      ...((input.accruedIncome ?? 0) > 0
+        ? [{ label: "  Accrued income", value: fmtEuro(input.accruedIncome) }]
         : []),
       { label: "  Cash at bank and in hand", value: fmtEuro(input.cashAtBank) },
       { label: "  Total Current Assets", value: fmtEuro(currentAssets) },
       { label: "", value: "" },
       { label: "CREDITORS: amounts falling due within one year", value: "" },
       { label: "  Trade creditors", value: fmtEuro(input.creditors) },
-      ...(input.accruals > 0 ? [{ label: "  Accruals and deferred income", value: fmtEuro(input.accruals) }] : []),
+      ...(input.accruals > 0 ? [{ label: "  Accruals", value: fmtEuro(input.accruals) }] : []),
+      ...((input.deferredIncome ?? 0) > 0 ? [{ label: "  Deferred income", value: fmtEuro(input.deferredIncome) }] : []),
       ...(input.taxation > 0 ? [{ label: "  Taxation", value: fmtEuro(input.taxation) }] : []),
       { label: "  Total Current Liabilities", value: `(${fmtEuro(currentLiabilities)})` },
       { label: "", value: "" },

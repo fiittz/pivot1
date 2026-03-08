@@ -71,6 +71,8 @@ interface ClientTransactionsProps {
   accountType?: string;
   isVatRegistered?: boolean;
   isRctRegistered?: boolean;
+  initialCategoryFilter?: string;
+  onClearCategoryFilter?: () => void;
 }
 
 type TypeFilter = "all" | "income" | "expense" | "vat" | "rct";
@@ -110,8 +112,10 @@ const ClientTransactions = ({
   accountType,
   isVatRegistered = false,
   isRctRegistered = false,
+  initialCategoryFilter,
+  onClearCategoryFilter,
 }: ClientTransactionsProps) => {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialCategoryFilter ?? "");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [otherDialogOpen, setOtherDialogOpen] = useState(false);
   const [otherComment, setOtherComment] = useState("");
@@ -929,6 +933,21 @@ const ClientTransactions = ({
             <span className="font-semibold text-foreground">{invoiceMap.size}</span>
             <span className="text-muted-foreground">/ {incomeCount}</span>
           </div>
+        </div>
+      )}
+
+      {/* Back to Trial Balance breadcrumb */}
+      {initialCategoryFilter && (
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            onClick={() => { setSearch(""); onClearCategoryFilter?.(); }}
+            className="text-primary hover:underline"
+          >
+            Trial Balance
+          </button>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-medium">{initialCategoryFilter}</span>
+          <span className="text-muted-foreground">({filtered.length} transactions)</span>
         </div>
       )}
 

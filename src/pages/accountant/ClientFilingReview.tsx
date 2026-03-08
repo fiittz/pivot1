@@ -24,9 +24,16 @@ import {
   Send,
   CheckCircle2,
   Pencil,
+  Receipt,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useCopilotAnalysis } from "@/hooks/accountant/useCopilot";
+import { useAccountantClientByUserId } from "@/hooks/accountant/useAccountantClients";
+import CopilotPanel from "@/components/accountant/CopilotPanel";
 
 // Import XML generators for client-side XML generation
 import { buildCT1Xml } from "@/lib/reports/xml/ct1Xml";
@@ -51,8 +58,71 @@ const ClientFilingReview = () => {
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
   const [notesEditing, setNotesEditing] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Co-pilot
+  const { data: accountantClient } = useAccountantClientByUserId(clientUserId);
+  const copilotEnabled = accountantClient?.copilot_enabled ?? false;
 
   const clientName = (onboarding?.company_name as string) ?? profile?.full_name ?? "Client";
+
+  // Fetch finalization request for this client + filing type
+  const taxYear = filing?.tax_period_start?.slice(0, 4);
+  const { data: finalizationReq } = useQuery({
+    queryKey: ["finalization-request", clientUserId, filing?.filing_type, taxYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finalization_requests")
+        .select("*")
+        .eq("user_id", clientUserId!)
+        .eq("report_type", filing!.filing_type)
+        .eq("tax_year", parseInt(taxYear!, 10))
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientUserId && !!filing && !!taxYear,
+  });
+
+  // Co-pilot analysis
+  const {
+    data: copilotSuggestions = [],
+    isLoading: copilotLoading,
+    error: copilotError,
+    refetch: refetchCopilot,
+  } = useCopilotAnalysis(
+    clientUserId,
+    filing?.filing_type,
+    taxYear ? parseInt(taxYear, 10) : undefined,
+    copilotEnabled && !!filing,
+  );
+
+  // Send report to client via approve-client-report edge function
+  const sendToClient = useMutation({
+    mutationFn: async () => {
+      const snapshot = filing!.questionnaire_snapshot || {};
+      const { data, error } = await supabase.functions.invoke("approve-client-report", {
+        body: {
+          client_user_id: clientUserId,
+          report_type: filing!.filing_type,
+          tax_year: parseInt(taxYear!, 10),
+          report_data: snapshot,
+          notes: filing!.accountant_review_notes || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Report sent to client" });
+      queryClient.invalidateQueries({ queryKey: ["filing-records"] });
+      queryClient.invalidateQueries({ queryKey: ["client-reports"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: `Failed to send: ${err.message}`, variant: "destructive" });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -271,16 +341,144 @@ const ClientFilingReview = () => {
             </Button>
           )}
           {filing.status === "approved" && (
-            <Button
-              onClick={handleGenerateXml}
-              size="sm"
-              className="gap-1.5 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download XML
-            </Button>
+            <>
+              <Button
+                onClick={handleGenerateXml}
+                size="sm"
+                className="gap-1.5 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download XML
+              </Button>
+              <Button
+                onClick={() => sendToClient.mutate()}
+                disabled={sendToClient.isPending}
+                size="sm"
+                className="gap-1.5 border border-blue-600 bg-blue-600/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-blue-600 hover:bg-blue-600 hover:text-white"
+              >
+                {sendToClient.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
+                Send to Client
+              </Button>
+            </>
           )}
         </div>
+
+        {/* Co-Pilot Suggestions */}
+        {copilotEnabled && (
+          <CopilotPanel
+            suggestions={copilotSuggestions}
+            isLoading={copilotLoading}
+            error={copilotError as Error | null}
+            onRefresh={() => refetchCopilot()}
+          />
+        )}
+
+        {/* Receipt Coverage from Finalization Request */}
+        {finalizationReq && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Receipt className="w-4 h-4" />
+                Client Filing Pack
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2 text-sm">
+                {finalizationReq.status === "completed" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span className="text-emerald-600 font-medium">
+                      Questionnaire completed
+                      {finalizationReq.completed_at && (
+                        <span className="text-muted-foreground font-normal ml-1">
+                          on {new Date(finalizationReq.completed_at).toLocaleDateString("en-IE")}
+                        </span>
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-4 h-4 text-amber-500" />
+                    <span className="text-amber-600 font-medium">
+                      Questionnaire {finalizationReq.status === "in_progress" ? "in progress" : "sent — awaiting response"}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Receipt coverage stats */}
+              {finalizationReq.receipt_coverage && (() => {
+                const cov = finalizationReq.receipt_coverage as { total?: number; matched?: number; unmatched?: number; uncategorised?: number };
+                const pct = cov.total ? Math.round(((cov.matched || 0) / cov.total) * 100) : 0;
+                return (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-4 gap-3 text-center">
+                      <div>
+                        <p className="text-lg font-bold">{cov.total || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">Expenses</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-emerald-600">{cov.matched || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">With Receipts</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-amber-600">{cov.unmatched || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">Missing</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-red-500">{cov.uncategorised || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">Uncategorised</p>
+                      </div>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-1.5">
+                      <div
+                        className="bg-emerald-500 h-1.5 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{pct}% receipt coverage</p>
+                  </div>
+                );
+              })()}
+
+              {/* Missing receipts list */}
+              {finalizationReq.missing_receipts && (finalizationReq.missing_receipts as any[]).length > 0 && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                    <AlertTriangle className="w-3 h-3 inline mr-1 text-amber-500" />
+                    {(finalizationReq.missing_receipts as any[]).length} transactions missing receipts
+                  </summary>
+                  <div className="mt-2 max-h-48 overflow-y-auto border rounded-lg">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/50 sticky top-0">
+                        <tr>
+                          <th className="text-left p-1.5 font-medium">Date</th>
+                          <th className="text-left p-1.5 font-medium">Description</th>
+                          <th className="text-right p-1.5 font-medium">Amount</th>
+                          <th className="text-left p-1.5 font-medium">Category</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(finalizationReq.missing_receipts as any[]).map((m: any, i: number) => (
+                          <tr key={i} className="border-t">
+                            <td className="p-1.5 text-muted-foreground">{m.date}</td>
+                            <td className="p-1.5">{m.description}</td>
+                            <td className="p-1.5 text-right">{"\u20AC"}{Math.abs(m.amount).toFixed(2)}</td>
+                            <td className="p-1.5 text-muted-foreground">{m.category}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Review notes */}
         <Card>

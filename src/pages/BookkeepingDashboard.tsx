@@ -10,6 +10,8 @@ import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { WidgetCustomizeSheet } from "@/components/dashboard/WidgetCustomizeSheet";
 import { DeadlinesWidget } from "@/components/dashboard/DeadlinesWidget";
 import { DocumentRequestsBanner } from "@/components/dashboard/DocumentRequestsBanner";
+import { TrialBalanceFlagsBanner } from "@/components/dashboard/TrialBalanceFlagsBanner";
+import { ReconciliationBanner } from "@/components/dashboard/ReconciliationBanner";
 import { InboundEmailCard } from "@/components/dashboard/InboundEmailCard";
 import InsightsWidget from "@/components/dashboard/InsightsWidget";
 import AILearningWidget from "@/components/dashboard/AILearningWidget";
@@ -138,6 +140,8 @@ const BookkeepingDashboard = () => {
 
         <OnboardingProgressCard />
         <DocumentRequestsBanner />
+        <TrialBalanceFlagsBanner />
+        <ReconciliationBanner />
 
         {/* Top cards grid — draggable */}
         <DashboardGrid

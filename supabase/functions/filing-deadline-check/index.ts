@@ -24,6 +24,113 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/** Generate branded HTML email for client finalization */
+function buildClientEmailHtml(opts: {
+  firstName: string;
+  reportName: string;
+  taxYear: number;
+  daysUntilDue: number;
+  urgency: string;
+  questionnaireUrl: string;
+  isReminder: boolean;
+}): string {
+  const { firstName, reportName, taxYear, daysUntilDue, urgency, questionnaireUrl, isReminder } = opts;
+  const heading = isReminder
+    ? `Reminder: Complete Your ${taxYear} ${reportName} Questionnaire`
+    : `Action Needed: ${taxYear} ${reportName}`;
+  const ctaText = isReminder ? "Complete Questionnaire Now" : "Start Questionnaire";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;">
+    <tr><td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background-color:#1a1a2e;border-radius:8px 8px 0 0;">
+        <tr><td style="padding:28px 32px;text-align:center;">
+          <span style="font-size:28px;font-weight:700;color:#E8930C;letter-spacing:1px;">Balnce</span>
+        </td></tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background-color:#ffffff;border-radius:0 0 8px 8px;">
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 16px;font-size:20px;color:#1a1a2e;">${heading}</h1>
+          <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">Hi ${firstName},</p>
+          <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">Your <strong>${reportName}</strong> for tax year <strong>${taxYear}</strong> is due in <strong>${daysUntilDue} days</strong>. To prepare your filing, we need you to complete a short questionnaire confirming your details.</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#c0392b;line-height:1.6;font-weight:600;">${urgency}</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+            <tr><td style="background-color:#E8930C;border-radius:6px;">
+              <a href="${questionnaireUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;">${ctaText}</a>
+            </td></tr>
+          </table>
+          <p style="margin:0;font-size:13px;color:#888;line-height:1.5;">If the button doesn't work, copy and paste this link into your browser:<br><a href="${questionnaireUrl}" style="color:#E8930C;word-break:break-all;">${questionnaireUrl}</a></p>
+        </td></tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
+        <tr><td style="padding:20px 32px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#999;">Balnce &middot; Automated Bookkeeping for Irish Businesses</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+/** Generate branded HTML email for accountant notification */
+function buildAccountantEmailHtml(opts: {
+  accountantFirstName: string;
+  clientName: string;
+  reportName: string;
+  taxYear: number;
+  reason: "pack_ready" | "unresponsive";
+  practiceUrl: string;
+}): string {
+  const { accountantFirstName, clientName, reportName, taxYear, reason, practiceUrl } = opts;
+
+  const heading = reason === "pack_ready"
+    ? `${clientName} — ${reportName} ${taxYear} Pack Ready`
+    : `${clientName} — ${reportName} ${taxYear} Needs Follow-Up`;
+
+  const message = reason === "pack_ready"
+    ? `<strong>${clientName}</strong> has completed their <strong>${reportName}</strong> finalization questionnaire for tax year <strong>${taxYear}</strong>. Their filing pack is ready for your review in Practice View.`
+    : `<strong>${clientName}</strong> has not completed their <strong>${reportName} ${taxYear}</strong> questionnaire despite multiple reminders. You may want to follow up with them directly.`;
+
+  const ctaText = reason === "pack_ready" ? "Open Practice View" : "View Client Details";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;">
+    <tr><td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background-color:#1a1a2e;border-radius:8px 8px 0 0;">
+        <tr><td style="padding:28px 32px;text-align:center;">
+          <span style="font-size:28px;font-weight:700;color:#E8930C;letter-spacing:1px;">Balnce</span>
+        </td></tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background-color:#ffffff;border-radius:0 0 8px 8px;">
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 16px;font-size:20px;color:#1a1a2e;">${heading}</h1>
+          <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">Hi ${accountantFirstName},</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#333;line-height:1.6;">${message}</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+            <tr><td style="background-color:#E8930C;border-radius:6px;">
+              <a href="${practiceUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;">${ctaText}</a>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
+        <tr><td style="padding:20px 32px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#999;">Balnce &middot; Automated Bookkeeping for Irish Businesses</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 /** Calculate receipt coverage for a user */
 async function getReceiptCoverage(userId: string) {
   const { data: transactions } = await supabase
@@ -88,22 +195,22 @@ async function sendFinalizationEmail(
         ? "Please complete this soon to give your accountant enough time to review."
         : "There's plenty of time, but completing this early helps your accountant prepare.";
 
+  const bodyHtml = buildClientEmailHtml({
+    firstName,
+    reportName,
+    taxYear,
+    daysUntilDue,
+    urgency,
+    questionnaireUrl,
+    isReminder,
+  });
+
   await supabase.from("notification_queue").insert({
-    user_id: userId,
-    channel: "email",
+    recipient_user_id: userId,
+    recipient_email: profile.email,
+    notification_type: "filing_ready",
     subject,
-    body: JSON.stringify({
-      template: "finalization_request",
-      data: {
-        firstName,
-        reportName,
-        taxYear,
-        daysUntilDue,
-        urgency,
-        questionnaireUrl,
-        isReminder,
-      },
-    }),
+    body_html: bodyHtml,
     dedup_key: `finalization-${reportType}-${taxYear}-${daysUntilDue <= 30 ? "urgent" : daysUntilDue <= 60 ? "second" : "first"}`,
   });
 }
@@ -137,27 +244,40 @@ async function notifyAccountant(
     .eq("user_id", clientUserId)
     .single();
 
+  // Fetch accountant profile for email and name
+  const { data: accountantProfile } = await supabase
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", link.accountant_id)
+    .single();
+
+  if (!accountantProfile?.email) return;
+
   const clientName = onboarding?.company_name || clientProfile?.full_name || clientProfile?.email || "Client";
   const reportName = reportType === "ct1" ? "CT1" : "Form 11";
+  const accountantFirstName = accountantProfile.full_name?.split(" ")[0] || "there";
+  const practiceUrl = `${SITE_URL}/practice`;
 
   const subject =
     reason === "pack_ready"
       ? `${clientName} — ${reportName} ${taxYear} pack ready for review`
       : `${clientName} — ${reportName} ${taxYear} questionnaire not completed`;
 
-  const body =
-    reason === "pack_ready"
-      ? `${clientName} has completed their ${reportName} finalization questionnaire. Their filing pack is ready for your review in Practice View.`
-      : `${clientName} has not completed their ${reportName} ${taxYear} questionnaire despite multiple reminders. You may want to follow up directly.`;
+  const bodyHtml = buildAccountantEmailHtml({
+    accountantFirstName,
+    clientName,
+    reportName,
+    taxYear,
+    reason,
+    practiceUrl,
+  });
 
   await supabase.from("notification_queue").insert({
-    user_id: link.accountant_id,
-    channel: "email",
+    recipient_user_id: link.accountant_id,
+    recipient_email: accountantProfile.email,
+    notification_type: "filing_ready",
     subject,
-    body: JSON.stringify({
-      template: "accountant_notification",
-      data: { clientName, reportName, taxYear, reason, body },
-    }),
+    body_html: bodyHtml,
     dedup_key: `accountant-${reason}-${clientUserId}-${reportType}-${taxYear}`,
   });
 }

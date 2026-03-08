@@ -23,6 +23,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useReliefScan } from "@/hooks/useReliefScan";
 import { useCT1Data } from "@/hooks/useCT1Data";
 import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
+import { usePriorYearOpeningBalances } from "@/hooks/usePriorYearSnapshot";
 import { BusinessBankExportQuestionnaire } from "@/components/export/BusinessBankExportQuestionnaire";
 import { DirectorExportQuestionnaire } from "@/components/export/DirectorExportQuestionnaire";
 import { ExportButtons } from "@/components/reports/ExportButtons";
@@ -62,6 +63,9 @@ const TaxCentre = () => {
   const now = new Date();
   const currentYear = now.getMonth() >= 10 ? now.getFullYear() + 1 : now.getFullYear();
   const taxYear = `${currentYear - 1}`;
+
+  // Load prior year closing balances → this year's opening balances
+  const { data: priorYearData } = usePriorYearOpeningBalances(user?.id, parseInt(taxYear));
 
   // Read saved CT1 questionnaire from localStorage
   const savedCT1 = useMemo(() => {
@@ -155,6 +159,7 @@ const TaxCentre = () => {
       wip: savedCT1?.wipValue ?? 0,
       debtors: savedCT1?.currentAssetsDebtors ?? savedCT1?.tradeDebtorsTotal ?? 0,
       prepayments: savedCT1?.prepaymentsAmount ?? 0,
+      accruedIncome: savedCT1?.accruedIncomeAmount ?? 0,
       cashAtBank: savedCT1?.currentAssetsBankBalance ?? (() => {
         const companyAcct = allAccounts?.find((a) => a.account_type === "limited_company");
         const companyTxns = companyAcct
@@ -168,6 +173,7 @@ const TaxCentre = () => {
       })(),
       creditors: savedCT1?.liabilitiesCreditors ?? savedCT1?.tradeCreditorsTotal ?? 0,
       accruals: savedCT1?.accrualsAmount ?? 0,
+      deferredIncome: savedCT1?.deferredIncomeAmount ?? 0,
       taxation: ctLiability,
       bankLoans: savedCT1?.liabilitiesBankLoans ?? 0,
       directorsLoans: savedCT1?.liabilitiesDirectorsLoans ?? savedCT1?.directorsLoanBalance ?? 0,
@@ -543,7 +549,7 @@ const TaxCentre = () => {
         rctDeductions={[]}
         isConstructionTrade={ct1.isConstructionTrade}
         isCloseCompany={ct1.isCloseCompany}
-        initialValues={savedCT1 ?? undefined}
+        initialValues={savedCT1 ?? priorYearData?.openingBalances ?? undefined}
         reEvaluationApplied={ct1.reEvaluationApplied ?? false}
         reEvaluationWarnings={ct1.reEvaluationWarnings ?? []}
         originalExpenseSummary={ct1.originalExpenseSummary}

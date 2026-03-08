@@ -276,6 +276,7 @@ const BankFeed = () => {
   const [newAccountName, setNewAccountName] = useState("");
   const [newAccountDescription, setNewAccountDescription] = useState("");
   const [newAccountType, setNewAccountType] = useState<AccountType>("limited_company");
+  const [newAccountIsCash, setNewAccountIsCash] = useState(false);
 
   // Export questionnaire state
   const [showBusinessQuestionnaire, setShowBusinessQuestionnaire] = useState(false);
@@ -372,10 +373,13 @@ const BankFeed = () => {
         iban: null,
         bic: null,
         sort_code: null,
+        is_cash: newAccountIsCash,
+        tax_scope: "ct1",
       });
       setNewAccountName("");
       setNewAccountDescription("");
       setNewAccountType("limited_company");
+      setNewAccountIsCash(false);
       setShowAddAccountDialog(false);
       setSelectedAccountId(newAccount.id);
       setSearchParams({ account: newAccount.id });
@@ -1218,9 +1222,11 @@ const BankFeed = () => {
       wip: 0,
       debtors: abDebtors,
       prepayments: 0,
+      accruedIncome: 0,
       cashAtBank,
       creditors: abCreditors,
       accruals: 0,
+      deferredIncome: 0,
       taxation: 0,
       bankLoans: abBankLoans,
       directorsLoans: abDirectorsLoans,
@@ -1352,6 +1358,20 @@ const BankFeed = () => {
                 onChange={(e) => setNewAccountDescription(e.target.value)}
               />
             </div>
+            <label className="flex items-center gap-2 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={newAccountIsCash}
+                onChange={(e) => setNewAccountIsCash(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm">This is a cash account (no bank details needed)</span>
+            </label>
+            {newAccountIsCash && (
+              <p className="text-xs text-muted-foreground pl-6 -mt-1">
+                Cash accounts track physical cash, petty cash, or card payments without a linked bank feed.
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddAccountDialog(false)}>

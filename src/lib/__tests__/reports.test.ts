@@ -57,9 +57,15 @@ describe("assembleBalanceSheetData", () => {
     debtors: 8000,
     cash: 500,
     bankBalance: 12000,
+    rctPrepayment: 0,
+    prepayments: 0,
+    accruedIncome: 0,
     creditors: 6000,
     taxation: 3000,
     bankOverdraft: 0,
+    directorsLoanTravel: 0,
+    accruedExpenses: 0,
+    deferredIncome: 0,
     bankLoans: 10000,
     directorsLoans: 5000,
     shareCapital: 100,
@@ -203,9 +209,11 @@ describe("assembleAbridgedAccountsData", () => {
     wip: 1000,
     debtors: 5000,
     prepayments: 500,
+    accruedIncome: 0,
     cashAtBank: 10000,
     creditors: 4000,
     accruals: 1000,
+    deferredIncome: 0,
     taxation: 2000,
     bankLoans: 8000,
     directorsLoans: 3000,
@@ -370,10 +378,14 @@ describe("assembleBalanceSheetData — conditional rows", () => {
     cash: 500,
     bankBalance: 12000,
     rctPrepayment: 0,
+    prepayments: 0,
+    accruedIncome: 0,
     creditors: 6000,
     taxation: 3000,
     bankOverdraft: 0,
     directorsLoanTravel: 0,
+    accruedExpenses: 0,
+    deferredIncome: 0,
     bankLoans: 10000,
     directorsLoans: 5000,
     shareCapital: 100,
@@ -432,9 +444,11 @@ describe("assembleAbridgedAccountsData — conditional rows", () => {
     wip: 0,
     debtors: 5000,
     prepayments: 0,
+    accruedIncome: 0,
     cashAtBank: 10000,
     creditors: 4000,
     accruals: 0,
+    deferredIncome: 0,
     taxation: 0,
     bankLoans: 0,
     directorsLoans: 0,
@@ -461,14 +475,14 @@ describe("assembleAbridgedAccountsData — conditional rows", () => {
     const input = { ...baseInput, prepayments: 500 };
     const result = assembleAbridgedAccountsData(input, META);
     const bs = result.sections.find((s) => s.title === "Abridged Balance Sheet")!;
-    const row = bs.rows.find((r) => r.label === "  Prepayments and accrued income");
+    const row = bs.rows.find((r) => r.label === "  Prepayments");
     expect(row).toBeDefined();
   });
 
   it("omits Prepayments row when prepayments is 0", () => {
     const result = assembleAbridgedAccountsData(baseInput, META);
     const bs = result.sections.find((s) => s.title === "Abridged Balance Sheet")!;
-    const row = bs.rows.find((r) => r.label === "  Prepayments and accrued income");
+    const row = bs.rows.find((r) => r.label === "  Prepayments");
     expect(row).toBeUndefined();
   });
 
@@ -476,14 +490,14 @@ describe("assembleAbridgedAccountsData — conditional rows", () => {
     const input = { ...baseInput, accruals: 1000 };
     const result = assembleAbridgedAccountsData(input, META);
     const bs = result.sections.find((s) => s.title === "Abridged Balance Sheet")!;
-    const row = bs.rows.find((r) => r.label === "  Accruals and deferred income");
+    const row = bs.rows.find((r) => r.label === "  Accruals");
     expect(row).toBeDefined();
   });
 
   it("omits Accruals row when accruals is 0", () => {
     const result = assembleAbridgedAccountsData(baseInput, META);
     const bs = result.sections.find((s) => s.title === "Abridged Balance Sheet")!;
-    const row = bs.rows.find((r) => r.label === "  Accruals and deferred income");
+    const row = bs.rows.find((r) => r.label === "  Accruals");
     expect(row).toBeUndefined();
   });
 

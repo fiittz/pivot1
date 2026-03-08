@@ -13,11 +13,15 @@ export interface BalanceSheetInput {
   cash: number;
   bankBalance: number;
   rctPrepayment: number; // RCT deducted from invoices — offset against CT
+  prepayments: number; // Prepaid expenses (current asset)
+  accruedIncome: number; // Income earned but not yet received (current asset)
   // Current Liabilities (from CT1 questionnaire section 10)
   creditors: number;
   taxation: number;
   bankOverdraft: number;
   directorsLoanTravel: number; // Mileage/subsistence owed to director at Revenue rates
+  accruedExpenses: number; // Expenses incurred but not yet paid (current liability)
+  deferredIncome: number; // Income received but not yet earned (current liability)
   // Long-term Liabilities
   bankLoans: number;
   directorsLoans: number;
@@ -31,9 +35,11 @@ export function assembleBalanceSheetData(input: BalanceSheetInput, meta: ReportM
 
   const fixedAssets = input.landBuildings + input.plantMachinery + input.motorVehicles + input.fixturesFittings;
 
-  const currentAssets = input.stock + input.debtors + input.cash + input.bankBalance + (input.rctPrepayment ?? 0);
+  const currentAssets = input.stock + input.debtors + input.cash + input.bankBalance
+    + (input.rctPrepayment ?? 0) + (input.prepayments ?? 0) + (input.accruedIncome ?? 0);
 
-  const currentLiabilities = input.creditors + input.taxation + input.bankOverdraft + (input.directorsLoanTravel ?? 0);
+  const currentLiabilities = input.creditors + input.taxation + input.bankOverdraft
+    + (input.directorsLoanTravel ?? 0) + (input.accruedExpenses ?? 0) + (input.deferredIncome ?? 0);
 
   const longTermLiabilities = input.bankLoans + input.directorsLoans;
 
@@ -61,6 +67,8 @@ export function assembleBalanceSheetData(input: BalanceSheetInput, meta: ReportM
       { label: "Cash in Hand", value: fmtEuro(input.cash) },
       { label: "Bank Balance", value: fmtEuro(input.bankBalance) },
       ...(input.rctPrepayment > 0 ? [{ label: "RCT Prepayment", value: fmtEuro(input.rctPrepayment) }] : []),
+      ...((input.prepayments ?? 0) > 0 ? [{ label: "Prepayments", value: fmtEuro(input.prepayments) }] : []),
+      ...((input.accruedIncome ?? 0) > 0 ? [{ label: "Accrued Income", value: fmtEuro(input.accruedIncome) }] : []),
       { label: "Total Current Assets", value: fmtEuro(currentAssets) },
     ],
   });
@@ -75,6 +83,8 @@ export function assembleBalanceSheetData(input: BalanceSheetInput, meta: ReportM
       ...((input.directorsLoanTravel ?? 0) > 0
         ? [{ label: "Director's Loan", value: fmtEuro(input.directorsLoanTravel) }]
         : []),
+      ...((input.accruedExpenses ?? 0) > 0 ? [{ label: "Accrued Expenses", value: fmtEuro(input.accruedExpenses) }] : []),
+      ...((input.deferredIncome ?? 0) > 0 ? [{ label: "Deferred Income", value: fmtEuro(input.deferredIncome) }] : []),
       { label: "Total Current Liabilities", value: fmtEuro(currentLiabilities) },
     ],
   });

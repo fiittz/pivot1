@@ -40,10 +40,17 @@ import {
   CheckCircle2,
   Send,
   Lock,
+  Receipt,
+  AlertTriangle,
+  Inbox,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload } from "lucide-react";
+import { PriorYearImport } from "@/components/accountant/PriorYearImport";
 
 interface ClientFilingsTabProps {
   accountantClientId: string;
@@ -103,12 +110,31 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
   const { toast } = useToast();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [priorYearOpen, setPriorYearOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<FilingType>("ct1");
   const [tabFilter, setTabFilter] = useState<TabFilter>("all");
   const [search, setSearch] = useState("");
 
+  // Prior year import: default to last tax year
+  const priorYearDefault = new Date().getFullYear() - 1;
+
   const now = new Date();
   const taxYear = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
+
+  // Fetch finalization requests for this client
+  const { data: finalizationRequests = [] } = useQuery({
+    queryKey: ["finalization-requests", clientUserId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finalization_requests")
+        .select("*")
+        .eq("user_id", clientUserId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientUserId,
+  });
 
   const filtered = filings.filter((f) => {
     if (tabFilter !== "all" && f.status !== tabFilter) return false;
@@ -252,28 +278,121 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
         onSearchChange={setSearch}
         searchPlaceholder="Search filings..."
         actions={
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button
-                  onClick={() => setCreateOpen(true)}
-                  size="sm"
-                  disabled={!isReadyForFiling}
-                  className="h-8 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white gap-1 disabled:opacity-50"
-                >
-                  {isReadyForFiling ? <Plus className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                  Filing
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {!isReadyForFiling && (
-              <TooltipContent>
-                <p>All readiness steps must be complete before creating a filing</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setPriorYearOpen(true)}
+              size="sm"
+              variant="outline"
+              className="h-8 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest gap-1"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Prior Year
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    onClick={() => setCreateOpen(true)}
+                    size="sm"
+                    disabled={!isReadyForFiling}
+                    className="h-8 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white gap-1 disabled:opacity-50"
+                  >
+                    {isReadyForFiling ? <Plus className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                    Filing
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!isReadyForFiling && (
+                <TooltipContent>
+                  <p>All readiness steps must be complete before creating a filing</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
         }
       />
+
+      {/* Finalization Requests — receipt coverage & client questionnaire status */}
+      {finalizationRequests.length > 0 && (
+        <div className="space-y-3">
+          {finalizationRequests.map((req: any) => {
+            const coverage = req.receipt_coverage as { total?: number; matched?: number; unmatched?: number; uncategorised?: number } | null;
+            const missing = (req.missing_receipts as any[]) || [];
+            const coveragePct = coverage && coverage.total ? Math.round(((coverage.matched || 0) / coverage.total) * 100) : 0;
+            const reportName = req.report_type === "ct1" ? "CT1" : "Form 11";
+            const statusLabel = req.status === "completed" ? "Completed" : req.status === "in_progress" ? "In Progress" : req.status === "sent" ? "Sent to Client" : "Pending";
+            const statusColor = req.status === "completed" ? "text-emerald-600" : req.status === "in_progress" ? "text-blue-500" : "text-amber-500";
+
+            return (
+              <div key={req.id} className="rounded-lg border bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Inbox className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {reportName} {req.tax_year} — Finalization Questionnaire
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {req.status === "completed" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    )}
+                    <span className={`text-xs font-medium ${statusColor}`}>{statusLabel}</span>
+                  </div>
+                </div>
+
+                {/* Receipt Coverage Bar */}
+                {coverage && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                      <span>{coverage.total || 0} expenses</span>
+                      <span className="text-emerald-600">{coverage.matched || 0} with receipts</span>
+                      <span className="text-amber-600">{coverage.unmatched || 0} missing</span>
+                      <span className="text-red-500">{coverage.uncategorised || 0} uncategorised</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-1.5">
+                      <div
+                        className="bg-emerald-500 h-1.5 rounded-full transition-all"
+                        style={{ width: `${coveragePct}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {coveragePct}% receipt coverage
+                      {(coverage.unmatched || 0) > 0 && (
+                        <span className="text-amber-600"> — {coverage.unmatched} transactions missing receipts</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Missing Receipts Summary */}
+                {missing.length > 0 && missing.length <= 5 && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      <AlertTriangle className="w-3 h-3 inline mr-1 text-amber-500" />
+                      {missing.length} missing receipt{missing.length !== 1 ? "s" : ""}
+                    </summary>
+                    <ul className="mt-1 ml-4 space-y-0.5 text-muted-foreground">
+                      {missing.map((m: any, i: number) => (
+                        <li key={i}>
+                          {m.date} — {m.description} ({"\u20AC"}{Math.abs(m.amount).toFixed(2)}) — {m.category}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                {missing.length > 5 && (
+                  <p className="text-xs text-muted-foreground">
+                    <AlertTriangle className="w-3 h-3 inline mr-1 text-amber-500" />
+                    {missing.length} transactions missing receipts — review in filing detail
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <DataTable
         columns={columns}
@@ -322,6 +441,20 @@ const ClientFilingsTab = ({ accountantClientId, clientUserId }: ClientFilingsTab
               {createFiling.isPending ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prior Year Import Dialog */}
+      <Dialog open={priorYearOpen} onOpenChange={setPriorYearOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Prior Year Balances</DialogTitle>
+          </DialogHeader>
+          <PriorYearImport
+            clientUserId={clientUserId}
+            taxYear={priorYearDefault}
+            onComplete={() => setPriorYearOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>
