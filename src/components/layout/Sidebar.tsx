@@ -34,6 +34,8 @@ const Sidebar = () => {
     { path: "/invoices", label: "Invoices" },
     { path: "/expense", label: "Expenses" },
     { path: "/chart-of-accounts", label: "Chart of Accounts" },
+    { path: "/reconciliation", label: "Reconciliation" },
+    { path: "/budgets", label: "Budgets" },
     { path: "/vat", label: "VAT" },
     { path: "/rct", label: "RCT", hidden: !showRct },
     { path: "/settings", label: "Settings" },
