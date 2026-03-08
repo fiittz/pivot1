@@ -68,6 +68,8 @@ import { useBulkRecategorize } from "@/hooks/useBulkRecategorize";
 import { matchAllUnmatched, matchSingleTransaction } from "@/services/matchingServices";
 import { toast } from "sonner";
 import CSVImportDialog from "@/components/bank/CSVImportDialog";
+import ConnectBankDialog from "@/components/bank/ConnectBankDialog";
+import { useOpenBanking } from "@/hooks/useOpenBanking";
 import BusinessExpenseReviewDialog from "@/components/bank/BusinessExpenseReviewDialog";
 import ImportBatchesPanel from "@/components/bank/ImportBatchesPanel";
 import AccountLedgerSection from "@/components/bank/AccountLedgerSection";
@@ -301,6 +303,20 @@ const BankFeed = () => {
     }
   }, [searchParams]);
 
+  // Handle Open Banking callback (redirect from bank auth with ?code=xxx&state=xxx)
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    if (code && state) {
+      const savedState = sessionStorage.getItem("ob_state") || state;
+      sessionStorage.removeItem("ob_state");
+      searchParams.delete("code");
+      searchParams.delete("state");
+      setSearchParams(searchParams, { replace: true });
+      obCallback.mutate({ code, state: savedState });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const selectedAccount = accounts?.find((a) => a.id === selectedAccountId);
 
   // Reset reports sub-tab if switching to account type with hidden tabs
@@ -367,6 +383,7 @@ const BankFeed = () => {
   const { data: onboarding } = useOnboardingSettings();
   const { invoiceTrips: allInvoiceTrips } = useInvoiceTripMatcher();
   const { user } = useAuth();
+  const { handleCallback: obCallback } = useOpenBanking();
   const { data: invoicesData } = useInvoices();
   const { data: directorRows } = useDirectorOnboarding();
 
@@ -1546,10 +1563,7 @@ const BankFeed = () => {
                       Import CSV
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => setShowBankWizard(true)}>
-                    <Landmark className="w-4 h-4 mr-2" />
-                    Connect Bank
-                  </Button>
+                  <ConnectBankDialog />
                   <Button variant="outline" size="sm" onClick={() => navigate("/receipts/bulk")}>
                     <Receipt className="w-4 h-4 mr-2" />
                     Upload Receipts
