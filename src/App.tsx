@@ -1,11 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import * as Sentry from "@sentry/react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider, RequireAuth } from "@/hooks/useAuth";
+import { AuthProvider, RequireAuth, useAuth } from "@/hooks/useAuth";
 import { RequireAccountant } from "@/components/auth/RequireAccountant";
 import { RequirePlatformAdmin } from "@/components/auth/RequirePlatformAdmin";
 import { BackgroundTasksProvider } from "@/contexts/BackgroundTasksContext";
@@ -17,6 +17,51 @@ import PostHogTracker from "@/components/PostHogTracker";
 // Eagerly loaded — landing/login page (first thing users see)
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
+
+// ---------------------------------------------------------------------------
+// Prefetch route chunks after auth resolves so in-app navigations are instant
+// ---------------------------------------------------------------------------
+
+const accountantChunks = [
+  () => import("./pages/accountant/AccountantDashboard"),
+  () => import("./pages/accountant/AccountantSettings"),
+  () => import("./pages/accountant/ClientList"),
+  () => import("./pages/accountant/InviteClient"),
+  () => import("./pages/accountant/ClientDetail"),
+  () => import("./pages/accountant/AccountantTasks"),
+  () => import("./pages/accountant/ClientFilingReview"),
+  () => import("./pages/accountant/ClientSettings"),
+  () => import("./pages/accountant/InboundEmailDashboard"),
+];
+
+const clientChunks = [
+  () => import("./pages/BookkeepingDashboard"),
+  () => import("./pages/Invoices"),
+  () => import("./pages/BankFeed"),
+  () => import("./pages/VATCentre"),
+  () => import("./pages/TaxCentre"),
+  () => import("./pages/Settings"),
+  () => import("./pages/Reports"),
+  () => import("./pages/Accounts"),
+  () => import("./pages/RCTCentre"),
+  () => import("./pages/BudgetPage"),
+  () => import("./pages/ReconciliationPage"),
+];
+
+function PrefetchRoutes() {
+  const { user, isLoading, isAccountant } = useAuth();
+
+  useEffect(() => {
+    if (isLoading || !user || isAccountant === null) return;
+    const chunks = isAccountant ? accountantChunks : clientChunks;
+    // Stagger prefetches to avoid blocking the main thread
+    chunks.forEach((load, i) => {
+      setTimeout(() => load().catch(() => {}), 1000 + i * 200);
+    });
+  }, [user, isLoading, isAccountant]);
+
+  return null;
+}
 
 // Retry wrapper for lazy imports — handles stale chunk 404s after deploys
 function lazyWithRetry(importFn: () => Promise<{ default: React.ComponentType }>) {
@@ -107,6 +152,7 @@ const App = () => (
             <ErrorBoundary>
               <AuthProvider>
                 <PostHogTracker />
+                <PrefetchRoutes />
                 <BackgroundTasksProvider>
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-pulse text-xl font-semibold">Loading...</div></div>}>
                     <Routes>
