@@ -50,9 +50,9 @@ const Welcome = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Redirect if already logged in
+  // Redirect if already logged in — wait for role check to complete
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && isAccountant !== null) {
       if (isAccountant) {
         navigate("/accountant/dashboard");
       } else {
