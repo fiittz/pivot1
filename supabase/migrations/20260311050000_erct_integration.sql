@@ -1,6 +1,69 @@
 -- eRCT Integration: Revenue electronic Relevant Contracts Tax
--- Extends existing RCT system (subcontractors, rct_deductions) with
--- full Revenue eRCT API integration tables.
+-- Creates subcontractors table and full Revenue eRCT API integration tables.
+
+-- ============================================================
+-- 0. TABLE: subcontractors — RCT subcontractor registry
+-- ============================================================
+CREATE TABLE subcontractors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  ppsn_or_tax_ref TEXT,
+  company_reg_number TEXT,
+  verified_with_revenue BOOLEAN NOT NULL DEFAULT FALSE,
+  last_rate_check TIMESTAMPTZ,
+  revenue_rate NUMERIC(5,2),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_subcontractors_user ON subcontractors(user_id);
+ALTER TABLE subcontractors ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own subcontractors" ON subcontractors FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Accountants see client subcontractors" ON subcontractors FOR SELECT USING (
+  EXISTS (SELECT 1 FROM accountant_clients ac WHERE ac.accountant_id = auth.uid() AND ac.client_user_id = subcontractors.user_id)
+);
+CREATE POLICY "Accountants manage client subcontractors" ON subcontractors FOR ALL USING (
+  EXISTS (SELECT 1 FROM accountant_clients ac WHERE ac.accountant_id = auth.uid() AND ac.client_user_id = subcontractors.user_id)
+);
+
+CREATE TRIGGER update_subcontractors_updated_at
+  BEFORE UPDATE ON subcontractors
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- ============================================================
+-- 0b. TABLE: rct_deductions — RCT deduction records
+-- ============================================================
+CREATE TABLE rct_deductions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  subcontractor_id UUID NOT NULL REFERENCES subcontractors(id),
+  gross_amount NUMERIC(12,2) NOT NULL,
+  rct_rate NUMERIC(5,2) NOT NULL,
+  rct_amount NUMERIC(12,2) NOT NULL,
+  net_amount NUMERIC(12,2) NOT NULL,
+  deduction_date DATE NOT NULL,
+  reference TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'filed', 'paid')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_rct_deductions_user ON rct_deductions(user_id);
+ALTER TABLE rct_deductions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own rct_deductions" ON rct_deductions FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Accountants see client rct_deductions" ON rct_deductions FOR SELECT USING (
+  EXISTS (SELECT 1 FROM accountant_clients ac WHERE ac.accountant_id = auth.uid() AND ac.client_user_id = rct_deductions.user_id)
+);
 
 -- ============================================================
 -- 1. TABLE: rct_contracts — Revenue contract notifications
@@ -87,14 +150,7 @@ ALTER TABLE invoices ADD COLUMN IF NOT EXISTS rct_deduction_ref TEXT;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS rct_contract_id UUID REFERENCES rct_contracts(id);
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS is_reverse_charge_vat BOOLEAN DEFAULT FALSE;
 
--- ============================================================
--- 6. ALTER subcontractors — add Revenue integration columns
--- ============================================================
-ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS ppsn_or_tax_ref TEXT;
-ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS company_reg_number TEXT;
-ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS verified_with_revenue BOOLEAN DEFAULT FALSE;
-ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS last_rate_check TIMESTAMPTZ;
-ALTER TABLE subcontractors ADD COLUMN IF NOT EXISTS revenue_rate NUMERIC(5,2);
+-- (subcontractors columns already included in CREATE TABLE above)
 
 -- ============================================================
 -- 7. INDEXES
@@ -119,7 +175,7 @@ CREATE INDEX idx_revenue_credentials_user ON revenue_credentials(user_id);
 
 -- Partial indexes on new invoice columns
 CREATE INDEX idx_invoices_rct ON invoices(rct_contract_id) WHERE is_rct = TRUE;
-CREATE INDEX idx_subcontractors_verified ON subcontractors(verified_with_revenue) WHERE verified_with_revenue = TRUE;
+-- subcontractors verified index already in CREATE TABLE block above
 
 -- ============================================================
 -- 8. ENABLE RLS
