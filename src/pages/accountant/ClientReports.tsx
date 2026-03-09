@@ -17,7 +17,11 @@ import { buildForm11Xml } from "@/lib/reports/xml/form11Xml";
 import { buildVATXml } from "@/lib/reports/xml/vatXml";
 import { buildRCTXml, type RCTSubcontractor, type RCTSummary } from "@/lib/reports/xml/rctXml";
 import { saveXml } from "@/lib/reports/xmlHelpers";
-import { FileText, Download, Building2, User, Receipt, Landmark } from "lucide-react";
+import { generateCT1Pdf } from "@/lib/reports/pdf/ct1Pdf";
+import { generateForm11Pdf } from "@/lib/reports/pdf/form11Pdf";
+import { generateAbridgedAccountsPdf } from "@/lib/reports/pdf/abridgedAccountsPdf";
+import { assembleAbridgedAccountsData, type AbridgedAccountsInput } from "@/lib/reports/abridgedAccountsData";
+import { FileText, Download, Building2, User, Receipt, Landmark, FileDown } from "lucide-react";
 
 interface ClientReportsProps {
   clientUserId: string | null | undefined;
@@ -146,9 +150,13 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
     generatedDate: new Date(),
   };
 
+  const getCT1ReportData = () => {
+    return assembleCT1ReportData(ct1Data as never, null, meta);
+  };
+
   const handleCT1Xml = () => {
     try {
-      const reportData = assembleCT1ReportData(ct1Data as never, null, meta);
+      const reportData = getCT1ReportData();
       const xml = buildCT1Xml(reportData, {
         periodStart: startDate,
         periodEnd: endDate,
@@ -161,6 +169,15 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
       saveXml(xml, `CT1_${companyName.replace(/\s+/g, "_")}_${taxYear}.xml`);
     } catch (err) {
       console.error("CT1 XML error:", err);
+    }
+  };
+
+  const handleCT1Pdf = () => {
+    try {
+      const reportData = getCT1ReportData();
+      generateCT1Pdf(reportData);
+    } catch (err) {
+      console.error("CT1 PDF error:", err);
     }
   };
 
@@ -208,6 +225,69 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
   const isVatRegistered = !!(onboarding?.vat_registered);
   const isRctRegistered = !!(onboarding?.rct_registered);
 
+  // ── CRO Abridged Accounts PDF ─────────────────────────────
+  const handleAbridgedPdf = () => {
+    try {
+      const input: AbridgedAccountsInput = {
+        companyName,
+        croNumber: (onboarding?.company_registration_number as string) ?? "",
+        registeredAddress: (onboarding?.registered_address as string) ?? "",
+        accountingYearEnd: `31 December ${taxYear}`,
+        directorNames: directors.map((d) => d.name),
+        companySecretaryName: directors.length === 1 ? directors[0].name : undefined,
+        fixedAssetsTangible: 0,
+        stock: 0,
+        wip: 0,
+        debtors: 0,
+        prepayments: 0,
+        accruedIncome: 0,
+        cashAtBank: 0,
+        creditors: 0,
+        accruals: 0,
+        deferredIncome: 0,
+        taxation: 0,
+        bankLoans: 0,
+        directorsLoans: 0,
+        shareCapital: 100,
+        retainedProfits: 0,
+      };
+
+      // Try to populate from CT1 questionnaire data in localStorage
+      if (clientUserId) {
+        const raw = localStorage.getItem(`ct1_questionnaire_${clientUserId}_${taxYear}`);
+        if (raw) {
+          const q = JSON.parse(raw);
+          input.fixedAssetsTangible =
+            (q.fixedAssetsPlantMachinery ?? 0) +
+            (q.fixedAssetsMotorVehicles ?? 0) +
+            (q.fixedAssetsFixturesFittings ?? 0) +
+            (q.fixedAssetsLandBuildings ?? 0);
+          input.stock = q.currentAssetsStock ?? 0;
+          input.debtors = q.currentAssetsDebtors ?? q.tradeDebtorsTotal ?? 0;
+          input.cashAtBank = q.currentAssetsBankBalance ?? 0;
+          input.prepayments = q.prepaymentsAmount ?? 0;
+          input.accruedIncome = q.accruedIncomeAmount ?? 0;
+          input.creditors = q.liabilitiesCreditors ?? q.tradeCreditorsTotal ?? 0;
+          input.accruals = q.accrualsAmount ?? 0;
+          input.deferredIncome = q.deferredIncomeAmount ?? 0;
+          input.taxation = q.liabilitiesTaxation ?? 0;
+          input.bankLoans = q.liabilitiesBankLoans ?? 0;
+          input.directorsLoans = q.liabilitiesDirectorsLoans ?? 0;
+          input.shareCapital = q.shareCapital ?? 100;
+          // Derive retained profits as balancing figure
+          const totalAssets = input.fixedAssetsTangible + input.stock + input.debtors + input.cashAtBank + input.prepayments + input.accruedIncome;
+          const totalLiabilities = input.creditors + input.accruals + input.deferredIncome + input.taxation + input.bankLoans + input.directorsLoans;
+          input.retainedProfits = totalAssets - totalLiabilities - input.shareCapital;
+        }
+      }
+
+      const reportData = assembleAbridgedAccountsData(input, meta);
+      generateAbridgedAccountsPdf(reportData);
+    } catch (err) {
+      console.error("Abridged Accounts PDF error:", err);
+    }
+  };
+
   // ── CT1 Card ────────────────────────────────────────────────
 
   const ct1Section = (
@@ -222,10 +302,16 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
             {companyName} · Tax year {taxYear}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleCT1Xml} disabled={ct1Data.isLoading}>
-          <Download className="w-4 h-4 mr-1.5" />
-          ROS XML
-        </Button>
+        <div className="flex gap-1.5">
+          <Button variant="outline" size="sm" onClick={handleCT1Pdf} disabled={ct1Data.isLoading}>
+            <FileDown className="w-4 h-4 mr-1.5" />
+            PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCT1Xml} disabled={ct1Data.isLoading}>
+            <Download className="w-4 h-4 mr-1.5" />
+            ROS XML
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {ct1Data.isLoading ? (
@@ -390,6 +476,31 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
       )}
       {vatSection}
       {rctSection}
+
+      {/* CRO Abridged Accounts PDF */}
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-3 pb-3">
+          <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+            <FileText className="w-5 h-5 text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-base">CRO — Abridged Accounts</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {companyName} · FYE 31 Dec {taxYear}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleAbridgedPdf}>
+            <FileDown className="w-4 h-4 mr-1.5" />
+            PDF
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">
+            FRS 102 Section 1A abridged balance sheet, directors' responsibility statement,
+            accounting policies, and notes. Upload to CRO CORE portal with B1 annual return.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
@@ -413,19 +524,33 @@ function DirectorReportCard({
 }) {
   const { input, result, isLoading } = useClientForm11Data(clientUserId, directorNumber);
 
+  const getForm11ReportData = () => {
+    const meta = {
+      companyName,
+      taxYear: String(taxYear),
+      generatedDate: new Date(),
+    };
+    return assembleForm11ReportData(input!, result!, meta);
+  };
+
   const handleForm11Xml = () => {
     if (!input || !result) return;
     try {
-      const meta = {
-        companyName,
-        taxYear: String(taxYear),
-        generatedDate: new Date(),
-      };
-      const reportData = assembleForm11ReportData(input, result, meta);
+      const reportData = getForm11ReportData();
       const xml = buildForm11Xml(reportData);
       saveXml(xml, `Form11_${directorName.replace(/\s+/g, "_")}_${taxYear}.xml`);
     } catch (err) {
       console.error("Form 11 XML error:", err);
+    }
+  };
+
+  const handleForm11Pdf = () => {
+    if (!input || !result) return;
+    try {
+      const reportData = getForm11ReportData();
+      generateForm11Pdf(reportData);
+    } catch (err) {
+      console.error("Form 11 PDF error:", err);
     }
   };
 
@@ -442,10 +567,16 @@ function DirectorReportCard({
           </p>
         </div>
         {result && (
-          <Button variant="outline" size="sm" onClick={handleForm11Xml}>
-            <Download className="w-4 h-4 mr-1.5" />
-            ROS XML
-          </Button>
+          <div className="flex gap-1.5">
+            <Button variant="outline" size="sm" onClick={handleForm11Pdf}>
+              <FileDown className="w-4 h-4 mr-1.5" />
+              PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleForm11Xml}>
+              <Download className="w-4 h-4 mr-1.5" />
+              ROS XML
+            </Button>
+          </div>
         )}
       </CardHeader>
       <CardContent>
