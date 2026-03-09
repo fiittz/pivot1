@@ -47,6 +47,49 @@ interface CTAdjustmentLine {
   name: string;
   amount: number;
   legislation?: string;
+  /** Flags whether this add-back has personal tax implications (BIK / DLA) */
+  bikFlag?: "bik" | "dla" | "uncategorised" | null;
+}
+
+/**
+ * Determine if an add-back triggers personal tax (BIK on director).
+ *
+ * Close company rules (s.438 TCA 1997):
+ * - Personal expenses paid by company → BIK on director (Schedule E)
+ * - Uncategorised expenses → must be classified; if personal → BIK
+ * - Entertainment → no BIK (company absorbs, just non-deductible for CT)
+ * - Depreciation → no BIK (accounting adjustment)
+ * - Fines → no BIK (company absorbs)
+ */
+function classifyBIK(
+  name: string,
+  classification: string,
+): CTAdjustmentLine["bikFlag"] {
+  const lower = name.toLowerCase();
+
+  // Uncategorised → must be reviewed and classified
+  if (classification === "needs_review" || lower.includes("uncategorised") || lower.includes("uncategorized")) {
+    return "uncategorised";
+  }
+
+  // Personal expenses → BIK on director
+  if (
+    lower.includes("personal") ||
+    lower.includes("private") ||
+    lower.includes("non-business") ||
+    lower.includes("groceries") ||
+    lower.includes("clothing")
+  ) {
+    return "bik";
+  }
+
+  // Director's drawings → DLA
+  if (lower.includes("drawing") || lower.includes("director's loan") || lower.includes("directors loan")) {
+    return "dla";
+  }
+
+  // Everything else (entertainment, depreciation, fines, etc.) — no BIK
+  return null;
 }
 
 /**
@@ -253,12 +296,13 @@ export function ProfitAndLossView({
           name: line.name,
           amount: line.amount,
           legislation: result.legislation,
+          bikFlag: classifyBIK(line.name, result.classification),
         });
       }
     }
 
     // Description-level add-backs
-    const descriptionAddBacks = new Map<string, { amount: number; legislation?: string }>();
+    const descriptionAddBacks = new Map<string, { amount: number; legislation?: string; classification: string }>();
     for (const txn of expTxns) {
       const t = txn as Record<string, unknown>;
       const cat = t.category as { id: string; name: string } | null;
@@ -275,13 +319,13 @@ export function ProfitAndLossView({
         if (existing) {
           existing.amount += amt;
         } else {
-          descriptionAddBacks.set(key, { amount: amt, legislation: result.legislation });
+          descriptionAddBacks.set(key, { amount: amt, legislation: result.legislation, classification: result.classification });
         }
       }
     }
 
     for (const [reason, data] of descriptionAddBacks) {
-      addBacks.push({ name: reason, amount: data.amount, legislation: data.legislation });
+      addBacks.push({ name: reason, amount: data.amount, legislation: data.legislation, bikFlag: classifyBIK(reason, data.classification) });
     }
 
     // Ensure depreciation is added back if in P&L
@@ -356,6 +400,14 @@ export function ProfitAndLossView({
     // BALANCE DUE / REFUNDABLE
     const balanceDue = ctAfterRCT - preliminaryTax.amount;
 
+    // BIK / Personal tax implications
+    const bikItems = addBacks.filter(ab => ab.bikFlag === "bik");
+    const uncategorisedItems = addBacks.filter(ab => ab.bikFlag === "uncategorised");
+    const dlaItems = addBacks.filter(ab => ab.bikFlag === "dla");
+    const totalBIK = bikItems.reduce((s, l) => s + l.amount, 0);
+    const totalUncategorised = uncategorisedItems.reduce((s, l) => s + l.amount, 0);
+    const totalDLA = dlaItems.reduce((s, l) => s + l.amount, 0);
+
     return {
       incomeLines,
       cosLines,
@@ -381,6 +433,13 @@ export function ProfitAndLossView({
       ctAfterRCT,
       preliminaryTax,
       balanceDue,
+      // Personal tax
+      bikItems,
+      uncategorisedItems,
+      dlaItems,
+      totalBIK,
+      totalUncategorised,
+      totalDLA,
     };
   }, [incomeTransactions, expenseTransactions, journalEntries, fixedAssets, priorYearSnapshot, rctNotifications, hasAccounts, selectedAccountIds, selectedSet, taxYear, startDate, endDate]);
 
@@ -558,13 +617,37 @@ export function ProfitAndLossView({
                     <>
                       <SectionHeader label="ADD BACKS" />
                       {pnl.addBacks.map((line, idx) => (
-                        <AdjustmentRow
+                        <tr
                           key={`addback-${idx}`}
-                          label={line.name}
-                          amount={line.amount}
-                          legislation={line.legislation}
-                          color="text-amber-600"
-                        />
+                          className="border-b border-muted/20 hover:bg-muted/10 transition-colors"
+                        >
+                          <td className="py-1.5 px-4 pl-8">
+                            <span>{line.name}</span>
+                            {line.legislation && (
+                              <span className="ml-2 text-[10px] text-muted-foreground">
+                                ({line.legislation})
+                              </span>
+                            )}
+                            {line.bikFlag === "bik" && (
+                              <span className="ml-2 text-[10px] font-medium text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                                BIK
+                              </span>
+                            )}
+                            {line.bikFlag === "uncategorised" && (
+                              <span className="ml-2 text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                                REVIEW
+                              </span>
+                            )}
+                            {line.bikFlag === "dla" && (
+                              <span className="ml-2 text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
+                                DLA
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-1.5 px-4 text-right font-mono tabular-nums text-amber-600">
+                            {eur(line.amount)}
+                          </td>
+                        </tr>
                       ))}
                       <SubtotalRow
                         label="Total Add Backs"
@@ -746,6 +829,124 @@ export function ProfitAndLossView({
                       </td>
                     </tr>
                   )}
+
+                  {/* ═══════════════════════════════════════════════════════════ */}
+                  {/* ── PERSONAL TAX IMPLICATIONS ─────────────────────────────── */}
+                  {/* ═══════════════════════════════════════════════════════════ */}
+                  {(pnl.totalBIK > 0 || pnl.totalUncategorised > 0 || pnl.totalDLA > 0) && (
+                    <>
+                      <tr><td colSpan={2} className="py-3" /></tr>
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="py-2 px-4 bg-red-50 border-t-2 border-b border-red-200"
+                        >
+                          <span className="font-semibold text-sm text-red-700">
+                            Personal Tax Implications
+                          </span>
+                          <span className="text-xs text-red-500 ml-2">
+                            Close company — s.438 TCA 1997
+                          </span>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td colSpan={2} className="py-2 px-4 text-xs text-muted-foreground">
+                          Add-backs flagged below must be classified as business or personal.
+                          Personal expenses paid by the company are treated as a benefit to the director
+                          and taxed under Schedule E (IT + USC + PRSI).
+                        </td>
+                      </tr>
+
+                      {/* BIK items — confirmed personal benefit */}
+                      {pnl.bikItems.length > 0 && (
+                        <>
+                          <SectionHeader label="BENEFIT IN KIND (BIK)" />
+                          {pnl.bikItems.map((line, idx) => (
+                            <tr
+                              key={`bik-${idx}`}
+                              className="border-b border-muted/20 hover:bg-red-50/50 transition-colors"
+                            >
+                              <td className="py-1.5 px-4 pl-8">
+                                <span>{line.name}</span>
+                                <span className="ml-2 text-[10px] text-red-500">
+                                  Director Schedule E
+                                </span>
+                              </td>
+                              <td className="py-1.5 px-4 text-right font-mono tabular-nums text-red-600">
+                                {eur(line.amount)}
+                              </td>
+                            </tr>
+                          ))}
+                          <SubtotalRow label="Total BIK" amount={pnl.totalBIK} />
+                          <tr>
+                            <td colSpan={2} className="py-1 px-4 pl-8 text-[11px] text-red-500 italic">
+                              Director pays IT (up to 40%) + USC (up to 8%) + PRSI (4%) on BIK amount.
+                              Must be reported on Form 11 / payroll P30.
+                            </td>
+                          </tr>
+                        </>
+                      )}
+
+                      {/* DLA items — director's loan account */}
+                      {pnl.dlaItems.length > 0 && (
+                        <>
+                          <SectionHeader label="DIRECTOR'S LOAN ACCOUNT" />
+                          {pnl.dlaItems.map((line, idx) => (
+                            <tr
+                              key={`dla-${idx}`}
+                              className="border-b border-muted/20 hover:bg-violet-50/50 transition-colors"
+                            >
+                              <td className="py-1.5 px-4 pl-8">
+                                <span>{line.name}</span>
+                              </td>
+                              <td className="py-1.5 px-4 text-right font-mono tabular-nums text-violet-600">
+                                {eur(line.amount)}
+                              </td>
+                            </tr>
+                          ))}
+                          <SubtotalRow label="Total DLA" amount={pnl.totalDLA} />
+                          <tr>
+                            <td colSpan={2} className="py-1 px-4 pl-8 text-[11px] text-violet-600 italic">
+                              If not repaid within the AP, close company surcharge of 20% applies (s.438 TCA 1997).
+                              DLA balance also subject to deemed distribution rules.
+                            </td>
+                          </tr>
+                        </>
+                      )}
+
+                      {/* Uncategorised — needs classification */}
+                      {pnl.uncategorisedItems.length > 0 && (
+                        <>
+                          <SectionHeader label="REQUIRES CLASSIFICATION" />
+                          {pnl.uncategorisedItems.map((line, idx) => (
+                            <tr
+                              key={`uncat-${idx}`}
+                              className="border-b border-muted/20 hover:bg-orange-50/50 transition-colors"
+                            >
+                              <td className="py-1.5 px-4 pl-8">
+                                <span>{line.name}</span>
+                                <span className="ml-2 text-[10px] font-medium text-orange-600">
+                                  Business or Personal?
+                                </span>
+                              </td>
+                              <td className="py-1.5 px-4 text-right font-mono tabular-nums text-orange-600">
+                                {eur(line.amount)}
+                              </td>
+                            </tr>
+                          ))}
+                          <SubtotalRow label="Total Uncategorised" amount={pnl.totalUncategorised} />
+                          <tr>
+                            <td colSpan={2} className="py-1 px-4 pl-8 text-[11px] text-orange-600 italic">
+                              These expenses must be categorised. If personal → BIK on director.
+                              If business → reclassify and remove from add-backs.
+                              Revenue may query uncategorised items on audit.
+                            </td>
+                          </tr>
+                        </>
+                      )}
+                    </>
+                  )}
                 </>
               )}
             </tbody>
@@ -766,6 +967,9 @@ const SECTION_COLORS: Record<string, string> = {
   "ADD BACKS": "text-amber-600",
   "LESS: CAPITAL ALLOWANCES": "text-blue-600",
   "LESS: LOSSES FORWARD": "text-purple-600",
+  "BENEFIT IN KIND (BIK)": "text-red-600",
+  "DIRECTOR'S LOAN ACCOUNT": "text-violet-600",
+  "REQUIRES CLASSIFICATION": "text-orange-600",
 };
 
 function SectionHeader({ label }: { label: string }) {
