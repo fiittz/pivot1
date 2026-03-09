@@ -427,31 +427,32 @@ export function useAutoEnrolmentEmployees(
   return useQuery<AutoEnrolmentEmployee[]>({
     queryKey: ["auto-enrolment-employees", clientUserId, _taxYear],
     queryFn: async () => {
-      // Fetch enrolment records
+      // 1. Fetch ALL active employees for this client
+      const { data: employees, error: empError } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, date_of_birth, annual_salary, employment_start_date")
+        .eq("user_id", clientUserId!)
+        .eq("is_active", true);
+
+      if (empError) throw empError;
+      if (!employees || employees.length === 0) return [];
+
+      // 2. Fetch any existing enrolment records
       const { data: enrolments, error: enrolError } = await supabase
         .from("employee_auto_enrolment")
         .select("*")
         .eq("user_id", clientUserId!);
 
       if (enrolError) throw enrolError;
-      if (!enrolments || enrolments.length === 0) return [];
 
-      // Fetch employee details
-      const employeeIds = enrolments.map((e) => e.employee_id);
-      const { data: employees, error: empError } = await supabase
-        .from("employees")
-        .select("id, first_name, last_name, date_of_birth, annual_salary")
-        .in("id", employeeIds);
-
-      if (empError) throw empError;
-
-      const empMap = new Map(
-        (employees ?? []).map((e) => [e.id, e])
+      const enrolMap = new Map(
+        (enrolments ?? []).map((e) => [e.employee_id, e])
       );
 
-      return enrolments.map((enr) => {
-        const emp = empMap.get(enr.employee_id);
-        const dob = emp?.date_of_birth ? new Date(emp.date_of_birth) : null;
+      // 3. Merge — employees without enrolment records show as "pending"
+      return employees.map((emp) => {
+        const enr = enrolMap.get(emp.id);
+        const dob = emp.date_of_birth ? new Date(emp.date_of_birth) : null;
         const age = dob
           ? Math.floor(
               (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
@@ -459,16 +460,14 @@ export function useAutoEnrolmentEmployees(
           : 0;
 
         return {
-          id: enr.employee_id,
-          name: emp
-            ? `${emp.first_name ?? ""} ${emp.last_name ?? ""}`.trim()
-            : enr.employee_id,
+          id: emp.id,
+          name: `${emp.first_name ?? ""} ${emp.last_name ?? ""}`.trim(),
           age,
-          annual_gross: emp?.annual_salary ?? 0,
-          status: enr.status as EnrolmentStatus,
-          enrolled_date: enr.enrolled_at ?? null,
-          opt_out_window_end: enr.opt_out_window_end ?? null,
-          re_enrolment_date: enr.next_re_enrolment_date ?? null,
+          annual_gross: emp.annual_salary ?? 0,
+          status: (enr?.status as EnrolmentStatus) ?? "pending",
+          enrolled_date: enr?.enrolled_at ?? null,
+          opt_out_window_end: enr?.opt_out_window_end ?? null,
+          re_enrolment_date: enr?.next_re_enrolment_date ?? null,
         } satisfies AutoEnrolmentEmployee;
       });
     },
