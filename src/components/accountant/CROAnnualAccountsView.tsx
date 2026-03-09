@@ -524,16 +524,10 @@ export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualA
         </CardTitle>
         <div className="flex items-center gap-2">
           {accounts && (
-            <>
-              <Button size="sm" variant="outline" onClick={() => handleAbridgedExport("pdf")}>
-                <Download className="h-4 w-4 mr-1" />
-                PDF
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => handleAbridgedExport("excel")}>
-                <Download className="h-4 w-4 mr-1" />
-                Excel
-              </Button>
-            </>
+            <Button size="sm" variant="outline" onClick={() => handleAbridgedExport("pdf")}>
+              <Download className="h-4 w-4 mr-1" />
+              Download PDF
+            </Button>
           )}
           {clientUserId && (
             <Button
