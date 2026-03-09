@@ -59,32 +59,32 @@ const routeConfig: Record<string, { label: string; color: string }> = {
 
 const columns: ColumnDef<InboundEmail>[] = [
   {
-    accessorKey: "created_at",
+    id: "created_at",
     header: "Received",
-    cell: (row) => (
+    accessorFn: (row) => (
       <span className="text-xs text-muted-foreground">{timeAgo(row.created_at)}</span>
     ),
   },
   {
-    accessorKey: "from_address",
+    id: "from_address",
     header: "From",
-    cell: (row) => (
+    accessorFn: (row) => (
       <span className="text-xs truncate max-w-[180px] block">{row.from_address}</span>
     ),
   },
   {
-    accessorKey: "subject",
+    id: "subject",
     header: "Subject",
-    cell: (row) => (
+    accessorFn: (row) => (
       <span className="text-xs font-medium truncate max-w-[250px] block">
         {row.subject || "(no subject)"}
       </span>
     ),
   },
   {
-    accessorKey: "triage_classification",
+    id: "triage_classification",
     header: "Type",
-    cell: (row) => {
+    accessorFn: (row) => {
       if (!row.triage_classification) return <span className="text-xs text-muted-foreground">-</span>;
       return (
         <Badge variant="outline" className="text-[10px]">
@@ -94,18 +94,18 @@ const columns: ColumnDef<InboundEmail>[] = [
     },
   },
   {
-    accessorKey: "extracted_data",
+    id: "extracted_data",
     header: "Amount",
-    cell: (row) => {
+    accessorFn: (row) => {
       const total = (row.extracted_data as Record<string, unknown>)?.total;
       if (!total) return <span className="text-xs text-muted-foreground">-</span>;
       return <span className="text-xs font-medium">{formatCurrency(total)}</span>;
     },
   },
   {
-    accessorKey: "status",
+    id: "status",
     header: "Status",
-    cell: (row) => {
+    accessorFn: (row) => {
       const cfg = statusConfig[row.status] ?? statusConfig.pending;
       const Icon = cfg.icon;
       return (
@@ -117,9 +117,9 @@ const columns: ColumnDef<InboundEmail>[] = [
     },
   },
   {
-    accessorKey: "route",
+    id: "route",
     header: "Route",
-    cell: (row) => {
+    accessorFn: (row) => {
       if (!row.route) return <span className="text-xs text-muted-foreground">-</span>;
       const cfg = routeConfig[row.route];
       return (
@@ -130,9 +130,9 @@ const columns: ColumnDef<InboundEmail>[] = [
     },
   },
   {
-    accessorKey: "attachment_count",
+    id: "attachment_count",
     header: "Files",
-    cell: (row) => (
+    accessorFn: (row) => (
       <span className="text-xs text-muted-foreground">
         {row.attachment_count > 0 ? `${row.attachment_count} file${row.attachment_count > 1 ? "s" : ""}` : "-"}
       </span>
@@ -203,6 +203,7 @@ export default function InboundEmailDashboard() {
             <DataTable
               columns={columns}
               data={emails}
+              getRowId={(row) => row.id}
               isLoading={isLoading}
               emptyMessage="No inbound emails yet. Clients can forward emails to their unique @in.balnce.ie address."
             />

@@ -72,7 +72,13 @@ const ResetPassword = () => {
       if (error) throw error;
 
       toast.success("Password updated successfully!");
-      window.location.href = "/dashboard";
+      // Redirect based on role
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", (await supabase.auth.getUser()).data.user!.id)
+        .eq("role", "accountant");
+      window.location.href = roleData && roleData.length > 0 ? "/accountant/dashboard" : "/dashboard";
       return;
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);

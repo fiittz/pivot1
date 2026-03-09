@@ -30,6 +30,12 @@ import {
   FileText,
   AlertTriangle,
   Check,
+  Calendar,
+  Settings,
+  Users,
+  Bell,
+  Link as LinkIcon,
+  Key,
 } from "lucide-react";
 import { toast } from "sonner";
 import {

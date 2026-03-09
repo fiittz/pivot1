@@ -220,6 +220,7 @@ export function TrialBalanceView({
       {/* Trial Balance Table */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">
@@ -321,6 +322,7 @@ export function TrialBalanceView({
               )}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 

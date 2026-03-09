@@ -42,13 +42,13 @@ export function usePracticeKPIs() {
       // Get all clients
       const { data: clients } = await supabase
         .from("accountant_clients")
-        .select("id, client_id, status, profiles:client_id(full_name, email)")
+        .select("id, client_user_id, client_name, client_email, status")
         .eq("practice_id", practice.id)
         .eq("status", "active");
 
       if (!clients || clients.length === 0) return null;
 
-      const clientIds = clients.map((c) => c.client_id);
+      const clientIds = clients.map((c) => c.client_user_id).filter(Boolean) as string[];
 
       // Get transaction counts per client
       const { data: txData } = await supabase
@@ -74,12 +74,11 @@ export function usePracticeKPIs() {
 
       // Build health rows
       const healthRows: ClientHealthRow[] = clients.map((c) => {
-        const stats = txByClient.get(c.client_id) || { total: 0, uncategorized: 0, withReceipt: 0, lastDate: null };
-        const profile = c.profiles as unknown as { full_name: string | null; email: string | null } | null;
+        const stats = txByClient.get(c.client_user_id || "") || { total: 0, uncategorized: 0, withReceipt: 0, lastDate: null };
         return {
-          clientId: c.client_id,
-          clientName: profile?.full_name || profile?.email || "Unknown",
-          email: profile?.email || "",
+          clientId: c.client_user_id || c.id,
+          clientName: c.client_name || c.client_email || "Unknown",
+          email: c.client_email || "",
           uncategorizedCount: stats.uncategorized,
           totalTransactions: stats.total,
           categorizationRate: stats.total > 0 ? Math.round(((stats.total - stats.uncategorized) / stats.total) * 100) : 100,

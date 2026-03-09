@@ -191,7 +191,7 @@ export function PayrollRunView({ clientUserId, taxYear }: PayrollRunViewProps) {
   };
 
   const handleCalculate = (run: PayrollRun) => {
-    // Build overrides from employee inputs (if we stored them — for now use defaults)
+    // Build overrides from employee inputs (if we stored them -- for now use defaults)
     calculateRun.mutate({
       runId: run.id,
       clientUserId,
@@ -248,227 +248,239 @@ export function PayrollRunView({ clientUserId, taxYear }: PayrollRunViewProps) {
 
       {/* Pay runs table */}
       {runs.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No pay runs for {taxYear}. Click &quot;New Pay Run&quot; to start.
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Receipt className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-sm">No pay runs for {taxYear}.</p>
+            <p className="text-xs mt-1">Click &quot;New Pay Run&quot; to start.</p>
           </CardContent>
         </Card>
       ) : (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="w-8 py-2 px-2"></th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Period</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Pay Date</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Status</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {runs.map((run) => {
-                  const isExpanded = expandedRunId === run.id;
-                  const statusCfg = STATUS_CONFIG[run.status] ?? STATUS_CONFIG.draft;
-                  const freq = run.pay_frequency as PayFrequency;
-                  const lines = isExpanded && expandedRunData ? expandedRunData.lines : [];
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="w-8 py-2 px-2"></th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Period</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Pay Date</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {runs.map((run) => {
+                    const isExpanded = expandedRunId === run.id;
+                    const statusCfg = STATUS_CONFIG[run.status] ?? STATUS_CONFIG.draft;
+                    const freq = run.pay_frequency as PayFrequency;
+                    const lines = isExpanded && expandedRunData ? expandedRunData.lines : [];
 
-                  return (
-                    <Fragment key={run.id}>
-                      <tr
-                        className="border-b border-muted/20 hover:bg-muted/10 cursor-pointer transition-colors"
-                        onClick={() => toggleExpand(run.id)}
-                      >
-                        <td className="py-1.5 px-2">
-                          {isExpanded ? (
-                            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                          )}
-                        </td>
-                        <td className="py-1.5 px-3 text-sm font-medium">
-                          {getPeriodLabel(run.pay_period, run.pay_frequency)}
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({run.pay_period}/{PERIODS_PER_FREQ[freq] ?? "?"})
-                          </span>
-                        </td>
-                        <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                          {formatDate(run.pay_date)}
-                        </td>
-                        <td className="py-1.5 px-3 text-center">
-                          <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
-                            {statusCfg.label}
-                          </Badge>
-                        </td>
-                        <td className="py-1.5 px-3 text-right">
-                          <div
-                            className="flex items-center justify-end gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {run.status === "draft" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 text-xs gap-1"
-                                onClick={() => handleCalculate(run)}
-                                disabled={calculateRun.isPending}
-                              >
-                                <Calculator className="w-3 h-3" />
-                                Calculate
-                              </Button>
+                    return (
+                      <Fragment key={run.id}>
+                        <tr
+                          className="border-b border-muted/20 hover:bg-muted/10 cursor-pointer transition-colors"
+                          onClick={() => toggleExpand(run.id)}
+                        >
+                          <td className="py-2 px-2">
+                            {isExpanded ? (
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                             )}
-                            {run.status === "calculated" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 text-xs gap-1 border-green-300 text-green-700 hover:bg-green-50"
-                                onClick={() => handleApprove(run)}
-                                disabled={approveRun.isPending}
-                              >
-                                <CheckCircle2 className="w-3 h-3" />
-                                Approve &amp; Post
-                              </Button>
-                            )}
-                            {(run.status === "approved" || run.status === "submitted") && run.journal_entry_id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 text-xs gap-1"
-                                title="View linked journal entry"
-                              >
-                                <FileText className="w-3 h-3" />
-                                Journal
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-
-                      {/* Expanded detail with lines */}
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={5} className="p-0">
-                            <div className="bg-muted/20 px-4 py-3">
-                              {lines.length === 0 ? (
-                                <p className="text-xs text-muted-foreground text-center py-2">
-                                  {run.status === "draft"
-                                    ? "Click \"Calculate\" to compute payroll for all employees."
-                                    : "Loading lines..."}
-                                </p>
-                              ) : (
-                                <table className="w-full text-xs">
-                                  <thead>
-                                    <tr className="text-muted-foreground">
-                                      <th className="text-left py-1 font-medium">Employee</th>
-                                      <th className="text-right py-1 font-medium">Gross</th>
-                                      <th className="text-right py-1 font-medium">PAYE</th>
-                                      <th className="text-right py-1 font-medium">USC</th>
-                                      <th className="text-right py-1 font-medium">Ee PRSI</th>
-                                      <th className="text-right py-1 font-medium">Pension</th>
-                                      <th className="text-right py-1 font-medium font-semibold">Net Pay</th>
-                                      <th className="text-right py-1 font-medium">Er PRSI</th>
-                                      <th className="text-right py-1 font-medium">Er Pension</th>
-                                      <th className="text-right py-1 font-medium font-semibold">Total Cost</th>
-                                      <th className="w-8"></th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {lines.map((line) => {
-                                      const empName = line.employee
-                                        ? `${line.employee.first_name} ${line.employee.last_name}`
-                                        : "Unknown";
-                                      return (
-                                        <tr key={line.id} className="border-t border-muted/20">
-                                          <td className="py-1 font-medium">{empName}</td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.gross_pay))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.paye_tax))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.usc))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.employee_prsi))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.pension_employee))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums font-semibold text-emerald-700">
-                                            {eur(Number(line.net_pay))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.employer_prsi))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums">
-                                            {eur(Number(line.pension_employer))}
-                                          </td>
-                                          <td className="py-1 text-right font-mono tabular-nums font-semibold">
-                                            {eur(Number(line.total_employer_cost))}
-                                          </td>
-                                          <td className="py-1 text-center">
-                                            {run.status !== "draft" && (
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-5 w-5 p-0"
-                                                title="View payslip"
-                                                onClick={() => setPayslipLine(line)}
-                                              >
-                                                <Receipt className="w-3 h-3 text-muted-foreground hover:text-blue-500" />
-                                              </Button>
-                                            )}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                    {/* Totals row */}
-                                    {lines.length > 1 && (
-                                      <tr className="border-t-2 font-semibold">
-                                        <td className="py-1">TOTALS</td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.gross_pay), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.paye_tax), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.usc), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.employee_prsi), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.pension_employee), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums text-emerald-700">
-                                          {eur(lines.reduce((s, l) => s + Number(l.net_pay), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.employer_prsi), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.pension_employer), 0))}
-                                        </td>
-                                        <td className="py-1 text-right font-mono tabular-nums">
-                                          {eur(lines.reduce((s, l) => s + Number(l.total_employer_cost), 0))}
-                                        </td>
-                                        <td></td>
-                                      </tr>
-                                    )}
-                                  </tbody>
-                                </table>
+                          </td>
+                          <td className="py-2 px-3 text-sm font-medium">
+                            {getPeriodLabel(run.pay_period, run.pay_frequency)}
+                            <span className="text-xs text-muted-foreground ml-1">
+                              ({run.pay_period}/{PERIODS_PER_FREQ[freq] ?? "?"})
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground">
+                            {formatDate(run.pay_date)}
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
+                              {statusCfg.label}
+                            </Badge>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <div
+                              className="flex items-center justify-end gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {run.status === "draft" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 text-xs gap-1"
+                                  onClick={() => handleCalculate(run)}
+                                  disabled={calculateRun.isPending}
+                                >
+                                  <Calculator className="w-3 h-3" />
+                                  Calculate
+                                </Button>
+                              )}
+                              {run.status === "calculated" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 text-xs gap-1 border-green-300 text-green-700 hover:bg-green-50"
+                                  onClick={() => handleApprove(run)}
+                                  disabled={approveRun.isPending}
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Approve &amp; Post
+                                </Button>
+                              )}
+                              {(run.status === "approved" || run.status === "submitted") && run.journal_entry_id && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 text-xs gap-1"
+                                  title="View linked journal entry"
+                                >
+                                  <FileText className="w-3 h-3" />
+                                  Journal
+                                </Button>
                               )}
                             </div>
                           </td>
                         </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+
+                        {/* Expanded detail with lines */}
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={5} className="p-0">
+                              <div className="bg-muted/20 border-t border-muted/30">
+                                {/* Section header */}
+                                <div className="px-4 py-3 bg-muted/30 border-b">
+                                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Employee Breakdown
+                                  </h4>
+                                </div>
+                                {lines.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground text-center py-6">
+                                    {run.status === "draft"
+                                      ? "Click \"Calculate\" to compute payroll for all employees."
+                                      : "Loading lines..."}
+                                  </p>
+                                ) : (
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-xs">
+                                      <thead>
+                                        <tr className="bg-muted/10 border-b">
+                                          <th className="text-left py-2 px-3 font-medium text-muted-foreground">Employee</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Gross</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">PAYE</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">USC</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Ee PRSI</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Pension</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Net Pay</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Er PRSI</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Er Pension</th>
+                                          <th className="text-right py-2 px-3 font-medium text-muted-foreground">Total Cost</th>
+                                          <th className="w-8"></th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {lines.map((line) => {
+                                          const empName = line.employee
+                                            ? `${line.employee.first_name} ${line.employee.last_name}`
+                                            : "Unknown";
+                                          return (
+                                            <tr key={line.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                                              <td className="py-2 px-3 font-medium">{empName}</td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums">
+                                                {eur(Number(line.gross_pay))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                                {eur(Number(line.paye_tax))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                                {eur(Number(line.usc))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                                {eur(Number(line.employee_prsi))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                                {eur(Number(line.pension_employee))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums font-semibold text-emerald-700">
+                                                {eur(Number(line.net_pay))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums text-muted-foreground">
+                                                {eur(Number(line.employer_prsi))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums text-muted-foreground">
+                                                {eur(Number(line.pension_employer))}
+                                              </td>
+                                              <td className="py-2 px-3 text-right font-mono tabular-nums font-semibold">
+                                                {eur(Number(line.total_employer_cost))}
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                {run.status !== "draft" && (
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-5 w-5 p-0"
+                                                    title="View payslip"
+                                                    onClick={() => setPayslipLine(line)}
+                                                  >
+                                                    <Receipt className="w-3 h-3 text-muted-foreground hover:text-blue-500" />
+                                                  </Button>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                        {/* Totals row */}
+                                        {lines.length > 1 && (
+                                          <tr className="border-t-2 border-foreground/20 font-semibold bg-muted/10">
+                                            <td className="py-2 px-3">TOTALS</td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums">
+                                              {eur(lines.reduce((s, l) => s + Number(l.gross_pay), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                              {eur(lines.reduce((s, l) => s + Number(l.paye_tax), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                              {eur(lines.reduce((s, l) => s + Number(l.usc), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                              {eur(lines.reduce((s, l) => s + Number(l.employee_prsi), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                                              {eur(lines.reduce((s, l) => s + Number(l.pension_employee), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">
+                                              {eur(lines.reduce((s, l) => s + Number(l.net_pay), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums">
+                                              {eur(lines.reduce((s, l) => s + Number(l.employer_prsi), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums">
+                                              {eur(lines.reduce((s, l) => s + Number(l.pension_employer), 0))}
+                                            </td>
+                                            <td className="py-2 px-3 text-right font-mono tabular-nums">
+                                              {eur(lines.reduce((s, l) => s + Number(l.total_employer_cost), 0))}
+                                            </td>
+                                            <td></td>
+                                          </tr>
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -528,8 +540,8 @@ export function PayrollRunView({ clientUserId, taxYear }: PayrollRunViewProps) {
                 </Label>
                 <div className="space-y-1">
                   {employeeInputs.map((inp) => (
-                    <div key={inp.employee_id} className="flex justify-between items-center text-sm px-2 py-1 bg-muted/10 rounded">
-                      <span>{inp.employee_name}</span>
+                    <div key={inp.employee_id} className="flex justify-between items-center text-sm px-3 py-1.5 bg-muted/10 rounded-lg border border-muted/20">
+                      <span className="font-medium">{inp.employee_name}</span>
                       <span className="font-mono tabular-nums text-muted-foreground">
                         {inp.gross_pay ? eur(parseFloat(inp.gross_pay)) : "\u2014"}
                       </span>
@@ -606,117 +618,129 @@ function PayslipCard({ line }: { line: PayrollLine & { employee?: Employee } }) 
   const totalCost = Number(line.total_employer_cost);
 
   return (
-    <Card className="border shadow-sm">
-      <CardContent className="p-4 space-y-3 text-sm">
+    <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+      <CardContent className="p-0">
         {/* Header */}
-        <div className="border-b pb-2">
-          <p className="font-semibold text-base">PAYSLIP &mdash; {empName}</p>
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Payslip</p>
+          <p className="font-semibold text-base mt-0.5">{empName}</p>
         </div>
 
-        {/* Earnings */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Earnings
-          </p>
-          <div className="space-y-0.5">
-            <div className="flex justify-between">
-              <span>Basic Pay</span>
-              <span className="font-mono tabular-nums">{eur(basicPay)}</span>
-            </div>
-            {overtime > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Overtime</span>
-                <span className="font-mono tabular-nums">{eur(overtime)}</span>
-              </div>
-            )}
-            {bonus > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Bonus</span>
-                <span className="font-mono tabular-nums">{eur(bonus)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold border-t pt-0.5">
-              <span>Gross Pay</span>
-              <span className="font-mono tabular-nums">{eur(grossPay)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Deductions */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Deductions
-          </p>
-          <div className="space-y-0.5">
-            <div className="flex justify-between">
-              <span>PAYE Income Tax</span>
-              <span className="font-mono tabular-nums">{eur(payeTax)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>USC</span>
-              <span className="font-mono tabular-nums">{eur(usc)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Employee PRSI</span>
-              <span className="font-mono tabular-nums">{eur(eePrsi)}</span>
-            </div>
-            {eePension > 0 && (
-              <div className="flex justify-between">
-                <span>Pension</span>
-                <span className="font-mono tabular-nums">{eur(eePension)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold border-t pt-0.5">
-              <span>Total Deductions</span>
-              <span className="font-mono tabular-nums">{eur(totalDeductions)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Net Pay */}
-        <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg px-3 py-2">
-          <div className="flex justify-between font-semibold text-emerald-700 dark:text-emerald-400">
-            <span>NET PAY</span>
-            <span className="font-mono tabular-nums text-lg">{eur(netPay)}</span>
-          </div>
-        </div>
-
-        {/* Employer Costs */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Employer Costs
-          </p>
-          <div className="space-y-0.5">
-            <div className="flex justify-between">
-              <span>Employer PRSI</span>
-              <span className="font-mono tabular-nums">{eur(erPrsi)}</span>
-            </div>
-            {erPension > 0 && (
-              <div className="flex justify-between">
-                <span>Employer Pension</span>
-                <span className="font-mono tabular-nums">{eur(erPension)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold border-t pt-0.5">
-              <span>Total Cost to Company</span>
-              <span className="font-mono tabular-nums">{eur(totalCost)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cumulative */}
-        {(Number(line.cumulative_gross) > 0 || Number(line.cumulative_tax) > 0) && (
-          <div className="border-t pt-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-              Cumulative (Year to Date)
+        <div className="p-4 space-y-4 text-sm">
+          {/* Earnings */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Earnings
             </p>
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span>Gross: {eur(Number(line.cumulative_gross))}</span>
-              <span>Tax: {eur(Number(line.cumulative_tax))}</span>
-              <span>USC: {eur(Number(line.cumulative_usc))}</span>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span>Basic Pay</span>
+                <span className="font-mono tabular-nums">{eur(basicPay)}</span>
+              </div>
+              {overtime > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Overtime</span>
+                  <span className="font-mono tabular-nums">{eur(overtime)}</span>
+                </div>
+              )}
+              {bonus > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Bonus</span>
+                  <span className="font-mono tabular-nums">{eur(bonus)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold border-t pt-1">
+                <span>Gross Pay</span>
+                <span className="font-mono tabular-nums">{eur(grossPay)}</span>
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Deductions */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Deductions
+            </p>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span>PAYE Income Tax</span>
+                <span className="font-mono tabular-nums text-red-600">{eur(payeTax)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>USC</span>
+                <span className="font-mono tabular-nums text-red-600">{eur(usc)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Employee PRSI</span>
+                <span className="font-mono tabular-nums text-red-600">{eur(eePrsi)}</span>
+              </div>
+              {eePension > 0 && (
+                <div className="flex justify-between">
+                  <span>Pension</span>
+                  <span className="font-mono tabular-nums text-red-600">{eur(eePension)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold border-t pt-1">
+                <span>Total Deductions</span>
+                <span className="font-mono tabular-nums text-red-600">{eur(totalDeductions)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Net Pay */}
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl px-4 py-3">
+            <div className="flex justify-between font-semibold text-emerald-700 dark:text-emerald-400">
+              <span>NET PAY</span>
+              <span className="font-mono tabular-nums text-lg">{eur(netPay)}</span>
+            </div>
+          </div>
+
+          {/* Employer Costs */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Employer Costs
+            </p>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span>Employer PRSI</span>
+                <span className="font-mono tabular-nums">{eur(erPrsi)}</span>
+              </div>
+              {erPension > 0 && (
+                <div className="flex justify-between">
+                  <span>Employer Pension</span>
+                  <span className="font-mono tabular-nums">{eur(erPension)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold border-t pt-1">
+                <span>Total Cost to Company</span>
+                <span className="font-mono tabular-nums">{eur(totalCost)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cumulative */}
+          {(Number(line.cumulative_gross) > 0 || Number(line.cumulative_tax) > 0) && (
+            <div className="border-t pt-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Cumulative (Year to Date)
+              </p>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div className="bg-muted/20 rounded-lg p-2 text-center">
+                  <p className="text-muted-foreground">Gross</p>
+                  <p className="font-mono tabular-nums font-medium">{eur(Number(line.cumulative_gross))}</p>
+                </div>
+                <div className="bg-muted/20 rounded-lg p-2 text-center">
+                  <p className="text-muted-foreground">Tax</p>
+                  <p className="font-mono tabular-nums font-medium">{eur(Number(line.cumulative_tax))}</p>
+                </div>
+                <div className="bg-muted/20 rounded-lg p-2 text-center">
+                  <p className="text-muted-foreground">USC</p>
+                  <p className="font-mono tabular-nums font-medium">{eur(Number(line.cumulative_usc))}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

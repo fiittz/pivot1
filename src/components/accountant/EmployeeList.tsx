@@ -6,6 +6,8 @@ import {
   UserX,
   Loader2,
   Shield,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -106,6 +108,19 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [form, setForm] = useState<EmployeeFormState>(defaultForm);
+  const [revealedPPSNs, setRevealedPPSNs] = useState<Set<string>>(new Set());
+
+  const togglePPSN = (id: string) => {
+    setRevealedPPSNs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const resetForm = () => {
     setForm(defaultForm);
@@ -234,120 +249,142 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
           {allEmployees.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              No employees recorded. Click &quot;Add Employee&quot; to begin.
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Users className="w-8 h-8 mb-2 opacity-40" />
+              <p className="text-sm">No employees recorded.</p>
+              <p className="text-xs mt-1">Click &quot;Add Employee&quot; to begin.</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Name</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">PPSN</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Start Date</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">PRSI Class</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Salary</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Role</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Status</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allEmployees.map((emp) => {
-                  const isInactive = !emp.is_active;
-                  const hasPension =
-                    Number(emp.pension_employee_pct) > 0 || Number(emp.pension_employer_pct) > 0;
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Name</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">PPSN</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Start Date</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">PRSI Class</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Salary</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Role</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allEmployees.map((emp) => {
+                    const isInactive = !emp.is_active;
+                    const hasPension =
+                      Number(emp.pension_employee_pct) > 0 || Number(emp.pension_employer_pct) > 0;
+                    const isPPSNRevealed = revealedPPSNs.has(emp.id);
 
-                  return (
-                    <tr
-                      key={emp.id}
-                      className={`border-b border-muted/20 hover:bg-muted/10 transition-colors ${
-                        isInactive ? "opacity-50" : ""
-                      }`}
-                    >
-                      <td className="py-1.5 px-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium">
-                            {emp.first_name} {emp.last_name}
-                          </span>
-                          {hasPension && (
-                            <span className="text-[10px] text-muted-foreground">
-                              (Pension: {emp.pension_employee_pct}%/{emp.pension_employer_pct}%)
+                    return (
+                      <tr
+                        key={emp.id}
+                        className={`border-b border-muted/20 hover:bg-muted/10 transition-colors ${
+                          isInactive ? "opacity-50" : ""
+                        }`}
+                      >
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium">
+                              {emp.first_name} {emp.last_name}
                             </span>
+                            {hasPension && (
+                              <span className="text-[10px] text-muted-foreground">
+                                (Pension: {emp.pension_employee_pct}%/{emp.pension_employer_pct}%)
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {isPPSNRevealed ? emp.ppsn : maskPPSN(emp.ppsn)}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 w-5 p-0"
+                              title={isPPSNRevealed ? "Hide PPSN" : "Reveal PPSN"}
+                              onClick={() => togglePPSN(emp.id)}
+                            >
+                              {isPPSNRevealed ? (
+                                <EyeOff className="w-3 h-3 text-muted-foreground" />
+                              ) : (
+                                <Eye className="w-3 h-3 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-xs text-muted-foreground">
+                          {formatDate(emp.employment_start_date)}
+                        </td>
+                        <td className="py-2 px-3">
+                          <Badge variant="outline" className="text-[10px]">
+                            {emp.prsi_class}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums text-sm">
+                          {emp.annual_salary ? eur(Number(emp.annual_salary)) : "\u2014"}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          {emp.is_director ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-blue-100 text-blue-700 border-blue-200"
+                            >
+                              <Shield className="w-2.5 h-2.5 mr-0.5" />
+                              Director
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-gray-100 text-gray-600 border-gray-200"
+                            >
+                              Employee
+                            </Badge>
                           )}
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">
-                        {maskPPSN(emp.ppsn)}
-                      </td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                        {formatDate(emp.employment_start_date)}
-                      </td>
-                      <td className="py-1.5 px-3">
-                        <Badge variant="outline" className="text-[10px]">
-                          {emp.prsi_class}
-                        </Badge>
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sm">
-                        {emp.annual_salary ? eur(Number(emp.annual_salary)) : "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-center">
-                        {emp.is_director ? (
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] bg-amber-100 text-amber-700 border-amber-200"
-                          >
-                            <Shield className="w-2.5 h-2.5 mr-0.5" />
-                            Director
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] bg-blue-100 text-blue-700 border-blue-200"
-                          >
-                            Employee
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-1.5 px-3 text-center">
-                        {isInactive ? (
-                          <Badge variant="secondary" className="text-[10px] bg-gray-100 text-gray-500">
-                            Inactive
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700">
-                            Active
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-1.5 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            title="Edit employee"
-                            onClick={() => openEdit(emp)}
-                          >
-                            <Pencil className="w-3 h-3 text-muted-foreground hover:text-blue-500" />
-                          </Button>
-                          {!isInactive && (
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          {isInactive ? (
+                            <Badge variant="secondary" className="text-[10px] bg-gray-100 text-gray-500">
+                              Inactive
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700">
+                              Active
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0"
-                              title="Deactivate employee"
-                              onClick={() => handleDeactivate(emp)}
+                              title="Edit employee"
+                              onClick={() => openEdit(emp)}
                             >
-                              <UserX className="w-3 h-3 text-muted-foreground hover:text-red-500" />
+                              <Pencil className="w-3 h-3 text-muted-foreground hover:text-blue-500" />
                             </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            {!isInactive && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                title="Deactivate employee"
+                                onClick={() => handleDeactivate(emp)}
+                              >
+                                <UserX className="w-3 h-3 text-muted-foreground hover:text-red-500" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -362,6 +399,13 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {/* Personal Details Section */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Personal Details
+              </h4>
+            </div>
+
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -431,6 +475,13 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                   <span className="text-sm">Is Director</span>
                 </label>
               </div>
+            </div>
+
+            {/* Pay & Tax Section */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Pay &amp; Tax
+              </h4>
             </div>
 
             {/* Pay frequency + salary */}
@@ -532,7 +583,13 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
               </div>
             </div>
 
-            {/* Pension */}
+            {/* Pension Section */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Pension
+              </h4>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Pension Employee %</Label>

@@ -30,7 +30,9 @@ class ErrorBoundary extends Component<Props, State> {
 
   handleReset = () => {
     this.setState({ hasError: false, error: null });
-    window.location.href = "/dashboard";
+    // Stay in the correct context — if the error occurred on an accountant page, go back there
+    const isAccountantRoute = window.location.pathname.startsWith("/accountant");
+    window.location.href = isAccountantRoute ? "/accountant/dashboard" : "/dashboard";
   };
 
   render() {
@@ -51,7 +53,7 @@ class ErrorBoundary extends Component<Props, State> {
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90"
             >
               <RefreshCw className="w-4 h-4" />
-              Go to Dashboard
+              Back to Dashboard
             </button>
           </div>
         </div>

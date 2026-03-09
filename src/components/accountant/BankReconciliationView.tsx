@@ -213,6 +213,7 @@ export function BankReconciliationView({
               Monthly Summary
             </h4>
           </div>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/10">
@@ -284,12 +285,13 @@ export function BankReconciliationView({
               </tr>
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 
       {/* Transaction count summary */}
       <div className="grid grid-cols-3 gap-3">
-        <Card className="border shadow-sm">
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="py-3 px-4">
             <p className="text-xs text-muted-foreground">Total Transactions</p>
             <p className="text-lg font-semibold font-mono tabular-nums">
@@ -297,7 +299,7 @@ export function BankReconciliationView({
             </p>
           </CardContent>
         </Card>
-        <Card className="border shadow-sm">
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="py-3 px-4">
             <p className="text-xs text-muted-foreground">Income Transactions</p>
             <p className="text-lg font-semibold font-mono tabular-nums text-emerald-600">
@@ -305,7 +307,7 @@ export function BankReconciliationView({
             </p>
           </CardContent>
         </Card>
-        <Card className="border shadow-sm">
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="py-3 px-4">
             <p className="text-xs text-muted-foreground">Expense Transactions</p>
             <p className="text-lg font-semibold font-mono tabular-nums text-red-500">
