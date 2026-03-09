@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar,
@@ -35,6 +35,7 @@ import type { AbridgedAccountsInput } from "@/lib/reports/abridgedAccountsData";
 import { generateAbridgedAccountsPdf } from "@/lib/reports/pdf/abridgedAccountsPdf";
 import { generateAbridgedAccountsExcel } from "@/lib/reports/excel/abridgedAccountsExcel";
 import type { ReportMeta } from "@/lib/reports/types";
+import { useSaveQuestionnaire } from "@/hooks/useQuestionnaire";
 
 interface TaxDeadline {
   name: string;
@@ -47,6 +48,7 @@ const TaxCentre = () => {
   const navigate = useNavigate();
   const { user, profile, directorCount, directorsCompleted, onboardingComplete, directorOnboardingComplete } =
     useAuth();
+  const saveQuestionnaire = useSaveQuestionnaire();
   const { data: personalAccounts } = useAccounts("directors_personal_tax");
   const { data: allAccounts } = useAccounts();
   const { data: allTransactions } = useTransactions();
@@ -522,14 +524,15 @@ const TaxCentre = () => {
         onOpenChange={setShowCT1Questionnaire}
         onComplete={(data) => {
           if (user?.id) {
-            // Serialize Date fields to ISO strings for localStorage
+            // Serialize Date fields to ISO strings
             const serialized = {
               ...data,
               automationChangeDate: data.automationChangeDate?.toISOString() ?? null,
               vatStatusChangeDate: data.vatStatusChangeDate?.toISOString() ?? null,
               preliminaryCTDate: data.preliminaryCTDate?.toISOString() ?? null,
             };
-            localStorage.setItem(`ct1_questionnaire_${user.id}_${taxYear}`, JSON.stringify(serialized));
+            // Save to both Supabase and localStorage
+            saveQuestionnaire.mutate({ type: "ct1", periodKey: taxYear, data: serialized });
             setCt1SaveCounter((c) => c + 1);
           }
           setShowCT1Questionnaire(false);
@@ -561,12 +564,11 @@ const TaxCentre = () => {
         open={showForm11Questionnaire}
         onOpenChange={setShowForm11Questionnaire}
         onComplete={(data) => {
-          // Save questionnaire data for the calculator
           if (user?.id) {
-            localStorage.setItem(`form11_questionnaire_${user.id}_${selectedDirectorIndex}`, JSON.stringify(data));
+            // Save to both Supabase and localStorage
+            saveQuestionnaire.mutate({ type: "form11", periodKey: String(selectedDirectorIndex), data: data as Record<string, unknown> });
           }
           setShowForm11Questionnaire(false);
-          // Navigate to the Form 11 results page
           navigate(`/tax/form11/${selectedDirectorIndex}`);
         }}
         accountName={getDirector(selectedDirectorIndex)?.director_name || `Director ${selectedDirectorIndex}`}

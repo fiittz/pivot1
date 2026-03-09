@@ -33,6 +33,7 @@ import { PayrollTab } from "@/components/accountant/PayrollTab";
 import { CapTableView } from "@/components/accountant/CapTableView";
 import { PaymentsOverview } from "@/components/accountant/PaymentsOverview";
 import { RCTManager } from "@/components/accountant/RCTManager";
+import { CROTab } from "@/components/accountant/CROTab";
 import {
   ArrowLeft,
   Building2,
@@ -114,6 +115,7 @@ function buildNavGroups(showRCT: boolean): NavGroup[] {
         ...(showRCT
           ? [{ value: "rct", label: "RCT", icon: HardHat }]
           : []),
+        { value: "cro", label: "CRO / Annual Return", icon: Building2 },
       ],
     },
     {
@@ -535,6 +537,15 @@ const ClientDetail = () => {
                   accountantClientId={accountantClientId}
                   clientName={businessName}
                 />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">Loading...</div>
+              )
+            )}
+
+            {/* CRO / Annual Return */}
+            {activeTab === "cro" && (
+              clientId ? (
+                <CROTab clientUserId={clientId} />
               ) : (
                 <div className="text-center py-12 text-muted-foreground">Loading...</div>
               )

@@ -56,6 +56,13 @@ export interface VATReportData {
   t3Purchases: number;
   t4InputVat: number;
   netVat: number;
+  // EU trade boxes (populated from onboarding_settings + transaction analysis)
+  t5GoodsToEU?: number;
+  t6ServicesToEU?: number;
+  e1GoodsFromEU?: number;
+  e2VatOnGoodsFromEU?: number;
+  es1ServicesFromEU?: number;
+  es2VatOnServicesFromEU?: number;
 }
 
 // ── Balance Sheet Report ─────────────────────────────────────

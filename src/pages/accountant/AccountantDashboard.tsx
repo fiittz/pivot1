@@ -14,6 +14,7 @@ import SmartReviewQueue from "@/components/accountant/SmartReviewQueue";
 import { usePracticeKPIs } from "@/hooks/accountant/usePracticeKPIs";
 import { PracticeHealthCards } from "@/components/accountant/dashboard/PracticeHealthCards";
 import { ClientHealthTable } from "@/components/accountant/dashboard/ClientHealthTable";
+import { CROComplianceWidget } from "@/components/accountant/CROComplianceWidget";
 
 const AccountantDashboard = () => {
   const navigate = useNavigate();
@@ -80,6 +81,7 @@ const AccountantDashboard = () => {
               <FilingDeadlineTimeline />
               <TasksDueThisWeek />
               <RecentActivityFeed />
+              <CROComplianceWidget />
             </div>
 
             {/* Right column — 1/3 width */}

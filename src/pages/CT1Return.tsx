@@ -96,6 +96,57 @@ const CT1Return = () => {
       isCloseCompany: ct1.isCloseCompany,
       rctCredit: ct1.rctPrepayment,
       preliminaryCTPaid: savedCT1?.preliminaryCTPaid ?? 0,
+      preliminaryCTDate: savedCT1?.preliminaryCTDate ?? undefined,
+      // Balance sheet from questionnaire
+      fixedAssetsLandBuildings: savedCT1?.fixedAssetsLandBuildings,
+      fixedAssetsPlantMachinery: savedCT1?.fixedAssetsPlantMachinery,
+      fixedAssetsMotorVehicles: savedCT1?.fixedAssetsMotorVehicles,
+      fixedAssetsFixturesFittings: savedCT1?.fixedAssetsFixturesFittings,
+      currentAssetsStock: savedCT1?.currentAssetsStock ?? savedCT1?.closingStockValue,
+      currentAssetsDebtors: savedCT1?.currentAssetsDebtors,
+      currentAssetsCash: savedCT1?.currentAssetsCash,
+      currentAssetsBankBalance: savedCT1?.currentAssetsBankBalance,
+      liabilitiesCreditors: savedCT1?.liabilitiesCreditors,
+      liabilitiesTaxation: savedCT1?.liabilitiesTaxation,
+      liabilitiesBankLoans: savedCT1?.liabilitiesBankLoans,
+      liabilitiesDirectorsLoans: savedCT1?.liabilitiesDirectorsLoans,
+      directorsLoanDirection: savedCT1?.directorsLoanDirection,
+      // Capital allowances
+      capitalAllowancesPlant: savedCT1?.capitalAllowancesPlant,
+      capitalAllowancesMotorVehicles: motorVehicleAllowance || undefined,
+      // Add-backs
+      addBackDepreciation: savedCT1?.addBackDepreciation,
+      addBackEntertainment: savedCT1?.addBackEntertainment,
+      addBackOther: savedCT1?.addBackOther,
+      addBackNotes: savedCT1?.addBackNotes,
+      // Losses & surcharge
+      lossesForward: savedCT1?.lossesForward,
+      closeCompanySurcharge: savedCT1?.closeCompanySurcharge,
+      // Distributions
+      hasDividendsPaid: savedCT1?.hasDividendsPaid,
+      dividendsPaidAmount: savedCT1?.dividendsPaidAmount,
+      dwtDeducted: savedCT1?.dwtDeducted,
+      // Asset disposals
+      hasAssetDisposals: savedCT1?.hasAssetDisposals,
+      disposals: savedCT1?.disposals,
+      // Startup exemption
+      claimStartupExemption: savedCT1?.claimStartupExemption,
+      startupExemptionAmount: savedCT1?.startupExemptionAmount,
+      // RCT
+      rctApplicable: savedCT1?.rctApplicable,
+      rctTotalDeducted: savedCT1?.rctTotalDeducted,
+      // VAT
+      vatStatus: savedCT1?.vatStatus,
+      // Directors
+      directorNames: getReportMeta().directorNames,
+      // Stock
+      closingStockValue: savedCT1?.closingStockValue,
+      stockValuationMethod: savedCT1?.stockValuationMethod,
+      // Accrual adjustments
+      prepaymentsAmount: savedCT1?.prepaymentsAmount,
+      accrualsAmount: savedCT1?.accrualsAmount,
+      accruedIncomeAmount: savedCT1?.accruedIncomeAmount,
+      deferredIncomeAmount: savedCT1?.deferredIncomeAmount,
     });
   };
 

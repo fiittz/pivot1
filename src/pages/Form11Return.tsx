@@ -23,9 +23,10 @@ import { ExportButtons } from "@/components/reports/ExportButtons";
 import { assembleForm11ReportData } from "@/lib/reports/form11ReportData";
 import { generateForm11Pdf } from "@/lib/reports/pdf/form11Pdf";
 import { generateForm11Excel } from "@/lib/reports/excel/form11Excel";
-import { generateForm11Xml } from "@/lib/reports/xml/form11Xml";
+import { generateForm11Xml, type Form11XmlOptions } from "@/lib/reports/xml/form11Xml";
 import type { ReportMeta } from "@/lib/reports/types";
 import type { TaxBandLine, CreditLine } from "@/lib/form11Calculator";
+import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
 
 const eur = (n: number) =>
   new Intl.NumberFormat("en-IE", {
@@ -76,6 +77,8 @@ const Form11Return = () => {
   const { result, input, isLoading, taxYear } = useForm11Data(dirNum);
   const { profile } = useAuth();
   const ct1 = useCT1Data();
+  const { getDirector } = useDirectorOnboarding();
+  const onboarding = getDirector(dirNum);
 
   const getReportMeta = (): ReportMeta => ({
     companyName: profile?.business_name || "Company",
@@ -107,7 +110,65 @@ const Form11Return = () => {
       expenseByCategory: ct1.expenseByCategory,
       incomeByCategory: ct1.detectedIncome,
     });
-    generateForm11Xml(data);
+
+    // Read finalization questionnaire for additional XML fields
+    const questionnaireRaw = localStorage.getItem(`form11_questionnaire_${profile?.id}_${dirNum}`);
+    const questionnaire = questionnaireRaw ? JSON.parse(questionnaireRaw) : null;
+
+    const xmlOptions: Form11XmlOptions = {
+      // From director onboarding
+      dateOfBirth: onboarding?.date_of_birth ?? undefined,
+      homeAddress: onboarding?.home_address ?? undefined,
+      homeCounty: onboarding?.home_county ?? undefined,
+      employerName: profile?.business_name || undefined,
+      employmentStartDate: onboarding?.employment_start_date ?? undefined,
+
+      // From finalization questionnaire
+      medicalExpenses: questionnaire?.medicalExpensesAmount ?? input.medicalExpenses ?? undefined,
+      rentPaid: questionnaire?.rentReliefAmount ?? input.rentPaid ?? undefined,
+      remoteWorkingDays: questionnaire?.remoteWorkingDays ?? undefined,
+      remoteWorkingCosts: input.remoteWorkingCosts ?? undefined,
+      pensionContributionsAmount: questionnaire?.pensionContributionsAmount ?? input.pensionContributions ?? undefined,
+      charitableDonationsAmount: questionnaire?.charitableDonationsAmount ?? input.charitableDonations ?? undefined,
+
+      // Reliefs from onboarding
+      claimHomeCarer: onboarding?.home_carer_credit ?? input.claimHomeCarer,
+      claimSingleParent: input.claimSingleParent,
+      hasDependentChildren: onboarding?.has_dependent_children ?? undefined,
+      dependentChildrenCount: onboarding?.dependent_children_count ?? undefined,
+      flatRateExpenses: onboarding?.flat_rate_expenses ?? undefined,
+
+      // Spouse details (joint assessment)
+      spouseHasIncome: questionnaire?.spouseHasIncome ?? undefined,
+      spouseIncomeType: questionnaire?.spouseIncomeType ?? undefined,
+      spouseIncomeAmount: questionnaire?.spouseIncomeAmount ?? undefined,
+
+      // Foreign income
+      foreignIncomeCountry: questionnaire?.foreignIncomeCountry ?? undefined,
+      hasForeignBankAccounts: onboarding?.foreign_bank_accounts ?? undefined,
+      hasForeignProperty: onboarding?.foreign_property ?? undefined,
+      hasCryptoHoldings: onboarding?.crypto_holdings ?? undefined,
+
+      // Capital gains
+      propertyDisposals: questionnaire?.propertyDisposals ?? undefined,
+      shareDisposals: questionnaire?.shareDisposals ?? undefined,
+      cryptoDisposals: questionnaire?.cryptoDisposals ?? undefined,
+
+      // BIK detail
+      bikTypes: onboarding?.bik_types ?? undefined,
+      companyVehicleValue: onboarding?.company_vehicle_value ?? undefined,
+      companyVehicleBusinessKm: onboarding?.company_vehicle_business_km ?? undefined,
+
+      // Preliminary tax
+      preliminaryTaxDate: questionnaire?.preliminaryTaxDate ?? undefined,
+
+      // Rental detail
+      rentalRepairsExpenses: questionnaire?.rentalRepairsExpenses ?? undefined,
+      rentalInterestExpenses: questionnaire?.rentalInterestExpenses ?? undefined,
+      rentalOtherExpenses: questionnaire?.rentalOtherExpenses ?? undefined,
+    };
+
+    generateForm11Xml(data, xmlOptions);
   };
 
   if (isLoading) {

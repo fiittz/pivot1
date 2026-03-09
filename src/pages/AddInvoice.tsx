@@ -19,6 +19,7 @@ import { generateInvoiceHTML } from "@/lib/invoiceHtml";
 import { SITE_BASED_ACTIVITIES, PAYMENT_TERMS, UNIT_TYPES } from "@/lib/invoiceConstants";
 import type { PaymentTerm, UnitType } from "@/lib/invoiceConstants";
 import { toast } from "sonner";
+import { useRCTContracts, useRequestDeductionAuth, type RCTContract } from "@/hooks/accountant/useRCT";
 // VAT rate types for Irish system
 type VatRate = "standard_23" | "reduced_13_5" | "second_reduced_9" | "livestock_4_8" | "zero_rated" | "exempt";
 
@@ -92,6 +93,13 @@ const AddInvoice = () => {
   const [invoiceType, setInvoiceType] = useState<"quote" | "invoice">("invoice");
   const [rctEnabled, setRctEnabled] = useState(false);
   const [rctRate, setRctRate] = useState<number>(20);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+
+  // Fetch active RCT contracts for this user
+  const { data: rctContracts } = useRCTContracts(user?.id);
+  const activeContracts = (rctContracts ?? []).filter((c) => c.status === "active");
+  const selectedContract = activeContracts.find((c) => c.id === selectedContractId) ?? null;
+  const requestDeductionAuth = useRequestDeductionAuth();
   const [comment, setComment] = useState("");
   const [logo, setLogo] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -342,6 +350,9 @@ const AddInvoice = () => {
         rct_enabled: rctEnabled,
         rct_rate: rctEnabled ? rctRate : 0,
         rct_amount: rctEnabled ? rctAmount : 0,
+        rct_contract_id: rctEnabled && selectedContractId ? selectedContractId : null,
+        rct_contract_ref: rctEnabled && selectedContract ? selectedContract.contract_ref : null,
+        rct_net_receivable: rctEnabled ? netReceivable : null,
         payment_terms: paymentTerms,
         custom_due_date: paymentTerms === "custom" ? customDueDate : null,
         po_number: poNumber || null,
@@ -365,13 +376,32 @@ const AddInvoice = () => {
         account_id: selectedAccountId,
       };
 
+      let savedInvoiceId: string | undefined;
+
       if (isEditMode && editId) {
         await updateInvoice.mutateAsync({ id: editId, ...invoiceData });
+        savedInvoiceId = editId;
       } else {
-        await createInvoice.mutateAsync({
+        const created = await createInvoice.mutateAsync({
           invoice: { ...invoiceData, status: "draft" },
         });
+        savedInvoiceId = (created as { id?: string })?.id;
       }
+
+      // Request RCT deduction authorisation from Revenue if contract selected
+      if (rctEnabled && selectedContractId && selectedContract && savedInvoiceId && rctAmount > 0) {
+        try {
+          await requestDeductionAuth.mutateAsync({
+            contract_id: selectedContractId,
+            invoice_id: savedInvoiceId,
+            subcontractor_id: selectedContract.subcontractor_id,
+            gross_amount: subtotal,
+          });
+        } catch {
+          toast.error("Invoice saved but RCT deduction authorisation failed. You can retry from the RCT manager.");
+        }
+      }
+
       navigate("/invoices");
     } catch (error) {
       console.error("Save invoice error:", error);
@@ -792,34 +822,128 @@ const AddInvoice = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold">RCT Applies</h3>
-                  <p className="text-sm text-muted-foreground">Enable for relevant contract tax</p>
+                  <p className="text-sm text-muted-foreground">Enable for relevant contract tax deduction</p>
                 </div>
-                <Switch checked={rctEnabled} onCheckedChange={setRctEnabled} />
+                <Switch checked={rctEnabled} onCheckedChange={(checked) => {
+                  setRctEnabled(checked);
+                  if (!checked) {
+                    setSelectedContractId(null);
+                  }
+                }} />
               </div>
 
               {rctEnabled && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <Label className="text-sm font-medium mb-2 block">RCT Rate</Label>
-                  <div className="flex gap-2">
-                    {[0, 20, 35].map((rate) => (
-                      <button
-                        key={rate}
-                        onClick={() => setRctRate(rate)}
-                        className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${
-                          rctRate === rate
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-foreground/20 hover:border-foreground/40"
-                        }`}
+                <div className="mt-4 pt-4 border-t border-border space-y-4">
+                  {/* Contract Selector */}
+                  {activeContracts.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">RCT Contract</Label>
+                      <Select
+                        value={selectedContractId ?? "none"}
+                        onValueChange={(v) => {
+                          const contractId = v === "none" ? null : v;
+                          setSelectedContractId(contractId);
+                          // Auto-populate rate from contract's subcontractor if available
+                          if (contractId) {
+                            const contract = activeContracts.find((c) => c.id === contractId);
+                            if (contract) {
+                              // The subcontractor's Revenue-verified rate will be used
+                              // at deduction auth time; for now show on the UI
+                              supabase
+                                .from("subcontractors")
+                                .select("revenue_rate")
+                                .eq("id", contract.subcontractor_id)
+                                .single()
+                                .then(({ data }) => {
+                                  if (data?.revenue_rate !== null && data?.revenue_rate !== undefined) {
+                                    setRctRate(data.revenue_rate);
+                                  }
+                                });
+                            }
+                          }
+                        }}
                       >
-                        {rate}%
-                      </button>
-                    ))}
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select contract..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No contract (manual rate)</SelectItem>
+                          {activeContracts.map((contract) => (
+                            <SelectItem key={contract.id} value={contract.id}>
+                              {contract.contract_ref} — {contract.principal_name}
+                              {contract.contract_description ? ` (${contract.contract_description})` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedContract && (
+                        <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                          <p>Principal: {selectedContract.principal_name} ({selectedContract.principal_tax_ref})</p>
+                          <p>Contract: {selectedContract.contract_ref}</p>
+                          {selectedContract.estimated_value > 0 && (
+                            <p>Est. Value: {new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(selectedContract.estimated_value)}</p>
+                          )}
+                          {selectedContract.revenue_notified && (
+                            <p className="text-emerald-600">Revenue notified</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeContracts.length === 0 && (
+                    <p className="text-xs text-amber-600">
+                      No active RCT contracts found. Add contracts in the RCT Manager to link deductions to Revenue.
+                    </p>
+                  )}
+
+                  {/* RCT Rate */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">RCT Rate</Label>
+                    <div className="flex gap-2">
+                      {[0, 20, 35].map((rate) => (
+                        <button
+                          key={rate}
+                          onClick={() => setRctRate(rate)}
+                          className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${
+                            rctRate === rate
+                              ? "bg-foreground text-background border-foreground"
+                              : "border-foreground/20 hover:border-foreground/40"
+                          }`}
+                        >
+                          {rate}%
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {rctRate === 0 && "Subcontractor is fully tax compliant (0% deduction)"}
+                      {rctRate === 20 && "Standard RCT rate (20% deduction at source)"}
+                      {rctRate === 35 && "Non-compliant or unknown subcontractor (35% deduction)"}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {rctRate === 0 && "Subcontractor is fully tax compliant"}
-                    {rctRate === 20 && "Standard RCT rate"}
-                    {rctRate === 35 && "Non-compliant or unknown subcontractor"}
-                  </p>
+
+                  {/* RCT Summary */}
+                  {subtotal > 0 && (
+                    <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Gross Payment</span>
+                        <span className="font-mono">{new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-red-600">
+                        <span>RCT Deduction ({rctRate}%)</span>
+                        <span className="font-mono">-{new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(rctAmount)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t pt-1">
+                        <span>Net Receivable</span>
+                        <span className="font-mono">{new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(netReceivable)}</span>
+                      </div>
+                      {selectedContract && (
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          RCT deduction authorisation will be requested from Revenue on save
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

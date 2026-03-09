@@ -4,6 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { MOCK_USER, MOCK_SESSION, MOCK_PROFILE, isDemoMode, disableDemoMode } from "@/lib/mockData";
+import { seedOakmontQuestionnaires } from "@/lib/seedDemoQuestionnaires";
 import type { UserRoleType, AccountantPractice } from "@/types/accountant";
 
 interface AuthContextType {
@@ -110,6 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchOnboardingStatus(session.user.id);
         checkDirectorOnboarding(session.user.id);
         fetchRoles(session.user.id);
+        // Auto-seed demo questionnaire data for Oakmont demo account (always overwrite)
+        if (session.user.email === "jamie@oakmont.ie") {
+          seedOakmontQuestionnaires(session.user.id, "2025");
+        }
         return;
       }
 
