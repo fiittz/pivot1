@@ -485,9 +485,9 @@ serve(async (req) => {
 
     // Define reminder windows (5-minute tolerance around target time)
     const windows: { type: ReminderType; minMs: number; maxMs: number; sentCol: string }[] = [
-      { type: "24h", minMs: 23 * 60 + 55, maxMs: 24 * 60 + 5, sentCol: "reminder_24h_sent" },
-      { type: "1h", minMs: 55, maxMs: 65, sentCol: "reminder_1h_sent" },
-      { type: "10m", minMs: 5, maxMs: 15, sentCol: "reminder_10m_sent" },
+      { type: "24h", minMs: 23 * 60 + 45, maxMs: 24 * 60 + 15, sentCol: "reminder_24h_sent" },
+      { type: "1h", minMs: 45, maxMs: 75, sentCol: "reminder_1h_sent" },
+      { type: "10m", minMs: 3, maxMs: 20, sentCol: "reminder_10m_sent" },
     ];
 
     for (const w of windows) {
