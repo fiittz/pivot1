@@ -19,12 +19,17 @@ import {
   ScrollText,
   BookOpen,
 } from "lucide-react";
-import { useCROAnnualAccounts } from "@/hooks/accountant/useCRO";
+import { useCROAnnualAccounts, useCROCompany } from "@/hooks/accountant/useCRO";
 import { useAssembleAuditSnapshot } from "@/hooks/accountant/useAssembleAuditSnapshot";
 import { toast } from "sonner";
 import type { CROAnnualAccounts } from "@/types/cro";
 import type { AuditSnapshot } from "@/lib/cro/assembleAuditSnapshot";
 import { classifyCompanySize, COMPANY_SIZE_THRESHOLDS, type CompanySizeResult } from "@/lib/cro/companySize";
+import { assembleAbridgedAccountsData, type AbridgedAccountsInput } from "@/lib/reports/abridgedAccountsData";
+import { generateAbridgedAccountsPdf } from "@/lib/reports/pdf/abridgedAccountsPdf";
+import { generateAbridgedAccountsExcel } from "@/lib/reports/excel/abridgedAccountsExcel";
+import type { ReportMeta } from "@/lib/reports/types";
+import { Download } from "lucide-react";
 
 interface CROAnnualAccountsViewProps {
   croCompanyId: string;
@@ -364,6 +369,7 @@ function NotesToAccounts({ accounts }: { accounts: CROAnnualAccounts }) {
 
 export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualAccountsViewProps) {
   const { data: allAccounts, isLoading } = useCROAnnualAccounts(croCompanyId);
+  const { data: croCompany } = useCROCompany(clientUserId);
   const assembleMutation = useAssembleAuditSnapshot();
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
 
@@ -386,6 +392,71 @@ export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualA
         onError: (err) => toast.error(`Failed to generate accounts: ${err.message}`),
       },
     );
+  };
+
+  const handleAbridgedExport = (exportType: "pdf" | "excel") => {
+    if (!accounts) return;
+
+    const snapshot = accounts.notes as unknown as AuditSnapshot | null;
+    const directorNames: string[] = snapshot?.directors_report?.directors ?? [];
+    if (directorNames.length === 0) {
+      // Fallback to notes directors list
+      const noteDirectors = (accounts.notes as Record<string, unknown>)?.directors;
+      if (Array.isArray(noteDirectors)) {
+        for (const d of noteDirectors) {
+          if (typeof d === "object" && d && "name" in d) directorNames.push((d as { name: string }).name);
+        }
+      }
+      if (directorNames.length === 0) directorNames.push("Director");
+    }
+
+    const companyName = croCompany?.company_name ?? "Company";
+    const croNumber = croCompany?.company_number ?? "";
+    const address = croCompany?.address ?? "";
+
+    const yearEnd = activeYear
+      ? new Date(activeYear).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })
+      : `31 December ${activeTaxYear}`;
+
+    const abInput: AbridgedAccountsInput = {
+      companyName,
+      croNumber,
+      registeredAddress: address,
+      accountingYearEnd: yearEnd,
+      directorNames,
+      companySecretaryName: snapshot?.directors_report?.secretary,
+      fixedAssetsTangible: accounts.fixed_assets_tangible ?? 0,
+      stock: accounts.current_assets_stock ?? 0,
+      wip: 0,
+      debtors: accounts.current_assets_debtors ?? 0,
+      prepayments: 0,
+      accruedIncome: 0,
+      cashAtBank: accounts.current_assets_cash ?? 0,
+      creditors: accounts.creditors_within_one_year ?? 0,
+      accruals: 0,
+      deferredIncome: 0,
+      taxation: accounts.taxation ?? 0,
+      bankLoans: accounts.creditors_after_one_year ?? 0,
+      directorsLoans: 0,
+      shareCapital: accounts.share_capital ?? 100,
+      retainedProfits: accounts.retained_profits ?? 0,
+    };
+
+    const meta: ReportMeta = {
+      companyName,
+      taxYear: activeTaxYear,
+      generatedDate: new Date().toISOString(),
+      preparedBy: "Balnce",
+    };
+
+    const reportData = assembleAbridgedAccountsData(abInput, meta);
+
+    if (exportType === "pdf") {
+      generateAbridgedAccountsPdf(reportData);
+    } else {
+      generateAbridgedAccountsExcel(reportData);
+    }
+    toast.success(`Abridged accounts exported as ${exportType.toUpperCase()}`);
   };
 
   if (isLoading) {
@@ -451,26 +522,40 @@ export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualA
           <FileSpreadsheet className="h-5 w-5" />
           Annual Accounts
         </CardTitle>
-        {clientUserId && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleGenerate}
-            disabled={assembleMutation.isPending}
-          >
-            {assembleMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-1" />
-                Generate from Balnce
-              </>
-            )}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {accounts && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => handleAbridgedExport("pdf")}>
+                <Download className="h-4 w-4 mr-1" />
+                PDF
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleAbridgedExport("excel")}>
+                <Download className="h-4 w-4 mr-1" />
+                Excel
+              </Button>
+            </>
+          )}
+          {clientUserId && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleGenerate}
+              disabled={assembleMutation.isPending}
+            >
+              {assembleMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  Generate from Balnce
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Year Selector Tabs */}
