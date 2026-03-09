@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { classifyCompanySize, type CompanySizeResult } from "./companySize";
 
 // ---------------------------------------------------------------------------
 // Audit Trail Snapshot — full interface
@@ -210,7 +211,10 @@ export interface AuditTrailSnapshot {
     }>;
   };
 
-  /** 13. Completeness checklist */
+  /** 13. Company size classification & CRO filing requirements */
+  company_size: CompanySizeResult;
+
+  /** 14. Completeness checklist */
   completeness: {
     onboarding_complete: boolean;
     director_onboarding_complete: boolean;
@@ -799,6 +803,12 @@ export async function assembleAuditSnapshot(
         confirmation_status: l.confirmation_status,
       })),
     },
+
+    company_size: classifyCompanySize({
+      balanceSheetTotal: fixedTangible + currentAssetsTotal,
+      netTurnover: turnover,
+      averageEmployees: onboarding?.employee_count ?? 1,
+    }),
 
     completeness: {
       onboarding_complete: onboarding?.onboarding_completed ?? false,

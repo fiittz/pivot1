@@ -24,6 +24,7 @@ import { useAssembleAuditSnapshot } from "@/hooks/accountant/useAssembleAuditSna
 import { toast } from "sonner";
 import type { CROAnnualAccounts } from "@/types/cro";
 import type { AuditSnapshot } from "@/lib/cro/assembleAuditSnapshot";
+import { classifyCompanySize, COMPANY_SIZE_THRESHOLDS, type CompanySizeResult } from "@/lib/cro/companySize";
 
 interface CROAnnualAccountsViewProps {
   croCompanyId: string;
@@ -533,6 +534,10 @@ export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualA
               </p>
             )}
 
+            {/* Company Size & Filing Requirements */}
+            <Separator />
+            <CompanySizeSection accounts={accounts} />
+
             {/* Abridged Accounts (from audit snapshot) */}
             {accounts.notes && (accounts.notes as unknown as AuditSnapshot).snapshot_version && (
               <>
@@ -544,6 +549,102 @@ export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualA
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Company Size & CRO Filing Requirements
+// ---------------------------------------------------------------------------
+
+function CompanySizeSection({ accounts }: { accounts: CROAnnualAccounts }) {
+  const balanceSheetTotal =
+    (accounts.fixed_assets_tangible ?? 0) +
+    (accounts.fixed_assets_intangible ?? 0) +
+    (accounts.fixed_assets_investments ?? 0) +
+    (accounts.current_assets_stock ?? 0) +
+    (accounts.current_assets_debtors ?? 0) +
+    (accounts.current_assets_cash ?? 0) +
+    (accounts.current_assets_other ?? 0);
+
+  // Try to get employee count from audit snapshot notes, fallback to 1
+  const snapshot = accounts.notes as unknown as AuditSnapshot | null;
+  const avgEmployees = snapshot?.onboarding?.employee_count ?? 1;
+
+  const result = classifyCompanySize({
+    balanceSheetTotal,
+    netTurnover: accounts.turnover ?? 0,
+    averageEmployees: avgEmployees,
+  });
+
+  const sizeBadgeColor: Record<string, string> = {
+    micro: "bg-blue-100 text-blue-700 border-blue-200",
+    small: "bg-green-100 text-green-700 border-green-200",
+    medium: "bg-amber-100 text-amber-700 border-amber-200",
+    large: "bg-red-100 text-red-700 border-red-200",
+  };
+
+  const reqIcon = (status: string) => {
+    if (status === "exempt") return <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />;
+    if (status === "abridged") return <FileSpreadsheet className="h-3.5 w-3.5 text-amber-600" />;
+    return <ClipboardList className="h-3.5 w-3.5 text-red-600" />;
+  };
+
+  const reqLabel = (status: string) => {
+    if (status === "exempt") return "Exempt";
+    if (status === "abridged") return "Abridged";
+    if (status === "minimal") return "Minimal";
+    if (status === "selected") return "Selected";
+    return "Full / Required";
+  };
+
+  const fr = result.filingRequirements;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold">Company Classification</h3>
+        <Badge className={sizeBadgeColor[result.size]}>{result.label}</Badge>
+        {result.auditExempt && (
+          <Badge className="bg-green-100 text-green-700 border-green-200">Audit Exempt</Badge>
+        )}
+      </div>
+
+      {/* Thresholds check */}
+      <div className="text-xs text-muted-foreground">
+        <p>
+          Balance sheet: {eur(balanceSheetTotal)} | Turnover: {eur(accounts.turnover)} | Employees: {avgEmployees}
+        </p>
+        <p className="mt-0.5">
+          Thresholds met — Micro: {result.thresholdsMet.micro}/3, Small: {result.thresholdsMet.small}/3, Medium: {result.thresholdsMet.medium}/3
+          {" "}(need 2 of 3 to qualify)
+        </p>
+      </div>
+
+      {/* Filing requirements table */}
+      <div className="border rounded-md">
+        <div className="grid grid-cols-2 gap-0 text-xs">
+          {[
+            { label: "Balance Sheet", value: fr.balanceSheet },
+            { label: "Profit & Loss", value: fr.profitAndLoss },
+            { label: "Directors' Report", value: fr.directorsReport },
+            { label: "Notes to Accounts", value: fr.notesToAccounts },
+            { label: "Auditor's Report", value: fr.auditorReport },
+            { label: "Cash Flow Statement", value: fr.cashFlowStatement },
+          ].map((item, i) => (
+            <div
+              key={item.label}
+              className={`flex items-center gap-2 px-3 py-2 ${i < 4 ? "border-b" : ""} ${i % 2 === 0 ? "border-r" : ""}`}
+            >
+              {reqIcon(item.value)}
+              <span className="text-muted-foreground">{item.label}:</span>
+              <span className="font-medium">{reqLabel(item.value)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">{fr.description}</p>
+    </div>
   );
 }
 
