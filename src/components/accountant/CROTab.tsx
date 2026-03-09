@@ -5,6 +5,7 @@ import { Search, Building2, AlertCircle } from "lucide-react";
 import { CROCompanyCard } from "./CROCompanyCard";
 import { CROFilingHistory } from "./CROFilingHistory";
 import { CROAnnualAccountsView } from "./CROAnnualAccountsView";
+import { CROSignaturePageSection } from "./CROSignaturePageSection";
 import { useCROCompany, useSyncCROCompany } from "@/hooks/accountant/useCRO";
 
 interface CROTabProps {
@@ -30,6 +31,7 @@ export function CROTab({ clientUserId }: CROTabProps) {
         <>
           <CROFilingHistory croCompanyId={company.id} />
           <CROAnnualAccountsView croCompanyId={company.id} clientUserId={clientUserId} />
+          <CROSignaturePageSection croCompanyId={company.id} companyName={company.company_name} companyNumber={company.company_num} />
         </>
       ) : (
         !isLoading && (

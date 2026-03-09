@@ -11,10 +11,11 @@ import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { WidgetCustomizeSheet } from "@/components/dashboard/WidgetCustomizeSheet";
 import { DeadlinesWidget } from "@/components/dashboard/DeadlinesWidget";
+import SignedDocumentUpload from "@/components/client/SignedDocumentUpload";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: incomeHistory } = useIncomeHistory();
   const { data: expenseHistory } = useExpenseHistory();
@@ -218,6 +219,8 @@ const Dashboard = () => {
           >
             <DeadlinesWidget />
           </DashboardWidget>
+          {/* CRO Signature Pages (if any pending) */}
+          {user?.id && <SignedDocumentUpload userId={user.id} />}
         </div>
       </main>
     </div>
