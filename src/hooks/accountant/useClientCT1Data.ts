@@ -147,7 +147,7 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
       const desc = (t.description ?? "").toLowerCase();
       const isCapitalCategory = capitalKeywords.some((kw) => catName.includes(kw));
       const isRevenueExpense = revenueExclude.some((kw) => catName.includes(kw) || desc.includes(kw));
-      if ((isCapitalCategory || amt >= 1000) && !isRevenueExpense) {
+      if (amt >= 1000 && !isRevenueExpense) {
         flaggedCapitalItems.push({ description: t.description ?? "Unknown", date: t.transaction_date ?? "", amount: amt });
       }
     }

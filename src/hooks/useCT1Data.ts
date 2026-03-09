@@ -321,8 +321,8 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
       const desc = (t.description ?? "").toLowerCase();
       const isCapitalCategory = capitalKeywords.some((kw) => catName.includes(kw));
       const isRevenueExpense = revenueExclude.some((kw) => catName.includes(kw) || desc.includes(kw));
-      // Only flag if it looks like a capital item AND is not clearly a revenue expense
-      if ((isCapitalCategory || amt >= 1000) && !isRevenueExpense) {
+      // Only flag if >= €1,000 AND (capital category or uncategorised high-value) AND not revenue
+      if (amt >= 1000 && !isRevenueExpense) {
         flaggedCapitalItems.push({
           description: t.description ?? "Unknown",
           date: t.transaction_date ?? "",
