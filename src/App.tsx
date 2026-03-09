@@ -85,7 +85,16 @@ const PeriodEndQuestionnaire = lazyWithRetry(() => import("./pages/PeriodEndQues
 const BudgetPage = lazyWithRetry(() => import("./pages/BudgetPage"));
 const ReconciliationPage = lazyWithRetry(() => import("./pages/ReconciliationPage"));
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,      // Data stays fresh for 2 minutes
+      gcTime: 1000 * 60 * 10,         // Cache kept for 10 minutes
+      refetchOnWindowFocus: false,     // Don't refetch when tabbing back
+      retry: 1,                        // Only retry once on failure
+    },
+  },
+});
 
 const App = () => (
   <Sentry.ErrorBoundary fallback={<p>An unexpected error occurred. Please refresh the page.</p>}>
@@ -99,7 +108,7 @@ const App = () => (
               <AuthProvider>
                 <PostHogTracker />
                 <BackgroundTasksProvider>
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-pulse text-xl font-semibold">Loading...</div></div>}>
                     <Routes>
                       <Route path="/" element={<Welcome />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
