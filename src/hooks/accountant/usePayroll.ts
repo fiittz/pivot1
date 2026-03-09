@@ -298,9 +298,10 @@ export function usePayrollRun(runId: string | null | undefined) {
         .from("payroll_runs")
         .select("*")
         .eq("id", runId!)
-        .single();
+        .maybeSingle();
 
       if (runError) throw runError;
+      if (!run) throw new Error(`Payroll run ${runId} not found`);
 
       // Fetch lines
       const { data: lines, error: linesError } = await supabase

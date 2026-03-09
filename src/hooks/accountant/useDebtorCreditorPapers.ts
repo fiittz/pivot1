@@ -74,6 +74,7 @@ export function useDebtorCreditorPaper(
   return useQuery({
     queryKey: ["debtor-creditor-paper", clientUserId, taxYear, paperType],
     queryFn: async (): Promise<DebtorCreditorPaper | null> => {
+      try {
       // Fetch the paper
       const { data: papers, error } = await supabase
         .from("debtor_creditor_papers")
@@ -101,6 +102,10 @@ export function useDebtorCreditorPaper(
         ...paper,
         lines: (lines ?? []) as unknown as DebtorCreditorLine[],
       };
+      } catch {
+        console.warn(`[useDebtorCreditorPaper] Failed to fetch ${paperType} paper for client ${clientUserId}`);
+        return null;
+      }
     },
     enabled: !!clientUserId,
   });

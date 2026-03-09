@@ -298,6 +298,7 @@ export function useRCTPaymentNotifications(contractId?: string) {
       if (error) throw error;
       return data as RCTPaymentNotification[];
     },
+    enabled: contractId !== undefined,
   });
 }
 

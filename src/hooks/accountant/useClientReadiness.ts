@@ -34,6 +34,20 @@ export function useClientReadiness(
     queryFn: async (): Promise<ClientReadiness> => {
       if (!clientUserId) throw new Error("No client");
 
+      const defaultReadiness: ClientReadiness = {
+        steps: [
+          { key: "bank_data", label: "Bank Data", description: "Transaction data imported for the period", status: "blocked", progress: 0, detail: "Unable to load" },
+          { key: "categorised", label: "Categorised", description: "All transactions assigned to a category", status: "blocked", progress: 0, detail: "Unable to load" },
+          { key: "receipts", label: "Receipts", description: "Receipts uploaded for expenses over \u20ac50", status: "blocked", progress: 0, detail: "Unable to load" },
+          { key: "reconciled", label: "Reconciled", description: "Transactions matched and reconciled", status: "blocked", progress: 0, detail: "Unable to load" },
+          { key: "questionnaire", label: "Questionnaire", description: "Period-end questionnaire completed by client", status: "blocked", progress: 0, detail: "Unable to load" },
+        ],
+        overallProgress: 0,
+        isReadyForFiling: false,
+        periodLabel: "",
+      };
+
+      try {
       // Default to current tax year if no period specified
       const now = new Date();
       const year = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
@@ -180,6 +194,10 @@ export function useClientReadiness(
         isReadyForFiling,
         periodLabel: `${start} to ${end}`,
       };
+      } catch {
+        console.warn(`[useClientReadiness] Failed to fetch readiness for client ${clientUserId}`);
+        return defaultReadiness;
+      }
     },
     enabled: !!clientUserId,
     staleTime: 30_000,

@@ -63,6 +63,9 @@ export function useCapTable(clientUserId: string | null | undefined) {
   return useQuery({
     queryKey: ["cap-table", clientUserId],
     queryFn: async () => {
+      const emptyResult = { shareClasses: [] as ShareClass[], shareholders: [] as Shareholder[], totalSharesIssued: 0, isCloseCompany: false };
+
+      try {
       // Fetch share classes
       const { data: classesRaw, error: classErr } = await supabase
         .from("share_classes" as string)
@@ -167,6 +170,10 @@ export function useCapTable(clientUserId: string | null | undefined) {
         totalSharesIssued,
         isCloseCompany,
       };
+      } catch {
+        console.warn(`[useCapTable] Failed to fetch cap table for client ${clientUserId}`);
+        return emptyResult;
+      }
     },
     enabled: !!clientUserId,
   });

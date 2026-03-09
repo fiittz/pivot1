@@ -64,6 +64,9 @@ export function useClientTrialBalance(
   return useQuery({
     queryKey: ["client-trial-balance", clientUserId, taxYear, "with-journals", accountIds ?? "all"],
     queryFn: async (): Promise<TrialBalanceData> => {
+      const emptyResult: TrialBalanceData = { lines: [], totalDebit: 0, totalCredit: 0, isBalanced: true, difference: 0 };
+
+      try {
       const startDate = `${taxYear}-01-01`;
       const endDate = `${taxYear}-12-31`;
 
@@ -228,6 +231,10 @@ export function useClientTrialBalance(
         isBalanced: difference < 0.01,
         difference,
       };
+      } catch {
+        console.warn(`[useClientTrialBalance] Failed to fetch trial balance for client ${clientUserId}`);
+        return emptyResult;
+      }
     },
     enabled: !!clientUserId,
     staleTime: 2 * 60 * 1000,

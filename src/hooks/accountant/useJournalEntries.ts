@@ -76,6 +76,7 @@ export function useClientJournalEntries(
   return useQuery({
     queryKey: ["client-journal-entries", clientUserId, taxYear],
     queryFn: async (): Promise<JournalEntry[]> => {
+      try {
       // Fetch journal entries
       const { data: entries, error } = await supabase
         .from("journal_entries")
@@ -108,6 +109,10 @@ export function useClientJournalEntries(
         ...entry,
         lines: linesByEntry.get(entry.id) ?? [],
       }));
+      } catch {
+        console.warn(`[useClientJournalEntries] Failed to fetch journal entries for client ${clientUserId}`);
+        return [];
+      }
     },
     enabled: !!clientUserId,
     staleTime: 2 * 60 * 1000,

@@ -12,22 +12,27 @@ export function useInboundEmails(
   return useQuery({
     queryKey: ["inbound-emails", clientUserId, statusFilter],
     queryFn: async () => {
-      let query = supabase
-        .from("inbound_emails")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      try {
+        let query = supabase
+          .from("inbound_emails")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(200);
 
-      if (clientUserId) {
-        query = query.eq("client_user_id", clientUserId);
-      }
-      if (statusFilter && statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
+        if (clientUserId) {
+          query = query.eq("client_user_id", clientUserId);
+        }
+        if (statusFilter && statusFilter !== "all") {
+          query = query.eq("status", statusFilter);
+        }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data ?? []) as InboundEmail[];
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data ?? []) as InboundEmail[];
+      } catch {
+        console.warn(`[useInboundEmails] Failed to fetch emails for client ${clientUserId ?? "all"}`);
+        return [] as InboundEmail[];
+      }
     },
   });
 }

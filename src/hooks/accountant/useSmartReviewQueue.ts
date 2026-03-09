@@ -44,105 +44,110 @@ export function useSmartReviewQueue() {
       const now = new Date();
 
       for (const client of clients) {
-        const clientUserId = client.client_user_id as string;
-        let score = 0;
-        const reasons: string[] = [];
+        try {
+          const clientUserId = client.client_user_id as string;
+          let score = 0;
+          const reasons: string[] = [];
 
-        // 1. Uncategorised transactions
-        const { count: uncatCount } = await supabase
-          .from("transactions")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", clientUserId)
-          .is("category_id", null);
+          // 1. Uncategorised transactions
+          const { count: uncatCount } = await supabase
+            .from("transactions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", clientUserId)
+            .is("category_id", null);
 
-        const uncategorisedCount = uncatCount ?? 0;
-        if (uncategorisedCount > 0) {
-          score += Math.min(uncategorisedCount * 2, 30);
-          reasons.push(`${uncategorisedCount} uncategorised transactions`);
-        }
-
-        // 2. Missing receipts (expenses > €50 without receipt)
-        const { count: receiptCount } = await supabase
-          .from("transactions")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", clientUserId)
-          .eq("type", "expense")
-          .is("receipt_url", null)
-          .lt("amount", -50);
-
-        const missingReceiptsCount = receiptCount ?? 0;
-        if (missingReceiptsCount > 0) {
-          score += Math.min(missingReceiptsCount, 15);
-          reasons.push(`${missingReceiptsCount} missing receipts`);
-        }
-
-        // 3. Pending questionnaires
-        const { count: questCount } = await supabase
-          .from("period_end_questionnaires")
-          .select("id", { count: "exact", head: true })
-          .eq("accountant_id", user.id)
-          .eq("client_user_id", clientUserId)
-          .eq("status", "completed"); // completed but not yet reviewed
-
-        const pendingQuestionnaires = questCount ?? 0;
-        if (pendingQuestionnaires > 0) {
-          score += 20;
-          reasons.push(`${pendingQuestionnaires} questionnaire${pendingQuestionnaires > 1 ? "s" : ""} to review`);
-        }
-
-        // 4. Inbound emails needing review
-        const { count: emailCount } = await supabase
-          .from("inbound_emails")
-          .select("id", { count: "exact", head: true })
-          .eq("client_user_id", clientUserId)
-          .eq("status", "processed")
-          .eq("route", "accountant_queue");
-
-        const pendingEmailReview = emailCount ?? 0;
-        if (pendingEmailReview > 0) {
-          score += pendingEmailReview * 5;
-          reasons.push(`${pendingEmailReview} email${pendingEmailReview > 1 ? "s" : ""} need review`);
-        }
-
-        // 5. Deadline proximity
-        let daysUntilDeadline: number | null = null;
-        if (client.year_end_month) {
-          const yem = client.year_end_month as number;
-          let yearEndYear = now.getFullYear();
-          const yearEnd = new Date(yearEndYear, yem, 0); // Last day of year_end_month
-          if (yearEnd < now) yearEndYear++;
-          const nextYearEnd = new Date(yearEndYear, yem, 0);
-          daysUntilDeadline = Math.ceil((nextYearEnd.getTime() - now.getTime()) / 86400000);
-
-          if (daysUntilDeadline <= 14) {
-            score += 40;
-            reasons.push(`Year-end in ${daysUntilDeadline} days`);
-          } else if (daysUntilDeadline <= 30) {
-            score += 20;
-            reasons.push(`Year-end in ${daysUntilDeadline} days`);
-          } else if (daysUntilDeadline <= 60) {
-            score += 5;
+          const uncategorisedCount = uncatCount ?? 0;
+          if (uncategorisedCount > 0) {
+            score += Math.min(uncategorisedCount * 2, 30);
+            reasons.push(`${uncategorisedCount} uncategorised transactions`);
           }
+
+          // 2. Missing receipts (expenses > €50 without receipt)
+          const { count: receiptCount } = await supabase
+            .from("transactions")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", clientUserId)
+            .eq("type", "expense")
+            .is("receipt_url", null)
+            .lt("amount", -50);
+
+          const missingReceiptsCount = receiptCount ?? 0;
+          if (missingReceiptsCount > 0) {
+            score += Math.min(missingReceiptsCount, 15);
+            reasons.push(`${missingReceiptsCount} missing receipts`);
+          }
+
+          // 3. Pending questionnaires
+          const { count: questCount } = await supabase
+            .from("period_end_questionnaires")
+            .select("id", { count: "exact", head: true })
+            .eq("accountant_id", user.id)
+            .eq("client_user_id", clientUserId)
+            .eq("status", "completed"); // completed but not yet reviewed
+
+          const pendingQuestionnaires = questCount ?? 0;
+          if (pendingQuestionnaires > 0) {
+            score += 20;
+            reasons.push(`${pendingQuestionnaires} questionnaire${pendingQuestionnaires > 1 ? "s" : ""} to review`);
+          }
+
+          // 4. Inbound emails needing review
+          const { count: emailCount } = await supabase
+            .from("inbound_emails")
+            .select("id", { count: "exact", head: true })
+            .eq("client_user_id", clientUserId)
+            .eq("status", "processed")
+            .eq("route", "accountant_queue");
+
+          const pendingEmailReview = emailCount ?? 0;
+          if (pendingEmailReview > 0) {
+            score += pendingEmailReview * 5;
+            reasons.push(`${pendingEmailReview} email${pendingEmailReview > 1 ? "s" : ""} need review`);
+          }
+
+          // 5. Deadline proximity
+          let daysUntilDeadline: number | null = null;
+          if (client.year_end_month) {
+            const yem = client.year_end_month as number;
+            let yearEndYear = now.getFullYear();
+            const yearEnd = new Date(yearEndYear, yem, 0); // Last day of year_end_month
+            if (yearEnd < now) yearEndYear++;
+            const nextYearEnd = new Date(yearEndYear, yem, 0);
+            daysUntilDeadline = Math.ceil((nextYearEnd.getTime() - now.getTime()) / 86400000);
+
+            if (daysUntilDeadline <= 14) {
+              score += 40;
+              reasons.push(`Year-end in ${daysUntilDeadline} days`);
+            } else if (daysUntilDeadline <= 30) {
+              score += 20;
+              reasons.push(`Year-end in ${daysUntilDeadline} days`);
+            } else if (daysUntilDeadline <= 60) {
+              score += 5;
+            }
+          }
+
+          // Determine priority bucket
+          let priority: Priority = "low";
+          if (score >= 40) priority = "high";
+          else if (score >= 15) priority = "medium";
+
+          queue.push({
+            clientId: client.id,
+            clientUserId,
+            clientName: client.client_name ?? "Unknown",
+            priority,
+            score,
+            reasons,
+            uncategorisedCount,
+            missingReceiptsCount,
+            pendingQuestionnaires,
+            pendingEmailReview,
+            daysUntilDeadline,
+          });
+        } catch {
+          // Skip this client on error — don't crash the whole queue
+          console.warn(`[useSmartReviewQueue] Failed to fetch data for client ${client.id}, skipping`);
         }
-
-        // Determine priority bucket
-        let priority: Priority = "low";
-        if (score >= 40) priority = "high";
-        else if (score >= 15) priority = "medium";
-
-        queue.push({
-          clientId: client.id,
-          clientUserId,
-          clientName: client.client_name ?? "Unknown",
-          priority,
-          score,
-          reasons,
-          uncategorisedCount,
-          missingReceiptsCount,
-          pendingQuestionnaires,
-          pendingEmailReview,
-          daysUntilDeadline,
-        });
       }
 
       // Sort by score descending
