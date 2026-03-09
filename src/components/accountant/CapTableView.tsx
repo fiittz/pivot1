@@ -58,6 +58,17 @@ const TYPE_BADGES: Record<ShareholderType, { label: string; color: string }> = {
   nominee: { label: "Nominee", color: "bg-orange-100 text-orange-700 border-orange-200" },
 };
 
+const OWNERSHIP_COLORS = [
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-purple-500",
+  "bg-rose-500",
+  "bg-cyan-500",
+  "bg-orange-500",
+  "bg-indigo-500",
+];
+
 const ACQUISITION_TYPES = [
   { value: "incorporation", label: "Incorporation" },
   { value: "allotment", label: "Allotment" },
@@ -307,6 +318,14 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
     return map;
   }, [data]);
 
+  // Sorted active shareholders for the stacked bar
+  const activeShareholders = useMemo(() => {
+    if (!data) return [];
+    return data.shareholders
+      .filter((s) => s.is_active)
+      .sort((a, b) => b.totalShares - a.totalShares);
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -324,7 +343,10 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-lg">Cap Table</h3>
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <PieChart className="w-5 h-5 text-primary" />
+            Cap Table
+          </h3>
           <p className="text-xs text-muted-foreground">
             Capitalisation table &middot; {shareholders.filter((s) => s.is_active).length} shareholder{shareholders.filter((s) => s.is_active).length !== 1 ? "s" : ""}
           </p>
@@ -343,21 +365,25 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
 
       {/* Close Company Warning */}
       {data?.isCloseCompany && (
-        <Card className="border-amber-200 bg-amber-50 shadow-sm rounded-2xl">
-          <CardContent className="p-3 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-            <div className="text-sm text-amber-800">
-              <span className="font-medium">Close Company.</span>{" "}
-              This company has 5 or fewer participators controlling &gt;50% of shares.
-              A surcharge of 20% applies to undistributed investment/estate income,
-              and 15% to undistributed trading income under Section 440 TCA 1997.
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="p-4 flex items-start gap-3">
+            <div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-1.5 shrink-0">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Close Company</p>
+              <p className="text-sm text-amber-700 dark:text-amber-400 mt-0.5">
+                This company has 5 or fewer participators controlling &gt;50% of shares.
+                A surcharge of 20% applies to undistributed investment/estate income,
+                and 15% to undistributed trading income under Section 440 TCA 1997.
+              </p>
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border-0 shadow-sm rounded-2xl">
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Total Shares Issued</p>
@@ -373,7 +399,7 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
         <Card className="border-0 shadow-sm rounded-2xl">
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Share Capital</p>
-            <p className="text-xl font-semibold tabular-nums">{eur(summary.shareCapital)}</p>
+            <p className="text-xl font-semibold font-mono tabular-nums">{eur(summary.shareCapital)}</p>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm rounded-2xl">
@@ -390,10 +416,44 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
         </Card>
       </div>
 
+      {/* Ownership Stacked Bar */}
+      {activeShareholders.length > 0 && summary.totalShares > 0 && (
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 bg-muted/30 border-b">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Ownership Distribution
+            </h4>
+          </div>
+          <CardContent className="p-4">
+            {/* Stacked bar */}
+            <div className="flex h-6 rounded-full overflow-hidden mb-3">
+              {activeShareholders.map((sh, idx) => (
+                <div
+                  key={sh.id}
+                  className={`${OWNERSHIP_COLORS[idx % OWNERSHIP_COLORS.length]} transition-all`}
+                  style={{ width: `${sh.ownershipPct}%` }}
+                  title={`${sh.shareholder_name}: ${sh.ownershipPct.toFixed(1)}%`}
+                />
+              ))}
+            </div>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3">
+              {activeShareholders.map((sh, idx) => (
+                <div key={sh.id} className="flex items-center gap-1.5 text-xs">
+                  <div className={`w-2.5 h-2.5 rounded-full ${OWNERSHIP_COLORS[idx % OWNERSHIP_COLORS.length]}`} />
+                  <span className="text-muted-foreground">{sh.shareholder_name}</span>
+                  <span className="font-mono tabular-nums font-medium">{sh.ownershipPct.toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Share Classes */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-3 py-2 bg-muted/30 border-b flex items-center justify-between">
+          <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5" />
               Share Classes
@@ -404,42 +464,46 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
             </Button>
           </div>
           {shareClasses.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No share classes defined. Add an &quot;Ordinary&quot; class to get started.
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Shield className="w-8 h-8 mb-2 opacity-40" />
+              <p className="text-sm">No share classes defined.</p>
+              <p className="text-xs mt-1">Add an &quot;Ordinary&quot; class to get started.</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/10">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Class Name</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Nominal Value</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Voting</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Dividend Rights</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Authorised</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Issued</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shareClasses.map((sc) => (
-                  <tr key={sc.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
-                    <td className="py-1.5 px-3 font-medium">{sc.class_name}</td>
-                    <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(sc.nominal_value)}</td>
-                    <td className="py-1.5 px-3 text-center">
-                      {sc.voting_rights ? <Check className="w-3.5 h-3.5 text-green-600 mx-auto" /> : <X className="w-3.5 h-3.5 text-muted-foreground mx-auto" />}
-                    </td>
-                    <td className="py-1.5 px-3 text-center">
-                      {sc.dividend_rights ? <Check className="w-3.5 h-3.5 text-green-600 mx-auto" /> : <X className="w-3.5 h-3.5 text-muted-foreground mx-auto" />}
-                    </td>
-                    <td className="py-1.5 px-3 text-right font-mono tabular-nums text-muted-foreground">
-                      {sc.total_authorised?.toLocaleString() ?? "\u2014"}
-                    </td>
-                    <td className="py-1.5 px-3 text-right font-mono tabular-nums font-medium">
-                      {(issuedByClass.get(sc.id) ?? 0).toLocaleString()}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Class Name</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Nominal Value</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Voting</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Dividend Rights</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Authorised</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Issued</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {shareClasses.map((sc) => (
+                    <tr key={sc.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                      <td className="py-2 px-3 font-medium">{sc.class_name}</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(sc.nominal_value)}</td>
+                      <td className="py-2 px-3 text-center">
+                        {sc.voting_rights ? <Check className="w-3.5 h-3.5 text-green-600 mx-auto" /> : <X className="w-3.5 h-3.5 text-muted-foreground mx-auto" />}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        {sc.dividend_rights ? <Check className="w-3.5 h-3.5 text-green-600 mx-auto" /> : <X className="w-3.5 h-3.5 text-muted-foreground mx-auto" />}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums text-muted-foreground">
+                        {sc.total_authorised?.toLocaleString() ?? "\u2014"}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums font-medium">
+                        {(issuedByClass.get(sc.id) ?? 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -447,130 +511,134 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
       {/* Shareholders Table */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-3 py-2 bg-muted/30 border-b flex items-center justify-between">
+          <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <PieChart className="w-3.5 h-3.5" />
               Shareholders
             </h4>
           </div>
           {shareholders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No shareholders recorded. Click &quot;Add Shareholder&quot; to begin.
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Users className="w-8 h-8 mb-2 opacity-40" />
+              <p className="text-sm">No shareholders recorded.</p>
+              <p className="text-xs mt-1">Click &quot;Add Shareholder&quot; to begin.</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/10">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Shareholder</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Type</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Director</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Shares</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground w-40">% Ownership</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Share Capital</th>
-                  <th className="py-2 px-3 font-medium text-xs text-muted-foreground text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shareholders
-                  .filter((s) => s.is_active)
-                  .sort((a, b) => b.totalShares - a.totalShares)
-                  .map((sh) => {
-                    const typeBadge = TYPE_BADGES[sh.shareholder_type];
-                    // Calculate share capital for this shareholder
-                    const holderCapital = sh.allocations.reduce((sum, a) => {
-                      const sc = shareClasses.find((c) => c.id === a.share_class_id);
-                      return sum + a.num_shares * (sc?.nominal_value ?? 1);
-                    }, 0);
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Shareholder</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Type</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Director</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Shares</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground w-40">% Ownership</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Share Capital</th>
+                    <th className="py-2 px-3 text-xs font-medium text-muted-foreground text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shareholders
+                    .filter((s) => s.is_active)
+                    .sort((a, b) => b.totalShares - a.totalShares)
+                    .map((sh) => {
+                      const typeBadge = TYPE_BADGES[sh.shareholder_type];
+                      // Calculate share capital for this shareholder
+                      const holderCapital = sh.allocations.reduce((sum, a) => {
+                        const sc = shareClasses.find((c) => c.id === a.share_class_id);
+                        return sum + a.num_shares * (sc?.nominal_value ?? 1);
+                      }, 0);
 
-                    return (
-                      <tr key={sh.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
-                        <td className="py-1.5 px-3">
-                          <span className="font-medium">{sh.shareholder_name}</span>
-                          {sh.email && (
-                            <span className="block text-[10px] text-muted-foreground">{sh.email}</span>
-                          )}
-                        </td>
-                        <td className="py-1.5 px-3">
-                          <Badge variant="outline" className={`text-[10px] ${typeBadge.color}`}>
-                            {typeBadge.label}
-                          </Badge>
-                        </td>
-                        <td className="py-1.5 px-3 text-center">
-                          {sh.is_director ? (
-                            <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px]">Director</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">\u2014</span>
-                          )}
-                        </td>
-                        <td className="py-1.5 px-3 text-right font-mono tabular-nums font-medium">
-                          {sh.totalShares.toLocaleString()}
-                        </td>
-                        <td className="py-1.5 px-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-muted/30 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-blue-500 rounded-full transition-all"
-                                style={{ width: `${Math.min(sh.ownershipPct, 100)}%` }}
-                              />
+                      return (
+                        <tr key={sh.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                          <td className="py-2 px-3">
+                            <span className="font-medium">{sh.shareholder_name}</span>
+                            {sh.email && (
+                              <span className="block text-[10px] text-muted-foreground">{sh.email}</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3">
+                            <Badge variant="outline" className={`text-[10px] ${typeBadge.color}`}>
+                              {typeBadge.label}
+                            </Badge>
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            {sh.is_director ? (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">Director</Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">\u2014</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums font-medium">
+                            {sh.totalShares.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-muted/30 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-blue-500 rounded-full transition-all"
+                                  style={{ width: `${Math.min(sh.ownershipPct, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-xs tabular-nums font-mono w-12 text-right">
+                                {sh.ownershipPct.toFixed(1)}%
+                              </span>
                             </div>
-                            <span className="text-xs tabular-nums font-mono w-12 text-right">
-                              {sh.ownershipPct.toFixed(1)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-1.5 px-3 text-right font-mono tabular-nums">
-                          {eur(holderCapital)}
-                        </td>
-                        <td className="py-1.5 px-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 px-2 text-xs gap-1"
-                              onClick={() => openAllocate(sh)}
-                            >
-                              <Plus className="w-3 h-3" />
-                              Allocate
-                            </Button>
-                            {sh.allocations.length > 0 && (
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums">
+                            {eur(holderCapital)}
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 px-2 text-xs gap-1"
-                                onClick={() => openTransfer(sh, sh.allocations[0])}
+                                onClick={() => openAllocate(sh)}
                               >
-                                <ArrowRightLeft className="w-3 h-3" />
-                                Transfer
+                                <Plus className="w-3 h-3" />
+                                Allocate
                               </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                              {sh.allocations.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2 text-xs gap-1"
+                                  onClick={() => openTransfer(sh, sh.allocations[0])}
+                                >
+                                  <ArrowRightLeft className="w-3 h-3" />
+                                  Transfer
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
 
-                {/* Totals row */}
-                <tr className="border-t-2 font-semibold">
-                  <td className="py-2 px-3" colSpan={3}>TOTALS</td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {summary.totalShares.toLocaleString()}
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-blue-500 rounded-full" />
-                      <span className="text-xs tabular-nums font-mono w-12 text-right">100%</span>
-                    </div>
-                  </td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(summary.shareCapital)}</td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
+                  {/* Totals row */}
+                  <tr className="border-t-2 border-foreground/20 font-semibold bg-muted/10">
+                    <td className="py-2 px-3" colSpan={3}>TOTALS</td>
+                    <td className="py-2 px-3 text-right font-mono tabular-nums">
+                      {summary.totalShares.toLocaleString()}
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-blue-500 rounded-full" />
+                        <span className="text-xs tabular-nums font-mono w-12 text-right">100%</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(summary.shareCapital)}</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* ──────────────── DIALOGS ──────────────── */}
+      {/* DIALOGS */}
 
       {/* Add Share Class Dialog */}
       <Dialog open={classDialogOpen} onOpenChange={setClassDialogOpen}>
@@ -654,7 +722,7 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
 
       {/* Add Shareholder Dialog */}
       <Dialog open={shareholderDialogOpen} onOpenChange={setShareholderDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -865,9 +933,9 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total Consideration:</span>
-              <span className="font-mono font-medium">
+            <div className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
+              <span className="text-muted-foreground">Total Consideration</span>
+              <span className="font-mono tabular-nums font-medium">
                 {eur((parseInt(allocForm.num_shares) || 0) * (parseFloat(allocForm.price_per_share) || 0))}
               </span>
             </div>
@@ -910,13 +978,13 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">From:</span>
+            <div className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
+              <span className="text-muted-foreground">From</span>
               <span className="font-medium">{selectedShareholder?.shareholder_name}</span>
             </div>
             {selectedAllocation && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Allocation:</span>
+              <div className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
+                <span className="text-muted-foreground">Allocation</span>
                 <span className="font-mono text-xs">
                   {selectedAllocation.num_shares.toLocaleString()} {selectedAllocation.share_class_name} shares
                 </span>
@@ -970,9 +1038,9 @@ export function CapTableView({ clientUserId }: CapTableViewProps) {
                 className="h-8"
               />
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total Consideration:</span>
-              <span className="font-mono font-medium">
+            <div className="flex items-center justify-between text-sm bg-muted/20 rounded-lg px-3 py-2">
+              <span className="text-muted-foreground">Total Consideration</span>
+              <span className="font-mono tabular-nums font-medium">
                 {eur((parseInt(transferForm.num_shares) || 0) * (parseFloat(transferForm.price_per_share) || 0))}
               </span>
             </div>

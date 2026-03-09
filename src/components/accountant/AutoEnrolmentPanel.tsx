@@ -8,7 +8,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
@@ -34,7 +33,7 @@ import {
   type AutoEnrolmentEmployee,
 } from "@/hooks/accountant/useAutoEnrolment";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// -- Helpers --
 
 const eur = (n: number) =>
   n === 0
@@ -69,14 +68,14 @@ const STATUS_CONFIG: Record<
   ineligible: { label: "Ineligible", variant: "secondary", className: "" },
 };
 
-// ── Props ────────────────────────────────────────────────────────────────────
+// -- Props --
 
 interface AutoEnrolmentPanelProps {
   clientUserId: string;
   taxYear: number;
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
+// -- Component --
 
 export function AutoEnrolmentPanel({
   clientUserId,
@@ -112,7 +111,7 @@ export function AutoEnrolmentPanel({
   const isLoading =
     summaryLoading || employeesLoading || contributionsLoading || aepnLoading;
 
-  // ── Action handlers ──────────────────────────────────────────────────────
+  // -- Action handlers --
 
   function handleEnrol(employeeId: string) {
     enrolMutation.mutate(employeeId, {
@@ -155,12 +154,12 @@ export function AutoEnrolmentPanel({
     });
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────
+  // -- Loading state --
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         <span className="ml-2 text-sm text-muted-foreground">
           Loading auto-enrolment data...
         </span>
@@ -168,13 +167,13 @@ export function AutoEnrolmentPanel({
     );
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────────
+  // -- Empty state --
 
   if (!employees || employees.length === 0) {
     return (
-      <Card>
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <Shield className="h-10 w-10 text-muted-foreground mb-3" />
+          <Shield className="h-8 w-8 text-muted-foreground mb-3 opacity-40" />
           <p className="text-sm text-muted-foreground">
             No employees found for auto-enrolment in {taxYear}.
           </p>
@@ -186,78 +185,97 @@ export function AutoEnrolmentPanel({
     );
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // -- Render --
 
   return (
-    <div className="space-y-6">
-      {/* ── 1. Summary Cards ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-xs text-muted-foreground">Eligible</p>
-            <p className="text-2xl font-bold">{summary?.total_eligible ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-xs text-green-600">Enrolled</p>
-            <p className="text-2xl font-bold text-green-600">
+    <div className="space-y-4">
+      {/* 1. Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="border-0 shadow-sm rounded-2xl">
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Total Enrolled</p>
+            <p className="text-2xl font-bold text-green-600 tabular-nums">
               {summary?.enrolled ?? 0}
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-xs text-amber-600">Opted Out</p>
-            <p className="text-2xl font-bold text-amber-600">
-              {summary?.opted_out ?? 0}
+        <Card className="border-0 shadow-sm rounded-2xl">
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Employee Contributions</p>
+            <p className="text-xl font-bold font-mono tabular-nums">
+              {eur(contributions?.total_employee ?? 0)}
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-xs text-muted-foreground">Exempt / Ineligible</p>
-            <p className="text-2xl font-bold text-muted-foreground">
-              {(summary?.exempt ?? 0) + (summary?.ineligible ?? 0)}
+        <Card className="border-0 shadow-sm rounded-2xl">
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Employer Contributions</p>
+            <p className="text-xl font-bold font-mono tabular-nums">
+              {eur(contributions?.total_employer ?? 0)}
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-xs text-muted-foreground">Rates (EE/ER/State)</p>
-            <p className="text-lg font-bold">
-              {rates.employee}% / {rates.employer}% / {rates.state}%
+        <Card className="border-0 shadow-sm rounded-2xl">
+          <CardContent className="p-3">
+            <p className="text-xs text-amber-600">Pending Enrolments</p>
+            <p className="text-2xl font-bold text-amber-600 tabular-nums">
+              {(summary?.total_eligible ?? 0) - (summary?.enrolled ?? 0) - (summary?.opted_out ?? 0) - (summary?.exempt ?? 0) - (summary?.ineligible ?? 0)}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* ── 2. Employee Enrolment Table ─────────────────────────────────── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="h-4 w-4" />
+      {/* Rate Display */}
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Current Phase Rates ({taxYear})
+          </h4>
+        </div>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-muted/20 rounded-xl p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Employee</p>
+              <p className="text-2xl font-bold tabular-nums">{rates.employee}%</p>
+            </div>
+            <div className="bg-muted/20 rounded-xl p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Employer</p>
+              <p className="text-2xl font-bold tabular-nums">{rates.employer}%</p>
+            </div>
+            <div className="bg-muted/20 rounded-xl p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">State Top-Up</p>
+              <p className="text-2xl font-bold tabular-nums">{rates.state}%</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. Employee Enrolment Table */}
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
+          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Employee Enrolment
-          </CardTitle>
-        </CardHeader>
+          </h4>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left px-4 py-2 font-medium">Name</th>
-                  <th className="text-right px-4 py-2 font-medium">Age</th>
-                  <th className="text-right px-4 py-2 font-medium">
+                <tr className="bg-muted/10 border-b">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground">Name</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-muted-foreground">Age</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-muted-foreground">
                     Annual Gross
                   </th>
-                  <th className="text-center px-4 py-2 font-medium">Status</th>
-                  <th className="text-left px-4 py-2 font-medium">
+                  <th className="text-center px-3 py-2 text-xs font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground">
                     Enrolled Date
                   </th>
-                  <th className="text-left px-4 py-2 font-medium">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground">
                     Opt-Out Window
                   </th>
-                  <th className="text-right px-4 py-2 font-medium">Actions</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -268,24 +286,24 @@ export function AutoEnrolmentPanel({
                     new Date(emp.re_enrolment_date) <= new Date();
 
                   return (
-                    <tr key={emp.id} className="border-b last:border-0">
-                      <td className="px-4 py-2 font-medium">{emp.name}</td>
-                      <td className="px-4 py-2 text-right">{emp.age}</td>
-                      <td className="px-4 py-2 text-right font-mono">
+                    <tr key={emp.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                      <td className="px-3 py-2 font-medium">{emp.name}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{emp.age}</td>
+                      <td className="px-3 py-2 text-right font-mono tabular-nums">
                         {eur(emp.annual_gross)}
                       </td>
-                      <td className="px-4 py-2 text-center">
-                        <Badge variant={cfg.variant} className={cfg.className}>
+                      <td className="px-3 py-2 text-center">
+                        <Badge variant={cfg.variant} className={`text-[10px] ${cfg.className}`}>
                           {cfg.label}
                         </Badge>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
                         {formatDate(emp.enrolled_date)}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
                         {formatDate(emp.opt_out_window_end)}
                       </td>
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-3 py-2 text-right">
                         <EmployeeActions
                           employee={emp}
                           pastReEnrolDate={!!pastReEnrolDate}
@@ -307,15 +325,15 @@ export function AutoEnrolmentPanel({
         </CardContent>
       </Card>
 
-      {/* ── 3. AEPN Section ─────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Download className="h-4 w-4" />
+      {/* 3. AEPN Section */}
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
+          <Download className="h-3.5 w-3.5 text-muted-foreground" />
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Auto-Enrolment Personal Notifications (AEPNs)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h4>
+        </div>
+        <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-sm">
@@ -337,11 +355,12 @@ export function AutoEnrolmentPanel({
               variant="outline"
               onClick={handleDownloadAEPNs}
               disabled={downloadAEPNsMutation.isPending}
+              className="gap-1.5"
             >
               {downloadAEPNsMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Download className="h-4 w-4 mr-1.5" />
+                <Download className="h-3.5 w-3.5" />
               )}
               Download AEPNs
             </Button>
@@ -349,48 +368,50 @@ export function AutoEnrolmentPanel({
         </CardContent>
       </Card>
 
-      {/* ── 4. Contribution Summary ─────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Send className="h-4 w-4" />
+      {/* 4. Contribution Summary */}
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center gap-2">
+          <Send className="h-3.5 w-3.5 text-muted-foreground" />
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Contribution Summary
-            {contributions?.period_label && (
-              <span className="text-xs font-normal text-muted-foreground">
-                ({contributions.period_label})
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div>
+          </h4>
+          {contributions?.period_label && (
+            <span className="text-xs font-normal text-muted-foreground ml-1">
+              ({contributions.period_label})
+            </span>
+          )}
+        </div>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="bg-muted/20 rounded-xl p-3">
               <p className="text-xs text-muted-foreground">
                 Employee Contributions
               </p>
-              <p className="text-lg font-bold font-mono">
+              <p className="text-lg font-bold font-mono tabular-nums">
                 {eur(contributions?.total_employee ?? 0)}
               </p>
             </div>
-            <div>
+            <div className="bg-muted/20 rounded-xl p-3">
               <p className="text-xs text-muted-foreground">
                 Employer Contributions
               </p>
-              <p className="text-lg font-bold font-mono">
+              <p className="text-lg font-bold font-mono tabular-nums">
                 {eur(contributions?.total_employer ?? 0)}
               </p>
             </div>
-            <div>
+            <div className="bg-muted/20 rounded-xl p-3">
               <p className="text-xs text-muted-foreground">State Top-Up</p>
-              <p className="text-lg font-bold font-mono">
+              <p className="text-lg font-bold font-mono tabular-nums">
                 {eur(contributions?.total_state_topup ?? 0)}
               </p>
             </div>
-            <div>
+            <div className="bg-muted/20 rounded-xl p-3">
               <p className="text-xs text-muted-foreground">Status</p>
-              <ContributionStatusBadge
-                status={contributions?.submission_status ?? "pending"}
-              />
+              <div className="mt-1">
+                <ContributionStatusBadge
+                  status={contributions?.submission_status ?? "pending"}
+                />
+              </div>
             </div>
           </div>
           <div className="flex items-center justify-between border-t pt-3">
@@ -407,11 +428,12 @@ export function AutoEnrolmentPanel({
                 contributions?.submission_status === "submitted" ||
                 contributions?.submission_status === "accepted"
               }
+              className="gap-1.5"
             >
               {submitMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Send className="h-4 w-4 mr-1.5" />
+                <Send className="h-3.5 w-3.5" />
               )}
               Submit to NAERSA
             </Button>
@@ -419,7 +441,7 @@ export function AutoEnrolmentPanel({
         </CardContent>
       </Card>
 
-      {/* ── Review Dialog ───────────────────────────────────────────────── */}
+      {/* Review Dialog */}
       <Dialog
         open={!!reviewEmployee}
         onOpenChange={(open) => {
@@ -460,7 +482,7 @@ export function AutoEnrolmentPanel({
   );
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+// -- Sub-components --
 
 function EmployeeActions({
   employee,
@@ -489,13 +511,14 @@ function EmployeeActions({
         <Button
           size="sm"
           variant="default"
+          className="h-7 text-xs gap-1"
           onClick={() => onEnrol(employee.id)}
           disabled={enrolLoading}
         >
           {enrolLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <Check className="h-3.5 w-3.5 mr-1" />
+            <Check className="h-3 w-3" />
           )}
           Enrol
         </Button>
@@ -505,13 +528,14 @@ function EmployeeActions({
         <Button
           size="sm"
           variant="outline"
+          className="h-7 text-xs gap-1"
           onClick={() => onSuspend(employee.id)}
           disabled={suspendLoading}
         >
           {suspendLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <Shield className="h-3.5 w-3.5 mr-1" />
+            <Shield className="h-3 w-3" />
           )}
           Suspend
         </Button>
@@ -522,13 +546,14 @@ function EmployeeActions({
           <Button
             size="sm"
             variant="outline"
+            className="h-7 text-xs gap-1"
             onClick={() => onReEnrol(employee.id)}
             disabled={reEnrolLoading}
           >
             {reEnrolLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <Check className="h-3.5 w-3.5 mr-1" />
+              <Check className="h-3 w-3" />
             )}
             Re-enrol
           </Button>
@@ -544,6 +569,7 @@ function EmployeeActions({
         <Button
           size="sm"
           variant="ghost"
+          className="h-7 text-xs"
           onClick={() => onReview(employee)}
         >
           Review
@@ -562,19 +588,19 @@ function ContributionStatusBadge({
   switch (status) {
     case "accepted":
       return (
-        <Badge className="bg-green-600 hover:bg-green-700">Accepted</Badge>
+        <Badge className="bg-green-600 hover:bg-green-700 text-[10px]">Accepted</Badge>
       );
     case "submitted":
       return (
-        <Badge className="bg-blue-500 hover:bg-blue-600">Submitted</Badge>
+        <Badge className="bg-blue-500 hover:bg-blue-600 text-[10px]">Submitted</Badge>
       );
     case "rejected":
       return (
-        <Badge variant="destructive">Rejected</Badge>
+        <Badge variant="destructive" className="text-[10px]">Rejected</Badge>
       );
     default:
       return (
-        <Badge variant="secondary">Pending</Badge>
+        <Badge variant="secondary" className="text-[10px]">Pending</Badge>
       );
   }
 }

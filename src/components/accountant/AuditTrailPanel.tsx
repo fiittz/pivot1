@@ -133,12 +133,12 @@ const AuditTrailPanel = ({ clientUserId }: AuditTrailPanelProps) => {
   const events = data?.pages.flat() ?? [];
 
   return (
-    <div className="rounded-xl border bg-card overflow-hidden">
+    <div className="border-0 shadow-sm rounded-2xl bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
-        <div className="flex items-center gap-3">
-          <ClipboardList className="w-4 h-4 text-[#E8930C]" />
-          <span className="font-semibold text-sm">Audit Trail</span>
+        <div className="flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-muted-foreground" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Audit Trail</span>
           {events.length > 0 && (
             <span className="text-xs text-muted-foreground">
               {events.length} event{events.length !== 1 ? "s" : ""}

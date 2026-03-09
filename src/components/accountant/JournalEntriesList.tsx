@@ -1,7 +1,7 @@
 import { useState, Fragment } from "react";
 import { BookOpen, ChevronDown, ChevronRight, RotateCcw, Trash2, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -142,7 +142,7 @@ export function JournalEntriesList({
 
       {/* No entries */}
       {filteredEntries.length === 0 && (
-        <Card className="border-dashed">
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             {entries && entries.length > 0
               ? "No journal entries match the selected filter."
@@ -155,6 +155,7 @@ export function JournalEntriesList({
       {filteredEntries.length > 0 && (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
@@ -252,33 +253,33 @@ export function JournalEntriesList({
                       {isExpanded && (
                         <tr>
                           <td colSpan={8} className="p-0">
-                            <div className="bg-muted/20 px-6 py-2">
+                            <div className="bg-muted/10 border-l-2 border-primary/20 ml-4 px-4 py-2">
                               <table className="w-full text-xs">
                                 <thead>
-                                  <tr className="text-muted-foreground">
-                                    <th className="text-left py-1 font-medium">Account</th>
-                                    <th className="text-left py-1 font-medium">Type</th>
-                                    <th className="text-left py-1 font-medium">Code</th>
-                                    <th className="text-right py-1 font-medium">Debit</th>
-                                    <th className="text-right py-1 font-medium">Credit</th>
-                                    <th className="text-left py-1 font-medium">Description</th>
+                                  <tr className="text-muted-foreground border-b border-muted/30">
+                                    <th className="text-left py-1.5 font-medium">Account</th>
+                                    <th className="text-left py-1.5 font-medium">Type</th>
+                                    <th className="text-left py-1.5 font-medium">Code</th>
+                                    <th className="text-right py-1.5 font-medium">Debit</th>
+                                    <th className="text-right py-1.5 font-medium">Credit</th>
+                                    <th className="text-left py-1.5 font-medium">Description</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {entry.lines.map((line) => (
-                                    <tr key={line.id} className="border-t border-muted/20">
-                                      <td className="py-1">{line.account_name}</td>
-                                      <td className="py-1 text-muted-foreground">{line.account_type}</td>
-                                      <td className="py-1 font-mono text-muted-foreground">
+                                    <tr key={line.id} className="border-b border-muted/15 hover:bg-muted/10 transition-colors">
+                                      <td className="py-1.5">{line.account_name}</td>
+                                      <td className="py-1.5 text-muted-foreground">{line.account_type}</td>
+                                      <td className="py-1.5 font-mono text-muted-foreground">
                                         {line.account_code ?? "---"}
                                       </td>
-                                      <td className="py-1 text-right font-mono tabular-nums">
+                                      <td className="py-1.5 text-right font-mono tabular-nums">
                                         {Number(line.debit) > 0 ? eur(Number(line.debit)) : ""}
                                       </td>
-                                      <td className="py-1 text-right font-mono tabular-nums">
+                                      <td className="py-1.5 text-right font-mono tabular-nums">
                                         {Number(line.credit) > 0 ? eur(Number(line.credit)) : ""}
                                       </td>
-                                      <td className="py-1 text-muted-foreground">
+                                      <td className="py-1.5 text-muted-foreground">
                                         {line.description ?? ""}
                                       </td>
                                     </tr>
@@ -299,6 +300,7 @@ export function JournalEntriesList({
                 })}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}

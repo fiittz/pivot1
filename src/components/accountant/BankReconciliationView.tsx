@@ -208,7 +208,7 @@ export function BankReconciliationView({
       {/* Monthly Breakdown */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-3 py-2 bg-muted/30 border-b">
+          <div className="px-4 py-3 bg-muted/30 border-b">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Monthly Summary
             </h4>

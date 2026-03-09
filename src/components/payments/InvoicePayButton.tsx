@@ -6,7 +6,6 @@ import {
   ExternalLink,
   Loader2,
   Link as LinkIcon,
-  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +50,7 @@ export function InvoicePayButton({
 
     return (
       <div className="flex items-center gap-3">
-        <Badge variant="default" className="bg-green-600 hover:bg-green-700 gap-1">
+        <Badge variant="default" className="bg-green-600 hover:bg-green-700 gap-1 rounded-full px-2.5">
           <Check className="w-3 h-3" />
           Paid
         </Badge>
@@ -96,7 +95,7 @@ export function InvoicePayButton({
             <Input
               value={activeLink}
               readOnly
-              className="text-xs font-mono h-8"
+              className="text-xs font-mono h-8 bg-muted/10"
             />
             <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={handleCopy}>
               <Copy className="w-3.5 h-3.5" />
@@ -141,16 +140,17 @@ export function InvoicePayButton({
           ) : (
             <CreditCard className="w-4 h-4" />
           )}
-          Generate Payment Link
+          {createCheckout.isPending ? "Creating Link..." : "Generate Payment Link"}
         </Button>
       )}
 
       {/* Show recent payment attempts */}
       {payments && payments.length > 0 && (
-        <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
+        <div className="text-xs text-muted-foreground space-y-1.5 pt-2 border-t border-muted/20">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Recent Attempts</p>
           {payments.slice(0, 3).map((p) => (
-            <div key={p.id} className="flex items-center justify-between">
-              <span>
+            <div key={p.id} className="flex items-center justify-between py-0.5">
+              <span className="tabular-nums font-mono">
                 {new Date(p.created_at).toLocaleDateString("en-IE", {
                   month: "short",
                   day: "numeric",
@@ -166,11 +166,11 @@ export function InvoicePayButton({
                     ? "destructive"
                     : "secondary"
                 }
-                className={
+                className={`text-[10px] rounded-full px-2 ${
                   p.status === "succeeded"
-                    ? "bg-green-600 text-xs"
-                    : "text-xs"
-                }
+                    ? "bg-green-600"
+                    : ""
+                }`}
               >
                 {p.status}
               </Badge>

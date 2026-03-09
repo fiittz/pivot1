@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -148,30 +148,29 @@ export function OnboardingChecklist({ accountantClientId }: OnboardingChecklistP
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading onboarding checklist...</span>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Onboarding Checklist</CardTitle>
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Onboarding Checklist</h4>
             <Badge variant={percentage === 100 ? "default" : "secondary"}>
               {completedCount}/{totalCount} complete
             </Badge>
           </div>
-          <div className="space-y-1 pt-2">
-            <Progress value={percentage} className="h-2" />
-            <p className="text-xs text-muted-foreground text-right">{percentage}%</p>
+          <div className="space-y-1">
+            <Progress value={percentage} className="h-2.5" />
+            <p className="text-xs text-muted-foreground text-right font-mono tabular-nums">{percentage}%</p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        </div>
+        <CardContent className="space-y-6 pt-4">
           {CATEGORIES.map(({ key, label, icon: Icon }) => {
             const categoryItems = grouped[key];
             if (!categoryItems?.length) return null;
@@ -180,7 +179,7 @@ export function OnboardingChecklist({ accountantClientId }: OnboardingChecklistP
             const allDone = catCompleted === categoryItems.length;
 
             return (
-              <div key={key}>
+              <div key={key} className="pb-4 border-b border-muted/30 last:border-b-0 last:pb-0">
                 <div className="flex items-center gap-2 mb-3">
                   <Icon className={`w-4 h-4 ${allDone ? "text-emerald-500" : "text-muted-foreground"}`} />
                   <h4 className="text-sm font-medium">{label}</h4>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Send, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Send, CheckCircle2, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +35,33 @@ export function ReconciliationBanner() {
 
   if (requests.length === 0) return null;
 
+  const totalPending = requests.reduce(
+    (sum, r) => sum + r.lines.filter((l) => !l.responded_at).length,
+    0,
+  );
+
   return (
     <div className="space-y-3">
+      {/* Summary banner */}
+      {totalPending > 0 && (
+        <div className="flex items-center gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 px-4 py-3">
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/50 shrink-0">
+            <ClipboardCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              {totalPending} item{totalPending !== 1 ? "s" : ""} awaiting your response
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              Your accountant has sent reconciliation requests that need your confirmation.
+            </p>
+          </div>
+          <Badge className="bg-amber-600 hover:bg-amber-700 text-white rounded-full px-2.5 text-xs shrink-0">
+            Review {totalPending} Item{totalPending !== 1 ? "s" : ""}
+          </Badge>
+        </div>
+      )}
+
       {requests.map((request) => (
         <ReconciliationRequestCard key={request.id} request={request} />
       ))}
@@ -94,8 +119,8 @@ function ReconciliationRequestCard({ request }: { request: ReconciliationRequest
   };
 
   return (
-    <Card className="border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20">
-      <CardContent className="p-4 space-y-3">
+    <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+      <div className="px-4 py-3 bg-amber-50/50 dark:bg-amber-950/20 border-b border-amber-200/50 dark:border-amber-800/30">
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-sm font-semibold text-foreground">{request.title}</h3>
@@ -110,11 +135,20 @@ function ReconciliationRequestCard({ request }: { request: ReconciliationRequest
               })}
             </p>
           </div>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge
+            variant="outline"
+            className={`text-[10px] rounded-full px-2 ${
+              respondedCount === request.lines.length
+                ? "bg-green-100 text-green-700 border-green-200"
+                : "bg-amber-100 text-amber-700 border-amber-200"
+            }`}
+          >
             {respondedCount}/{request.lines.length} responded
           </Badge>
         </div>
+      </div>
 
+      <CardContent className="p-4 space-y-3">
         {request.lines.map((line) => {
           const state = lineStates[line.id] ?? { status: "", confirmedAmount: "", note: "" };
           const isResponded = !!line.responded_at;
@@ -122,8 +156,10 @@ function ReconciliationRequestCard({ request }: { request: ReconciliationRequest
           return (
             <div
               key={line.id}
-              className={`space-y-2 rounded-lg border p-3 ${
-                isResponded ? "bg-muted/30" : ""
+              className={`space-y-2 rounded-xl border p-3 transition-colors ${
+                isResponded
+                  ? "bg-green-50/50 dark:bg-green-950/10 border-green-200/50"
+                  : "bg-muted/10 border-muted/30"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -131,7 +167,7 @@ function ReconciliationRequestCard({ request }: { request: ReconciliationRequest
                   {isResponded ? (
                     <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
                   ) : (
-                    <AlertTriangle className="w-4 h-4 text-blue-500 shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                   )}
                   <span className="text-sm font-medium">{line.label}</span>
                   {line.reference && (
@@ -180,7 +216,7 @@ function ReconciliationRequestCard({ request }: { request: ReconciliationRequest
                     value={state.note}
                     onChange={(e) => updateLineState(line.id, "note", e.target.value)}
                     placeholder="Add a note..."
-                    className="w-full text-xs rounded-md border px-2 py-1.5 resize-none h-8 focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full text-xs rounded-md border bg-background px-2 py-1.5 resize-none h-8 focus:outline-none focus:ring-2 focus:ring-ring"
                     disabled={isResponded}
                   />
                 </div>
@@ -204,7 +240,7 @@ function ReconciliationRequestCard({ request }: { request: ReconciliationRequest
         {respondedCount === request.lines.length && respondedCount > 0 && (
           <Button
             size="sm"
-            className="w-full gap-1.5"
+            className="w-full gap-1.5 bg-green-600 hover:bg-green-700"
             onClick={handleSubmitAll}
             disabled={complete.isPending}
           >

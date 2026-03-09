@@ -458,7 +458,7 @@ export function DebtorCreditorWorkingPaper({
       {/* Section 1: Trade */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-3 py-2 bg-muted/30 border-b">
+          <div className="px-4 py-3 bg-muted/30 border-b">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {paperType === "debtors" ? "Trade Debtors" : "Trade Creditors"}
             </h4>
@@ -469,7 +469,7 @@ export function DebtorCreditorWorkingPaper({
             {(Object.keys(BUCKET_CONFIG) as AgeBucket[]).map((bucket) => {
               const cfg = BUCKET_CONFIG[bucket];
               return (
-                <Card key={bucket} className="border shadow-sm">
+                <Card key={bucket} className="border-0 shadow-sm rounded-2xl overflow-hidden">
                   <CardContent className="py-3 px-4">
                     <p className="text-xs text-muted-foreground">{cfg.label}</p>
                     <p className={`text-lg font-semibold font-mono tabular-nums ${cfg.color}`}>
@@ -484,7 +484,7 @@ export function DebtorCreditorWorkingPaper({
                 </Card>
               );
             })}
-            <Card className="border shadow-sm">
+            <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
               <CardContent className="py-3 px-4">
                 <p className="text-xs text-muted-foreground">Total</p>
                 <p className="text-lg font-bold font-mono tabular-nums">
@@ -496,6 +496,7 @@ export function DebtorCreditorWorkingPaper({
 
           {/* Trade lines table */}
           {tradeLines.length > 0 ? (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/10">
@@ -534,6 +535,7 @@ export function DebtorCreditorWorkingPaper({
                 </tr>
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground text-sm">
               No trade {paperType === "debtors" ? "debtors" : "creditors"} recorded.
@@ -545,7 +547,7 @@ export function DebtorCreditorWorkingPaper({
       {/* Section 2: Secondary (Accrued Income / Accruals) */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-3 py-2 bg-muted/30 border-b flex items-center justify-between">
+          <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {paperType === "debtors" ? "Accrued Income" : "Accruals"}
             </h4>
@@ -557,6 +559,7 @@ export function DebtorCreditorWorkingPaper({
           </div>
 
           {secondaryLines.length > 0 ? (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/10">
@@ -590,6 +593,7 @@ export function DebtorCreditorWorkingPaper({
                 </tr>
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground text-sm">
               No {paperType === "debtors" ? "accrued income" : "accruals"} recorded.
@@ -601,7 +605,7 @@ export function DebtorCreditorWorkingPaper({
       {/* Section 3: Tertiary (Prepayments Received / Prepayments Made) */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="px-3 py-2 bg-muted/30 border-b flex items-center justify-between">
+          <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {paperType === "debtors" ? "Prepayments Received" : "Prepayments Made"}
             </h4>
@@ -613,6 +617,7 @@ export function DebtorCreditorWorkingPaper({
           </div>
 
           {tertiaryLines.length > 0 ? (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/10">
@@ -648,6 +653,7 @@ export function DebtorCreditorWorkingPaper({
                 </tr>
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="text-center py-6 text-muted-foreground text-sm">
               No {paperType === "debtors" ? "prepayments received" : "prepayments made"} recorded.
@@ -660,7 +666,7 @@ export function DebtorCreditorWorkingPaper({
       {lines.length > 0 && (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="px-3 py-2 bg-muted/30 border-b">
+            <div className="px-4 py-3 bg-muted/30 border-b">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Balance Sheet Summary
               </h4>

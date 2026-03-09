@@ -1,17 +1,9 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, TrendingDown, Scale } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { isVATDeductible, calculateVATFromGross } from "@/lib/vatDeductibility";
 
 interface VATReturnsViewProps {
@@ -51,11 +43,11 @@ const eur = (n: number) =>
         currency: "EUR",
       }).format(n);
 
-const STATUS_BADGE: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
-  filed: { variant: "default", label: "Filed" },
-  due: { variant: "secondary", label: "Due" },
-  overdue: { variant: "destructive", label: "Overdue" },
-  not_due: { variant: "outline", label: "Not Due" },
+const STATUS_BADGE: Record<string, { className: string; label: string }> = {
+  filed: { className: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Filed" },
+  due: { className: "bg-amber-100 text-amber-700 border-amber-200", label: "Due" },
+  overdue: { className: "bg-red-100 text-red-700 border-red-200", label: "Overdue" },
+  not_due: { className: "bg-gray-100 text-gray-600 border-gray-200", label: "Not Due" },
 };
 
 function getLastDayOfMonth(year: number, month: number): string {
@@ -319,135 +311,104 @@ export function VATReturnsView({ clientUserId, taxYear }: VATReturnsViewProps) {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading VAT returns...</span>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              Total Output VAT
-            </div>
-            <p className="text-2xl font-semibold">{eur(totals.outputVat)}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground">Total Output VAT</p>
+            <p className="text-lg font-semibold font-mono tabular-nums text-red-500">{eur(totals.outputVat)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <TrendingDown className="w-4 h-4 text-blue-500" />
-              Total Input VAT
-            </div>
-            <p className="text-2xl font-semibold">{eur(totals.inputVat)}</p>
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground">Total Input VAT</p>
+            <p className="text-lg font-semibold font-mono tabular-nums text-emerald-600">{eur(totals.inputVat)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Scale className="w-4 h-4 text-orange-500" />
-              Net Position
-            </div>
-            <p
-              className={`text-2xl font-semibold ${
-                totals.netVat >= 0 ? "text-red-600" : "text-emerald-600"
-              }`}
-            >
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground">Net Position</p>
+            <p className={`text-lg font-semibold font-mono tabular-nums ${totals.netVat >= 0 ? "text-red-500" : "text-emerald-600"}`}>
               {totals.netVat >= 0 ? eur(totals.netVat) : `(${eur(Math.abs(totals.netVat))})`}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {totals.netVat >= 0 ? "Payable to Revenue" : "Refundable from Revenue"}
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground">Direction</p>
+            <p className="text-lg font-semibold">
+              {totals.netVat >= 0 ? "Payable" : "Refundable"}
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Period Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">VAT Returns {taxYear}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Period</TableHead>
-                <TableHead className="text-right">Sales (ex VAT)</TableHead>
-                <TableHead className="text-right">Output VAT</TableHead>
-                <TableHead className="text-right">Purchases (ex VAT)</TableHead>
-                <TableHead className="text-right">Input VAT</TableHead>
-                <TableHead className="text-right">Net VAT</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">VAT Returns {taxYear}</h4>
+        </div>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/10">
+                <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Period</th>
+                <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Sales (ex VAT)</th>
+                <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Output VAT</th>
+                <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Purchases (ex VAT)</th>
+                <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Input VAT</th>
+                <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Net VAT</th>
+                <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
               {periods.map((p) => {
                 const badge = STATUS_BADGE[p.status];
                 return (
-                  <TableRow key={p.label}>
-                    <TableCell className="font-medium">{p.label}</TableCell>
-                    <TableCell className="text-right tabular-nums">{eur(p.salesExVat)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{eur(p.outputVat)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {eur(p.purchasesExVat)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{eur(p.inputVat)}</TableCell>
-                    <TableCell
-                      className={`text-right tabular-nums font-medium ${
-                        p.netVat > 0
-                          ? "text-red-600"
-                          : p.netVat < 0
-                            ? "text-emerald-600"
-                            : ""
-                      }`}
-                    >
+                  <tr key={p.label} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                    <td className="py-1.5 px-3 font-medium text-sm">{p.label}</td>
+                    <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(p.salesExVat)}</td>
+                    <td className="py-1.5 px-3 text-right font-mono tabular-nums text-red-500">{eur(p.outputVat)}</td>
+                    <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(p.purchasesExVat)}</td>
+                    <td className="py-1.5 px-3 text-right font-mono tabular-nums text-emerald-600">{eur(p.inputVat)}</td>
+                    <td className={`py-1.5 px-3 text-right font-mono tabular-nums font-medium ${
+                      p.netVat > 0 ? "text-red-500" : p.netVat < 0 ? "text-emerald-600" : ""
+                    }`}>
                       {p.netVat < 0 ? `(${eur(Math.abs(p.netVat))})` : eur(p.netVat)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={badge.variant}>{badge.label}</Badge>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                    <td className="py-1.5 px-3 text-center">
+                      <Badge variant="outline" className={`text-[10px] ${badge.className}`}>{badge.label}</Badge>
+                    </td>
+                  </tr>
                 );
               })}
               {/* Totals Row */}
-              <TableRow className="border-t-2 font-semibold">
-                <TableCell>TOTAL</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {eur(totals.salesExVat)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {eur(totals.outputVat)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {eur(totals.purchasesExVat)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {eur(totals.inputVat)}
-                </TableCell>
-                <TableCell
-                  className={`text-right tabular-nums ${
-                    totals.netVat > 0
-                      ? "text-red-600"
-                      : totals.netVat < 0
-                        ? "text-emerald-600"
-                        : ""
-                  }`}
-                >
-                  {totals.netVat < 0
-                    ? `(${eur(Math.abs(totals.netVat))})`
-                    : eur(totals.netVat)}
-                </TableCell>
-                <TableCell />
-              </TableRow>
-            </TableBody>
-          </Table>
+              <tr className="border-t-2 font-semibold">
+                <td className="py-2 px-3">TOTAL</td>
+                <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(totals.salesExVat)}</td>
+                <td className="py-2 px-3 text-right font-mono tabular-nums text-red-500">{eur(totals.outputVat)}</td>
+                <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(totals.purchasesExVat)}</td>
+                <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-600">{eur(totals.inputVat)}</td>
+                <td className={`py-2 px-3 text-right font-mono tabular-nums ${
+                  totals.netVat > 0 ? "text-red-500" : totals.netVat < 0 ? "text-emerald-600" : ""
+                }`}>
+                  {totals.netVat < 0 ? `(${eur(Math.abs(totals.netVat))})` : eur(totals.netVat)}
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
         </CardContent>
       </Card>
     </div>

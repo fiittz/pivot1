@@ -1,6 +1,6 @@
 import { Fragment, useMemo } from "react";
-import { Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   useClientTrialBalance,
   type TrialBalanceLine,
@@ -232,10 +232,11 @@ export function MultiYearComparison({
 
       {/* P&L Comparison */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Profit &amp; Loss Comparison</CardTitle>
-        </CardHeader>
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profit &amp; Loss Comparison</h4>
+        </div>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">
@@ -297,15 +298,17 @@ export function MultiYearComparison({
               </tr>
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 
       {/* Balance Sheet Comparison */}
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Balance Sheet Comparison</CardTitle>
-        </CardHeader>
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Balance Sheet Comparison</h4>
+        </div>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">
@@ -380,6 +383,7 @@ export function MultiYearComparison({
               </tr>
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -5,23 +5,22 @@ import {
   AlertCircle,
   TrendingUp,
   Loader2,
-  ExternalLink,
+  RotateCcw,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useClientStripeAccount, useClientPayments } from "@/hooks/useStripeConnect";
 
 interface PaymentsOverviewProps {
   clientUserId: string;
 }
+
+const STATUS_BADGE: Record<string, { color: string; label: string }> = {
+  succeeded: { color: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Succeeded" },
+  pending: { color: "bg-amber-100 text-amber-700 border-amber-200", label: "Pending" },
+  failed: { color: "bg-red-100 text-red-700 border-red-200", label: "Failed" },
+  refunded: { color: "bg-gray-100 text-gray-600 border-gray-200", label: "Refunded" },
+};
 
 export function PaymentsOverview({ clientUserId }: PaymentsOverviewProps) {
   const { data: stripeAccount, isLoading: accountLoading } = useClientStripeAccount(clientUserId);
@@ -32,106 +31,113 @@ export function PaymentsOverview({ clientUserId }: PaymentsOverviewProps) {
   // Summary calculations
   const summary = useMemo(() => {
     if (!payments || payments.length === 0) {
-      return { totalThisMonth: 0, feesThisMonth: 0, pendingCount: 0, successCount: 0 };
+      return { totalCollected: 0, platformFees: 0, refunds: 0, pendingCount: 0, successCount: 0 };
     }
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const thisMonth = payments.filter(
-      (p) => new Date(p.created_at) >= monthStart
-    );
-
-    const succeeded = thisMonth.filter((p) => p.status === "succeeded");
-    const totalThisMonth = succeeded.reduce((sum, p) => sum + Number(p.amount), 0);
-    const feesThisMonth = succeeded.reduce((sum, p) => sum + Number(p.platform_fee), 0);
+    const succeeded = payments.filter((p) => p.status === "succeeded");
+    const totalCollected = succeeded.reduce((sum, p) => sum + Number(p.amount), 0);
+    const platformFees = succeeded.reduce((sum, p) => sum + Number(p.platform_fee), 0);
+    const refunded = payments.filter((p) => p.status === "refunded");
+    const refunds = refunded.reduce((sum, p) => sum + Number(p.amount), 0);
     const pendingCount = payments.filter((p) => p.status === "pending").length;
-    const successCount = payments.filter((p) => p.status === "succeeded").length;
+    const successCount = succeeded.length;
 
-    return { totalThisMonth, feesThisMonth, pendingCount, successCount };
+    return { totalCollected, platformFees, refunds, pendingCount, successCount };
   }, [payments]);
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Stripe account status */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              <CardTitle className="text-lg">Payment Collection</CardTitle>
-            </div>
-            {stripeAccount ? (
-              stripeAccount.charges_enabled ? (
-                <Badge variant="default" className="bg-green-600 hover:bg-green-700 gap-1">
-                  <Check className="w-3 h-3" />
-                  Connected
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Setup Incomplete
-                </Badge>
-              )
-            ) : (
-              <Badge variant="secondary">Not Connected</Badge>
-            )}
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-muted-foreground" />
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Payment Collection
+            </h4>
           </div>
-          {stripeAccount && (
-            <CardDescription>
-              Platform fee: {stripeAccount.platform_fee_pct}%
+          {stripeAccount ? (
+            stripeAccount.charges_enabled ? (
+              <Badge variant="outline" className="text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
+                <Check className="w-3 h-3" />
+                Connected
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-700 border-amber-200 gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Setup Incomplete
+              </Badge>
+            )
+          ) : (
+            <Badge variant="secondary" className="text-[10px]">Not Connected</Badge>
+          )}
+        </div>
+        {stripeAccount && (
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              Platform fee: <span className="font-medium text-foreground">{stripeAccount.platform_fee_pct}%</span>
               {stripeAccount.stripe_account_id && (
-                <span className="ml-2 font-mono text-xs">
+                <span className="ml-2 font-mono text-xs text-muted-foreground">
                   ({stripeAccount.stripe_account_id})
                 </span>
               )}
-            </CardDescription>
-          )}
-        </CardHeader>
+            </p>
+          </CardContent>
+        )}
       </Card>
 
-      {/* Summary cards */}
+      {/* Summary stats */}
       {stripeAccount?.charges_enabled && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">Received this month</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                <p className="text-xs text-muted-foreground">Total Collected</p>
               </div>
-              <p className="text-2xl font-semibold mt-1">
-                &euro;{summary.totalThisMonth.toLocaleString("en-IE", { minimumFractionDigits: 2 })}
+              <p className="text-xl font-semibold font-mono tabular-nums text-emerald-700">
+                {new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(summary.totalCollected)}
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Platform fees this month</span>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Platform Fees</p>
               </div>
-              <p className="text-2xl font-semibold mt-1">
-                &euro;{summary.feesThisMonth.toLocaleString("en-IE", { minimumFractionDigits: 2 })}
+              <p className="text-xl font-semibold font-mono tabular-nums">
+                {new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(summary.platformFees)}
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">Total successful</span>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Refunds</p>
               </div>
-              <p className="text-2xl font-semibold mt-1">{summary.successCount}</p>
+              <p className="text-xl font-semibold font-mono tabular-nums text-red-600">
+                {new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(summary.refunds)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                <p className="text-xs text-muted-foreground">Successful</p>
+              </div>
+              <p className="text-xl font-semibold tabular-nums">{summary.successCount}</p>
               {summary.pendingCount > 0 && (
                 <p className="text-xs text-amber-600 mt-0.5">
                   {summary.pendingCount} pending
@@ -144,73 +150,63 @@ export function PaymentsOverview({ clientUserId }: PaymentsOverviewProps) {
 
       {/* Payments table */}
       {payments && payments.length > 0 ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Recent Payments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="text-sm">
-                      {new Date(payment.created_at).toLocaleDateString("en-IE", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {payment.customer_email || "—"}
-                    </TableCell>
-                    <TableCell className="text-sm text-right font-medium">
-                      &euro;{Number(payment.amount).toLocaleString("en-IE", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-sm capitalize">
-                      {payment.payment_method_type || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          payment.status === "succeeded"
-                            ? "default"
-                            : payment.status === "failed"
-                            ? "destructive"
-                            : payment.status === "refunded"
-                            ? "outline"
-                            : "secondary"
-                        }
-                        className={
-                          payment.status === "succeeded"
-                            ? "bg-green-600 text-xs"
-                            : "text-xs"
-                        }
-                      >
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 bg-muted/30 border-b">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Recent Payments
+            </h4>
+          </div>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Date</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Customer</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Amount</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Method</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((payment) => {
+                    const statusCfg = STATUS_BADGE[payment.status] ?? STATUS_BADGE.pending;
+                    return (
+                      <tr key={payment.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                        <td className="py-2 px-3 text-xs text-muted-foreground">
+                          {new Date(payment.created_at).toLocaleDateString("en-IE", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </td>
+                        <td className="py-2 px-3 text-sm">
+                          {payment.customer_email || "\u2014"}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums font-medium">
+                          {new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(Number(payment.amount))}
+                        </td>
+                        <td className="py-2 px-3 text-sm capitalize text-muted-foreground">
+                          {payment.payment_method_type || "\u2014"}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
+                            {statusCfg.label}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       ) : stripeAccount?.charges_enabled ? (
-        <Card>
-          <CardContent className="text-center py-12 text-muted-foreground">
-            <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p>No payments received yet</p>
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <CreditCard className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-sm">No payments received yet.</p>
           </CardContent>
         </Card>
       ) : null}

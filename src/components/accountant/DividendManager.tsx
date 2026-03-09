@@ -225,7 +225,6 @@ export function DividendManager({ clientUserId, taxYear }: DividendManagerProps)
           </h3>
           <p className="text-xs text-muted-foreground">
             {taxYear} &middot; {allDividends.length} dividend{allDividends.length !== 1 ? "s" : ""}
-            {totalGross > 0 && <> &middot; Total gross: {eur(totalGross)}</>}
           </p>
         </div>
         <Button size="sm" className="gap-1.5" onClick={openDeclare}>
@@ -234,112 +233,146 @@ export function DividendManager({ clientUserId, taxYear }: DividendManagerProps)
         </Button>
       </div>
 
+      {/* Summary Stats */}
+      {allDividends.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">Total Gross</p>
+              <p className="text-xl font-semibold font-mono tabular-nums">{eur(totalGross)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <p className="text-xs text-red-600">DWT Withheld</p>
+              <p className="text-xl font-semibold font-mono tabular-nums text-red-600">{eur(totalDwt)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <p className="text-xs text-emerald-600">Net Paid</p>
+              <p className="text-xl font-semibold font-mono tabular-nums text-emerald-700">{eur(totalNet)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm rounded-2xl">
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">Dividends</p>
+              <p className="text-xl font-semibold tabular-nums">{allDividends.length}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Dividends table */}
       {allDividends.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No dividends declared for {taxYear}. Click &quot;Declare Dividend&quot; to start.
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Banknote className="w-8 h-8 mb-2 opacity-40" />
+            <p className="text-sm">No dividends declared for {taxYear}.</p>
+            <p className="text-xs mt-1">Click &quot;Declare Dividend&quot; to start.</p>
           </CardContent>
         </Card>
       ) : (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Recipient</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Declaration</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Gross</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">DWT ({allDividends[0]?.dwt_rate ?? 25}%)</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Net</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Payment Date</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">DWT Due</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Status</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allDividends.map((div) => {
-                  const statusCfg = STATUS_CONFIG[div.status] ?? STATUS_CONFIG.declared;
-                  return (
-                    <tr
-                      key={div.id}
-                      className="border-b border-muted/20 hover:bg-muted/10 transition-colors"
-                    >
-                      <td className="py-1.5 px-3 font-medium">{div.recipient_name}</td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                        {formatDate(div.declaration_date)}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums">
-                        {eur(Number(div.gross_amount))}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums text-red-600">
-                        -{eur(Number(div.dwt_amount))}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums font-medium text-emerald-700">
-                        {eur(Number(div.net_amount))}
-                      </td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                        {div.payment_date ? formatDate(div.payment_date) : "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                        {div.dwt_due_date ? formatDwtDueDate(div.dwt_due_date) : "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-center">
-                        <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
-                          {statusCfg.label}
-                        </Badge>
-                      </td>
-                      <td className="py-1.5 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {div.status === "declared" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-xs gap-1"
-                              onClick={() => handleMarkPaid(div)}
-                              disabled={markPaid.isPending}
-                            >
-                              <CheckCircle2 className="w-3 h-3" />
-                              Mark Paid
-                            </Button>
-                          )}
-                          {div.status === "paid" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-xs gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                              onClick={() => handleMarkDwtFiled(div)}
-                              disabled={markDwtFiled.isPending}
-                            >
-                              <FileCheck className="w-3 h-3" />
-                              DWT Filed
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {/* Totals row */}
-                {allDividends.length > 1 && (
-                  <tr className="border-t-2 font-semibold">
-                    <td className="py-2 px-3" colSpan={2}>TOTALS</td>
-                    <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(totalGross)}</td>
-                    <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">-{eur(totalDwt)}</td>
-                    <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(totalNet)}</td>
-                    <td colSpan={4}></td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Recipient</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Declaration</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Gross</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">DWT ({allDividends[0]?.dwt_rate ?? 25}%)</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Net</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Payment Date</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">DWT Due</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Actions</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {allDividends.map((div) => {
+                    const statusCfg = STATUS_CONFIG[div.status] ?? STATUS_CONFIG.declared;
+                    return (
+                      <tr
+                        key={div.id}
+                        className="border-b border-muted/20 hover:bg-muted/10 transition-colors"
+                      >
+                        <td className="py-2 px-3 font-medium">{div.recipient_name}</td>
+                        <td className="py-2 px-3 text-xs text-muted-foreground">
+                          {formatDate(div.declaration_date)}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums">
+                          {eur(Number(div.gross_amount))}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">
+                          -{eur(Number(div.dwt_amount))}
+                        </td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums font-medium text-emerald-700">
+                          {eur(Number(div.net_amount))}
+                        </td>
+                        <td className="py-2 px-3 text-xs text-muted-foreground">
+                          {div.payment_date ? formatDate(div.payment_date) : "\u2014"}
+                        </td>
+                        <td className="py-2 px-3 text-xs text-muted-foreground">
+                          {div.dwt_due_date ? formatDwtDueDate(div.dwt_due_date) : "\u2014"}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
+                            {statusCfg.label}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {div.status === "declared" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-xs gap-1"
+                                onClick={() => handleMarkPaid(div)}
+                                disabled={markPaid.isPending}
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                Mark Paid
+                              </Button>
+                            )}
+                            {div.status === "paid" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-xs gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => handleMarkDwtFiled(div)}
+                                disabled={markDwtFiled.isPending}
+                              >
+                                <FileCheck className="w-3 h-3" />
+                                DWT Filed
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {/* Totals row */}
+                  {allDividends.length > 1 && (
+                    <tr className="border-t-2 border-foreground/20 font-semibold bg-muted/10">
+                      <td className="py-2 px-3" colSpan={2}>TOTALS</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(totalGross)}</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">-{eur(totalDwt)}</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(totalNet)}</td>
+                      <td colSpan={4}></td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Declare Dividend Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Banknote className="w-4 h-4" />
@@ -416,26 +449,31 @@ export function DividendManager({ clientUserId, taxYear }: DividendManagerProps)
               </div>
             </div>
 
-            {/* Live calculation */}
+            {/* Live DWT calculation -- prominent display */}
             {grossAmount > 0 && (
-              <Card className="bg-muted/30">
-                <CardContent className="p-3 space-y-1 text-sm">
+              <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 bg-muted/30 border-b">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    DWT Calculation
+                  </h4>
+                </div>
+                <CardContent className="p-4 space-y-1.5 text-sm">
                   <div className="flex justify-between">
-                    <span>Gross Dividend:</span>
+                    <span>Gross Dividend</span>
                     <span className="font-mono tabular-nums font-medium">{eur(grossAmount)}</span>
                   </div>
                   <div className="flex justify-between text-red-600">
-                    <span>DWT ({dwtRate}%):</span>
-                    <span className="font-mono tabular-nums">-{eur(dwtAmount)}</span>
+                    <span>DWT ({dwtRate}%)</span>
+                    <span className="font-mono tabular-nums font-medium">-{eur(dwtAmount)}</span>
                   </div>
-                  <div className="flex justify-between font-semibold text-emerald-700 border-t pt-1">
-                    <span>Net to Director:</span>
-                    <span className="font-mono tabular-nums">{eur(netAmount)}</span>
+                  <div className="flex justify-between font-semibold text-emerald-700 border-t pt-2 mt-1">
+                    <span>Net to Director</span>
+                    <span className="font-mono tabular-nums text-lg">{eur(netAmount)}</span>
                   </div>
                   {form.payment_date && (
-                    <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                      <span>DWT due by:</span>
-                      <span>{computeDwtDueDate(form.payment_date)}</span>
+                    <div className="flex justify-between text-xs text-muted-foreground pt-1 border-t mt-1">
+                      <span>DWT due by</span>
+                      <span className="font-medium">{computeDwtDueDate(form.payment_date)}</span>
                     </div>
                   )}
                 </CardContent>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,9 +29,9 @@ import {
 import type { MatchResult } from "@/lib/matching/transactionMatcher";
 import { useCategories } from "@/hooks/useCategories";
 
-// ────────────────────────────────────────────
+// ----
 // Constants
-// ────────────────────────────────────────────
+// ----
 
 const eur = (n: number) =>
   new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(n);
@@ -97,19 +97,18 @@ function confidenceTextColor(c: number): string {
   return "text-red-700";
 }
 
-// ────────────────────────────────────────────
+// ----
 // Props
-// ────────────────────────────────────────────
+// ----
 
 interface MatchSuggestionsPanelProps {
   clientUserId: string;
   accountIds?: string[];
 }
 
-// ────────────────────────────────────────────
-// Helper hook: fetch unmatched transactions as a Map
-// Re-uses the same react-query cache key as useTransactionMatcher
-// ────────────────────────────────────────────
+// ----
+// Helper hook
+// ----
 
 function useUnmatchedTransactionMap(
   clientUserId: string | undefined,
@@ -157,14 +156,14 @@ function useUnmatchedTransactionMap(
   }, [data]);
 }
 
-// ────────────────────────────────────────────
+// ----
 // Confidence Bar
-// ────────────────────────────────────────────
+// ----
 
 function ConfidenceBar({ value }: { value: number }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+      <div className="flex-1 h-2 rounded-full bg-muted/30 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${confidenceBarColor(value)}`}
           style={{ width: `${value}%` }}
@@ -179,9 +178,9 @@ function ConfidenceBar({ value }: { value: number }) {
   );
 }
 
-// ────────────────────────────────────────────
+// ----
 // Suggestion Card
-// ────────────────────────────────────────────
+// ----
 
 interface SuggestionCardProps {
   result: MatchResult;
@@ -242,7 +241,7 @@ function SuggestionCard({ result, transaction, clientUserId }: SuggestionCardPro
   const isMutating = acceptMatch.isPending || dismissMatch.isPending;
 
   return (
-    <Card className="border shadow-sm">
+    <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
       <CardContent className="p-4 space-y-3">
         {/* Top row: badge, date, description, amount */}
         <div className="flex items-start justify-between gap-3">
@@ -266,7 +265,7 @@ function SuggestionCard({ result, transaction, clientUserId }: SuggestionCardPro
             <p className="text-sm font-medium truncate">{transaction.description}</p>
           </div>
           <span
-            className={`text-sm font-semibold whitespace-nowrap ${
+            className={`text-sm font-semibold font-mono tabular-nums whitespace-nowrap ${
               isIncome ? "text-green-600" : "text-red-600"
             }`}
           >
@@ -316,28 +315,28 @@ function SuggestionCard({ result, transaction, clientUserId }: SuggestionCardPro
           {result.match_type === "uncategorised" ? (
             <Button
               size="sm"
-              className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+              className="h-7 text-xs gap-1.5 bg-green-600 hover:bg-green-700 text-white"
               disabled={!selectedCategory || isMutating}
               onClick={handleAccept}
             >
               {acceptMatch.isPending ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <Check className="h-3 w-3 mr-1" />
+                <Check className="h-3 w-3" />
               )}
               Apply
             </Button>
           ) : (
             <Button
               size="sm"
-              className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+              className="h-7 text-xs gap-1.5 bg-green-600 hover:bg-green-700 text-white"
               disabled={isMutating}
               onClick={handleAccept}
             >
               {acceptMatch.isPending ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                <Check className="h-3 w-3 mr-1" />
+                <Check className="h-3 w-3" />
               )}
               Accept
             </Button>
@@ -345,14 +344,14 @@ function SuggestionCard({ result, transaction, clientUserId }: SuggestionCardPro
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs"
+            className="h-7 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
             disabled={isMutating}
             onClick={handleDismiss}
           >
             {dismissMatch.isPending ? (
-              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <X className="h-3 w-3 mr-1" />
+              <X className="h-3 w-3" />
             )}
             Dismiss
           </Button>
@@ -362,9 +361,9 @@ function SuggestionCard({ result, transaction, clientUserId }: SuggestionCardPro
   );
 }
 
-// ────────────────────────────────────────────
+// ----
 // Main Panel
-// ────────────────────────────────────────────
+// ----
 
 export default function MatchSuggestionsPanel({
   clientUserId,
@@ -407,26 +406,24 @@ export default function MatchSuggestionsPanel({
     return counts;
   }, [matchResults]);
 
-  // ────────────────────────────────────────────
+  // ----
   // Render
-  // ────────────────────────────────────────────
+  // ----
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">
-            Analysing transactions...
-          </span>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">
+          Analysing transactions...
+        </span>
+      </div>
     );
   }
 
   if (isError) {
     return (
-      <Card>
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
         <CardContent className="py-8 text-center">
           <p className="text-sm text-red-600">
             Failed to load match suggestions:{" "}
@@ -439,14 +436,16 @@ export default function MatchSuggestionsPanel({
 
   if (matchResults.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Match Suggestions</CardTitle>
-        </CardHeader>
-        <CardContent className="py-8 text-center">
-          <Check className="h-8 w-8 mx-auto text-green-500 mb-2" />
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Match Suggestions
+          </h4>
+        </div>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Check className="h-8 w-8 text-green-500 mb-2" />
           <p className="text-sm text-muted-foreground">
-            No pending suggestions — all transactions matched!
+            No pending suggestions -- all transactions matched!
           </p>
         </CardContent>
       </Card>
@@ -456,21 +455,21 @@ export default function MatchSuggestionsPanel({
   return (
     <div className="space-y-4">
       {/* Summary stats */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center justify-between">
-            <span>Match Suggestions</span>
-            <Badge variant="secondary" className="text-xs font-normal">
-              {matchResults.length} pending
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Match Suggestions
+          </h4>
+          <Badge variant="secondary" className="text-xs font-normal">
+            {matchResults.length} pending
+          </Badge>
+        </div>
+        <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               Total unmatched transactions
             </span>
-            <span className="font-medium">{unmatchedCount}</span>
+            <span className="font-medium tabular-nums">{unmatchedCount}</span>
           </div>
 
           {/* Type breakdown */}
@@ -486,7 +485,7 @@ export default function MatchSuggestionsPanel({
                     className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${cfg.bgColor}`}
                   >
                     <TypeIcon className="h-3 w-3" />
-                    <span>{count}</span>
+                    <span className="tabular-nums font-medium">{count}</span>
                     <span>{cfg.label}</span>
                   </div>
                 );
@@ -500,27 +499,32 @@ export default function MatchSuggestionsPanel({
         </CardContent>
       </Card>
 
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-1">
+      {/* Filter tabs -- pill style */}
+      <div className="flex flex-wrap gap-1.5">
         {FILTER_TABS.map((tab) => {
           const count =
             tab.value === "all"
               ? matchResults.length
               : typeCounts[tab.value as MatchType] ?? 0;
+          const isActive = activeTab === tab.value;
 
           return (
-            <Button
+            <button
               key={tab.value}
-              size="sm"
-              variant={activeTab === tab.value ? "default" : "outline"}
-              className="h-7 text-xs"
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
               onClick={() => setActiveTab(tab.value)}
             >
               {tab.label}
               {count > 0 && (
-                <span className="ml-1 opacity-70">({count})</span>
+                <span className={`tabular-nums ${isActive ? "opacity-80" : "opacity-60"}`}>
+                  ({count})
+                </span>
               )}
-            </Button>
+            </button>
           );
         })}
       </div>

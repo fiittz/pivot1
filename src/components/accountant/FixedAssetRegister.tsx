@@ -242,6 +242,7 @@ export function FixedAssetRegister({ clientUserId }: FixedAssetRegisterProps) {
               No fixed assets recorded. Click "Add Asset" to begin.
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
@@ -333,6 +334,7 @@ export function FixedAssetRegister({ clientUserId }: FixedAssetRegisterProps) {
                 </tr>
               </tbody>
             </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -341,11 +343,12 @@ export function FixedAssetRegister({ clientUserId }: FixedAssetRegisterProps) {
       {caSummary.length > 0 && (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="px-3 py-2 bg-muted/30 border-b">
+            <div className="px-4 py-3 bg-muted/30 border-b">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Capital Allowances (Tax Depreciation)
               </h4>
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/10">
@@ -386,6 +389,7 @@ export function FixedAssetRegister({ clientUserId }: FixedAssetRegisterProps) {
                 </tr>
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -198,44 +198,46 @@ function ContractsPanel({ clientUserId }: { clientUserId: string }) {
       ) : (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Contract Ref</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Principal</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Tax Ref</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Site Address</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Dates</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Est. Value</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allContracts.map((c) => {
-                  const statusCfg = CONTRACT_STATUS_CONFIG[c.status] ?? CONTRACT_STATUS_CONFIG.active;
-                  return (
-                    <tr key={c.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
-                      <td className="py-1.5 px-3 font-mono text-xs font-medium">{c.contract_ref}</td>
-                      <td className="py-1.5 px-3">{c.principal_name}</td>
-                      <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">{c.principal_tax_ref || "\u2014"}</td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground max-w-[200px] truncate">{c.site_address || "\u2014"}</td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                        {formatDate(c.start_date)}
-                        {c.end_date ? ` \u2013 ${formatDate(c.end_date)}` : " \u2013 ongoing"}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums">
-                        {c.estimated_value ? eur(c.estimated_value) : "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-center">
-                        <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
-                          {statusCfg.label}
-                        </Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Contract Ref</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Principal</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Tax Ref</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Site Address</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Dates</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Est. Value</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allContracts.map((c) => {
+                    const statusCfg = CONTRACT_STATUS_CONFIG[c.status] ?? CONTRACT_STATUS_CONFIG.active;
+                    return (
+                      <tr key={c.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                        <td className="py-1.5 px-3 font-mono text-xs font-medium">{c.contract_ref}</td>
+                        <td className="py-1.5 px-3">{c.principal_name}</td>
+                        <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">{c.principal_tax_ref || "\u2014"}</td>
+                        <td className="py-1.5 px-3 text-xs text-muted-foreground max-w-[200px] truncate">{c.site_address || "\u2014"}</td>
+                        <td className="py-1.5 px-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(c.start_date)}
+                          {c.end_date ? ` \u2013 ${formatDate(c.end_date)}` : " \u2013 ongoing"}
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums">
+                          {c.estimated_value ? eur(c.estimated_value) : "\u2014"}
+                        </td>
+                        <td className="py-1.5 px-3 text-center">
+                          <Badge variant="outline" className={`text-[10px] rounded-full px-2 ${statusCfg.color}`}>
+                            {statusCfg.label}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -470,49 +472,51 @@ function SubcontractorsPanel({ clientUserId }: { clientUserId: string }) {
       ) : (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Name</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Tax Ref</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Current Rate</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Last Verified</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allSubs.map((sub) => (
-                  <tr key={sub.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
-                    <td className="py-1.5 px-3 font-medium">{sub.name}</td>
-                    <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">{sub.tax_ref}</td>
-                    <td className="py-1.5 px-3 text-center">
-                      <Badge variant="outline" className={`text-[10px] font-mono ${getRateColor(sub.current_rate)}`}>
-                        {sub.current_rate}%
-                      </Badge>
-                    </td>
-                    <td className="py-1.5 px-3 text-xs text-muted-foreground">
-                      {sub.last_verified_date ? formatDate(sub.last_verified_date) : "Never"}
-                    </td>
-                    <td className="py-1.5 px-3 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 text-xs gap-1"
-                        onClick={() => handleCheckRate(sub)}
-                        disabled={checkingId === sub.id}
-                      >
-                        {checkingId === sub.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-3 h-3" />
-                        )}
-                        Check Rate
-                      </Button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Name</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Tax Ref</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Current Rate</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Last Verified</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {allSubs.map((sub) => (
+                    <tr key={sub.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                      <td className="py-1.5 px-3 font-medium">{sub.name}</td>
+                      <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">{sub.tax_ref}</td>
+                      <td className="py-1.5 px-3 text-center">
+                        <Badge variant="outline" className={`text-[10px] font-mono rounded-full px-2 ${getRateColor(sub.current_rate)}`}>
+                          {sub.current_rate}%
+                        </Badge>
+                      </td>
+                      <td className="py-1.5 px-3 text-xs text-muted-foreground">
+                        {sub.last_verified_date ? formatDate(sub.last_verified_date) : "Never"}
+                      </td>
+                      <td className="py-1.5 px-3 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 text-xs gap-1"
+                          onClick={() => handleCheckRate(sub)}
+                          disabled={checkingId === sub.id}
+                        >
+                          {checkingId === sub.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
+                          Check Rate
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -671,63 +675,65 @@ function PaymentNotificationsPanel({ clientUserId }: { clientUserId: string }) {
       ) : (
         <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Date</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Subcontractor</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Gross</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Rate</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">RCT Deducted</th>
-                  <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Net</th>
-                  <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Deduction Ref</th>
-                  <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allNotifications.map((pn) => {
-                  const statusCfg = PN_STATUS_CONFIG[pn.status] ?? PN_STATUS_CONFIG.pending;
-                  return (
-                    <tr key={pn.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">{formatDate(pn.date)}</td>
-                      <td className="py-1.5 px-3 font-medium">{pn.subcontractor_name}</td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(pn.gross_amount)}</td>
-                      <td className="py-1.5 px-3 text-center">
-                        <Badge variant="outline" className={`text-[10px] font-mono ${getRateColor(pn.rate)}`}>
-                          {pn.rate}%
-                        </Badge>
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums text-red-600">
-                        {pn.rct_deducted > 0 ? `-${eur(pn.rct_deducted)}` : "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums font-medium text-emerald-700">
-                        {eur(pn.net_amount)}
-                      </td>
-                      <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">
-                        {pn.deduction_ref || "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-center">
-                        <Badge variant="outline" className={`text-[10px] ${statusCfg.color}`}>
-                          {pn.status === "error" && <AlertTriangle className="w-2.5 h-2.5 mr-0.5 inline" />}
-                          {statusCfg.label}
-                        </Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {/* Totals row */}
-                {allNotifications.length > 1 && (
-                  <tr className="border-t-2 font-semibold">
-                    <td className="py-2 px-3" colSpan={2}>TOTALS</td>
-                    <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(totals.gross)}</td>
-                    <td></td>
-                    <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">-{eur(totals.deducted)}</td>
-                    <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(totals.net)}</td>
-                    <td colSpan={2}></td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/10 border-b">
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Date</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Subcontractor</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Gross</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Rate</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">RCT Deducted</th>
+                    <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Net</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Deduction Ref</th>
+                    <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {allNotifications.map((pn) => {
+                    const statusCfg = PN_STATUS_CONFIG[pn.status] ?? PN_STATUS_CONFIG.pending;
+                    return (
+                      <tr key={pn.id} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                        <td className="py-1.5 px-3 text-xs text-muted-foreground whitespace-nowrap">{formatDate(pn.date)}</td>
+                        <td className="py-1.5 px-3 font-medium">{pn.subcontractor_name}</td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(pn.gross_amount)}</td>
+                        <td className="py-1.5 px-3 text-center">
+                          <Badge variant="outline" className={`text-[10px] font-mono rounded-full px-2 ${getRateColor(pn.rate)}`}>
+                            {pn.rate}%
+                          </Badge>
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums text-red-600">
+                          {pn.rct_deducted > 0 ? `-${eur(pn.rct_deducted)}` : "\u2014"}
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums font-medium text-emerald-700">
+                          {eur(pn.net_amount)}
+                        </td>
+                        <td className="py-1.5 px-3 font-mono text-xs text-muted-foreground">
+                          {pn.deduction_ref || "\u2014"}
+                        </td>
+                        <td className="py-1.5 px-3 text-center">
+                          <Badge variant="outline" className={`text-[10px] rounded-full px-2 ${statusCfg.color}`}>
+                            {pn.status === "error" && <AlertTriangle className="w-2.5 h-2.5 mr-0.5 inline" />}
+                            {statusCfg.label}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {/* Totals row */}
+                  {allNotifications.length > 1 && (
+                    <tr className="border-t-2 font-semibold bg-muted/5">
+                      <td className="py-2 px-3 text-xs uppercase tracking-wider text-muted-foreground" colSpan={2}>Totals</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(totals.gross)}</td>
+                      <td></td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">-{eur(totals.deducted)}</td>
+                      <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(totals.net)}</td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -841,46 +847,48 @@ function MonthlyReturnsPanel({ clientUserId }: { clientUserId: string }) {
 
           {/* Breakdown by subcontractor */}
           <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Breakdown by Subcontractor</CardTitle>
-            </CardHeader>
+            <div className="px-4 py-3 bg-muted/30 border-b">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Breakdown by Subcontractor</h4>
+            </div>
             <CardContent className="p-0">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left py-2 px-3 font-medium text-xs text-muted-foreground">Subcontractor</th>
-                    <th className="text-center py-2 px-3 font-medium text-xs text-muted-foreground">Rate</th>
-                    <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Gross</th>
-                    <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">RCT Deducted</th>
-                    <th className="text-right py-2 px-3 font-medium text-xs text-muted-foreground">Net</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {returnData.breakdown.map((row, i) => (
-                    <tr key={i} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
-                      <td className="py-1.5 px-3 font-medium">{row.subcontractor_name}</td>
-                      <td className="py-1.5 px-3 text-center">
-                        <Badge variant="outline" className={`text-[10px] font-mono ${getRateColor(row.rate)}`}>
-                          {row.rate}%
-                        </Badge>
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(row.gross)}</td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums text-red-600">
-                        {row.rct_deducted > 0 ? `-${eur(row.rct_deducted)}` : "\u2014"}
-                      </td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(row.net)}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/10 border-b">
+                      <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Subcontractor</th>
+                      <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Rate</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Gross</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">RCT Deducted</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Net</th>
                     </tr>
-                  ))}
-                  {returnData.breakdown.length > 1 && (
-                    <tr className="border-t-2 font-semibold">
-                      <td className="py-2 px-3" colSpan={2}>TOTALS</td>
-                      <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(returnData.total_gross)}</td>
-                      <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">-{eur(returnData.total_rct_deducted)}</td>
-                      <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(returnData.total_net)}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {returnData.breakdown.map((row, i) => (
+                      <tr key={i} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                        <td className="py-1.5 px-3 font-medium">{row.subcontractor_name}</td>
+                        <td className="py-1.5 px-3 text-center">
+                          <Badge variant="outline" className={`text-[10px] font-mono rounded-full px-2 ${getRateColor(row.rate)}`}>
+                            {row.rate}%
+                          </Badge>
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums">{eur(row.gross)}</td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums text-red-600">
+                          {row.rct_deducted > 0 ? `-${eur(row.rct_deducted)}` : "\u2014"}
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(row.net)}</td>
+                      </tr>
+                    ))}
+                    {returnData.breakdown.length > 1 && (
+                      <tr className="border-t-2 font-semibold bg-muted/5">
+                        <td className="py-2 px-3 text-xs uppercase tracking-wider text-muted-foreground" colSpan={2}>Totals</td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums">{eur(returnData.total_gross)}</td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600">-{eur(returnData.total_rct_deducted)}</td>
+                        <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-700">{eur(returnData.total_net)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
 
@@ -1029,27 +1037,23 @@ function RevenueSetupPanel({ clientUserId, accountantClientId }: { clientUserId:
   return (
     <div className="space-y-6">
       {/* ---- Agent Credentials Section ---- */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
-              Agent Credentials
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Your TAIN and ROS credentials -- shared across all clients
-            </p>
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Key className="w-4 h-4 text-muted-foreground" />
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Agent Credentials</h4>
           </div>
           {hasAgentCredentials && (
-            <Badge variant="outline" className="text-[10px] bg-green-100 text-green-700 border-green-200 gap-1">
+            <Badge variant="outline" className="text-[10px] rounded-full px-2 bg-green-100 text-green-700 border-green-200 gap-1">
               <Check className="w-2.5 h-2.5" />
-              Agent Configured
+              Configured
             </Badge>
           )}
         </div>
-
-        <Card className="border-0 shadow-sm rounded-2xl">
-          <CardContent className="p-6 space-y-5">
+        <CardContent className="p-6 space-y-5">
+          <p className="text-xs text-muted-foreground">
+            Your TAIN and ROS credentials -- shared across all clients
+          </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">TAIN (Tax Agent ID Number) *</Label>
@@ -1154,31 +1158,26 @@ function RevenueSetupPanel({ clientUserId, accountantClientId }: { clientUserId:
               </Button>
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
 
       {/* ---- Client Revenue Link Section ---- */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              Client Revenue Link
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Per-client Revenue registration numbers for this client
-            </p>
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 text-muted-foreground" />
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Client Revenue Link</h4>
           </div>
           {hasClientLink && (
-            <Badge variant="outline" className="text-[10px] bg-green-100 text-green-700 border-green-200 gap-1">
+            <Badge variant="outline" className="text-[10px] rounded-full px-2 bg-green-100 text-green-700 border-green-200 gap-1">
               <Check className="w-2.5 h-2.5" />
               Linked
             </Badge>
           )}
         </div>
-
-        <Card className="border-0 shadow-sm rounded-2xl">
-          <CardContent className="p-6 space-y-5">
+        <CardContent className="p-6 space-y-5">
+          <p className="text-xs text-muted-foreground">
+            Per-client Revenue registration numbers for this client
+          </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Employer Registration Number</Label>
@@ -1231,8 +1230,7 @@ function RevenueSetupPanel({ clientUserId, accountantClientId }: { clientUserId:
               </Button>
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -1253,19 +1251,19 @@ export function RCTManager({ clientUserId, accountantClientId, clientName }: RCT
             Contracts
           </TabsTrigger>
           <TabsTrigger value="subcontractors" className="gap-1.5 text-xs">
-            <Shield className="w-3.5 h-3.5" />
+            <Users className="w-3.5 h-3.5" />
             Subcontractors
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-1.5 text-xs">
-            <Send className="w-3.5 h-3.5" />
+            <Bell className="w-3.5 h-3.5" />
             Payment Notifications
           </TabsTrigger>
           <TabsTrigger value="returns" className="gap-1.5 text-xs">
-            <FileText className="w-3.5 h-3.5" />
+            <Calendar className="w-3.5 h-3.5" />
             Monthly Returns
           </TabsTrigger>
           <TabsTrigger value="setup" className="gap-1.5 text-xs">
-            <Shield className="w-3.5 h-3.5" />
+            <Settings className="w-3.5 h-3.5" />
             Revenue Setup
           </TabsTrigger>
         </TabsList>
