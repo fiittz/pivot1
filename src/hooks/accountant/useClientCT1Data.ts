@@ -102,10 +102,28 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
 
     const flaggedCapitalItems: CT1Data["flaggedCapitalItems"] = [];
     const capitalKeywords = ["equipment", "tools", "vehicle", "fixed asset", "machinery", "plant"];
+    // Revenue expense categories that should NEVER be flagged as capital
+    const revenueExclude = [
+      "salary", "wage", "payroll", "director",
+      "subcontract", "labour", "contractor",
+      "insurance", "liability",
+      "accounting", "legal", "professional fee",
+      "rent", "lease", "utility", "utilities",
+      "phone", "broadband", "internet", "subscription",
+      "fuel", "diesel", "petrol", "motor expense",
+      "travel", "mileage", "accommodation",
+      "advertising", "marketing",
+      "office supplies", "stationery", "postage",
+      "bank charge", "interest", "finance charge",
+      "training", "course",
+    ];
     for (const t of expenseTransactions ?? []) {
       const amt = Math.abs(Number(t.amount) || 0);
       const catName = (t.category as { id: string; name: string } | null)?.name?.toLowerCase() ?? "";
-      if (amt >= 1000 || capitalKeywords.some((kw) => catName.includes(kw))) {
+      const desc = (t.description ?? "").toLowerCase();
+      const isCapitalCategory = capitalKeywords.some((kw) => catName.includes(kw));
+      const isRevenueExpense = revenueExclude.some((kw) => catName.includes(kw) || desc.includes(kw));
+      if ((isCapitalCategory || amt >= 1000) && !isRevenueExpense) {
         flaggedCapitalItems.push({ description: t.description ?? "Unknown", date: t.transaction_date ?? "", amount: amt });
       }
     }

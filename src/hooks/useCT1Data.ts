@@ -280,14 +280,32 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
       };
     }
 
-    // 6. Flagged capital items — expenses >= EUR 1,000 or capital-related categories
+    // 6. Flagged capital items — only genuinely capital-related expenses
     const capitalKeywords = ["equipment", "tools", "vehicle", "fixed asset", "machinery", "plant"];
+    // Revenue expense categories that should NEVER be flagged as capital
+    const revenueExclude = [
+      "salary", "wage", "payroll", "director",           // payroll / director remuneration
+      "subcontract", "labour", "contractor",              // subcontractor / labour costs
+      "insurance", "liability",                           // insurance premiums
+      "accounting", "legal", "professional fee",          // professional services
+      "rent", "lease", "utility", "utilities",            // occupancy / overheads
+      "phone", "broadband", "internet", "subscription",   // telecoms & subscriptions
+      "fuel", "diesel", "petrol", "motor expense",        // motor running costs
+      "travel", "mileage", "accommodation",               // travel & subsistence
+      "advertising", "marketing",                         // marketing
+      "office supplies", "stationery", "postage",         // admin
+      "bank charge", "interest", "finance charge",        // bank / finance
+      "training", "course",                               // CPD / training
+    ];
     const flaggedCapitalItems: CT1Data["flaggedCapitalItems"] = [];
     for (const t of expenseTransactions ?? []) {
       const amt = Math.abs(Number(t.amount) || 0);
       const catName = (t.category as { id: string; name: string } | null)?.name?.toLowerCase() ?? "";
+      const desc = (t.description ?? "").toLowerCase();
       const isCapitalCategory = capitalKeywords.some((kw) => catName.includes(kw));
-      if (amt >= 1000 || isCapitalCategory) {
+      const isRevenueExpense = revenueExclude.some((kw) => catName.includes(kw) || desc.includes(kw));
+      // Only flag if it looks like a capital item AND is not clearly a revenue expense
+      if ((isCapitalCategory || amt >= 1000) && !isRevenueExpense) {
         flaggedCapitalItems.push({
           description: t.description ?? "Unknown",
           date: t.transaction_date ?? "",
