@@ -411,8 +411,8 @@ export function CROAnnualAccountsView({ croCompanyId, clientUserId }: CROAnnualA
     }
 
     const companyName = croCompany?.company_name ?? "Company";
-    const croNumber = croCompany?.company_number ?? "";
-    const address = croCompany?.address ?? "";
+    const croNumber = croCompany?.company_num ?? "";
+    const address = [croCompany?.address_line1, croCompany?.address_line2, croCompany?.address_line3, croCompany?.address_line4, croCompany?.eircode].filter(Boolean).join(", ");
 
     const yearEnd = activeYear
       ? new Date(activeYear).toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" })

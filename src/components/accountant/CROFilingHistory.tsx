@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,11 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText } from "lucide-react";
-import { useCROFilings } from "@/hooks/accountant/useCRO";
+import { FileText, Download } from "lucide-react";
+import { useCROFilings, useCROCompany, useCROAnnualAccounts } from "@/hooks/accountant/useCRO";
+import { assembleAbridgedAccountsData, type AbridgedAccountsInput } from "@/lib/reports/abridgedAccountsData";
+import { generateAbridgedAccountsPdf } from "@/lib/reports/pdf/abridgedAccountsPdf";
+import type { ReportMeta } from "@/lib/reports/types";
+import type { AuditSnapshot } from "@/lib/cro/assembleAuditSnapshot";
+import { toast } from "sonner";
 
 interface CROFilingHistoryProps {
   croCompanyId: string;
+  clientUserId?: string;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -40,14 +47,85 @@ function filingStatusBadge(status: string | null) {
   return <Badge variant="secondary">{status}</Badge>;
 }
 
-export function CROFilingHistory({ croCompanyId }: CROFilingHistoryProps) {
+export function CROFilingHistory({ croCompanyId, clientUserId }: CROFilingHistoryProps) {
   const { data: filings, isLoading } = useCROFilings(croCompanyId);
+  const { data: croCompany } = useCROCompany(clientUserId);
+  const { data: allAccounts } = useCROAnnualAccounts(croCompanyId);
 
   const sortedFilings = [...(filings ?? [])].sort((a, b) => {
     const dateA = a.sub_received_date ? new Date(a.sub_received_date).getTime() : 0;
     const dateB = b.sub_received_date ? new Date(b.sub_received_date).getTime() : 0;
     return dateB - dateA;
   });
+
+  // Check if a filing has downloadable accounts data for its year
+  const hasAccountsForYear = (yearEnd: string | null): boolean => {
+    if (!yearEnd || !allAccounts) return false;
+    return allAccounts.some((a) => a.financial_year_end === yearEnd);
+  };
+
+  const handleDownloadFiling = (yearEnd: string) => {
+    const accounts = allAccounts?.find((a) => a.financial_year_end === yearEnd);
+    if (!accounts) {
+      toast.error("No accounts data available for this year");
+      return;
+    }
+
+    const snapshot = accounts.notes as unknown as AuditSnapshot | null;
+    const directorNames: string[] = snapshot?.directors_report?.directors ?? [];
+    if (directorNames.length === 0) {
+      const noteDirectors = (accounts.notes as Record<string, unknown>)?.directors;
+      if (Array.isArray(noteDirectors)) {
+        for (const d of noteDirectors) {
+          if (typeof d === "object" && d && "name" in d) directorNames.push((d as { name: string }).name);
+        }
+      }
+      if (directorNames.length === 0) directorNames.push("Director");
+    }
+
+    const companyName = croCompany?.company_name ?? "Company";
+    const croNumber = croCompany?.company_num ?? "";
+    const address = [croCompany?.address_line1, croCompany?.address_line2, croCompany?.address_line3, croCompany?.address_line4, croCompany?.eircode].filter(Boolean).join(", ");
+    const taxYear = new Date(yearEnd).getFullYear().toString();
+
+    const dateLabel = new Date(yearEnd).toLocaleDateString("en-IE", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+
+    const abInput: AbridgedAccountsInput = {
+      companyName,
+      croNumber,
+      registeredAddress: address,
+      accountingYearEnd: dateLabel,
+      directorNames,
+      companySecretaryName: snapshot?.directors_report?.secretary,
+      fixedAssetsTangible: accounts.fixed_assets_tangible ?? 0,
+      stock: accounts.current_assets_stock ?? 0,
+      wip: 0,
+      debtors: accounts.current_assets_debtors ?? 0,
+      prepayments: 0,
+      accruedIncome: 0,
+      cashAtBank: accounts.current_assets_cash ?? 0,
+      creditors: accounts.creditors_within_one_year ?? 0,
+      accruals: 0,
+      deferredIncome: 0,
+      taxation: accounts.taxation ?? 0,
+      bankLoans: accounts.creditors_after_one_year ?? 0,
+      directorsLoans: 0,
+      shareCapital: accounts.share_capital ?? 100,
+      retainedProfits: accounts.retained_profits ?? 0,
+    };
+
+    const meta: ReportMeta = {
+      companyName,
+      taxYear,
+      generatedDate: new Date().toISOString(),
+      preparedBy: "Balnce",
+    };
+
+    generateAbridgedAccountsPdf(assembleAbridgedAccountsData(abInput, meta));
+    toast.success("Filing PDF downloaded");
+  };
 
   return (
     <Card>
@@ -82,21 +160,38 @@ export function CROFilingHistory({ croCompanyId }: CROFilingHistoryProps) {
                   <TableHead>Status</TableHead>
                   <TableHead>Accounts Year End</TableHead>
                   <TableHead className="text-right">Pages</TableHead>
+                  <TableHead className="text-right">Download</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedFilings.map((filing) => (
-                  <TableRow key={filing.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {formatDate(filing.sub_received_date)}
-                    </TableCell>
-                    <TableCell>{filing.sub_type_desc}</TableCell>
-                    <TableCell>{filing.doc_type_desc ?? "\u2014"}</TableCell>
-                    <TableCell>{filingStatusBadge(filing.sub_status_desc)}</TableCell>
-                    <TableCell>{formatDate(filing.acc_year_to_date)}</TableCell>
-                    <TableCell className="text-right">{filing.num_pages ?? "\u2014"}</TableCell>
-                  </TableRow>
-                ))}
+                {sortedFilings.map((filing) => {
+                  const canDownload = hasAccountsForYear(filing.acc_year_to_date);
+                  return (
+                    <TableRow key={filing.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(filing.sub_received_date)}
+                      </TableCell>
+                      <TableCell>{filing.sub_type_desc}</TableCell>
+                      <TableCell>{filing.doc_type_desc ?? "\u2014"}</TableCell>
+                      <TableCell>{filingStatusBadge(filing.sub_status_desc)}</TableCell>
+                      <TableCell>{formatDate(filing.acc_year_to_date)}</TableCell>
+                      <TableCell className="text-right">{filing.num_pages ?? "\u2014"}</TableCell>
+                      <TableCell className="text-right">
+                        {canDownload ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDownloadFiling(filing.acc_year_to_date!)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">\u2014</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
