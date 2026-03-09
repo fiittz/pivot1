@@ -29,7 +29,7 @@ export function CROTab({ clientUserId }: CROTabProps) {
       {company ? (
         <>
           <CROFilingHistory croCompanyId={company.id} />
-          <CROAnnualAccountsView croCompanyId={company.id} />
+          <CROAnnualAccountsView croCompanyId={company.id} clientUserId={clientUserId} />
         </>
       ) : (
         !isLoading && (
