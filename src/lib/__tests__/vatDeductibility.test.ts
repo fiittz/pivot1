@@ -284,10 +284,16 @@ describe("isCTDeductible", () => {
     expect(result.reason).toContain("Entertainment");
   });
 
-  it("blocks meals category", () => {
-    const result = isCTDeductible("Team lunch", "Meals & Entertainment");
+  it("blocks client meals category", () => {
+    const result = isCTDeductible("Client lunch meeting", "Meals & Entertainment");
     expect(result.isDeductible).toBe(false);
-    expect(result.reason).toContain("Meals");
+    expect(result.reason).toContain("Entertainment");
+  });
+
+  it("allows staff meals (staff entertainment is deductible)", () => {
+    const result = isCTDeductible("Team lunch", "Meals & Entertainment");
+    expect(result.isDeductible).toBe(true);
+    expect(result.reason).toContain("Staff entertainment");
   });
 
   it("blocks fines category", () => {
@@ -299,7 +305,7 @@ describe("isCTDeductible", () => {
   it("blocks penalties category", () => {
     const result = isCTDeductible("Late return", "Tax Penalties");
     expect(result.isDeductible).toBe(false);
-    expect(result.reason).toContain("Fines");
+    expect(result.reason).toContain("penalties");
   });
 
   it("blocks fines in description via regex", () => {
@@ -323,25 +329,24 @@ describe("isCTDeductible", () => {
   it("blocks penalties in description via regex", () => {
     const result = isCTDeductible("Revenue penalties applied", "Admin");
     expect(result.isDeductible).toBe(false);
-    expect(result.reason).toContain("Fines");
   });
 
   it("blocks personal expenses", () => {
     const result = isCTDeductible("Groceries", "Personal");
     expect(result.isDeductible).toBe(false);
-    expect(result.reason).toContain("Non-business");
+    expect(result.reason).toContain("Personal");
   });
 
   it("blocks private expenses", () => {
     const result = isCTDeductible("Sky TV", "Private");
     expect(result.isDeductible).toBe(false);
-    expect(result.reason).toContain("Non-business");
+    expect(result.reason).toContain("Personal");
   });
 
   it("blocks non-business expenses", () => {
     const result = isCTDeductible("Holiday flights", "Non-Business");
     expect(result.isDeductible).toBe(false);
-    expect(result.reason).toContain("Non-business");
+    expect(result.reason).toContain("non-business");
   });
 
   it("blocks depreciation (replaced by capital allowances)", () => {
@@ -376,9 +381,9 @@ describe("isCTDeductible", () => {
 
   // ── Deductible categories ──
   it("allows travel expenses", () => {
-    const result = isCTDeductible("Train to client site", "Travel");
+    const result = isCTDeductible("Train to client site", "Travel & Subsistence");
     expect(result.isDeductible).toBe(true);
-    expect(result.reason).toContain("Allowable");
+    expect(result.reason).toContain("Travel");
   });
 
   it("allows bank charges", () => {
@@ -407,7 +412,156 @@ describe("isCTDeductible", () => {
   });
 
   it("allows vehicle expenses (not vehicle purchase)", () => {
-    const result = isCTDeductible("Diesel for van", "Vehicle Expenses");
+    const result = isCTDeductible("Diesel for van", "Motor Expenses");
     expect(result.isDeductible).toBe(true);
+    expect(result.reason).toContain("Motor");
+  });
+
+  // ── Classification types ──
+  it("returns classification: needs_review for uncategorised", () => {
+    const result = isCTDeductible("Random payment", null);
+    expect(result.classification).toBe("needs_review");
+  });
+
+  it("returns classification: non_deductible for entertainment", () => {
+    const result = isCTDeductible("Client dinner", "Entertainment");
+    expect(result.classification).toBe("non_deductible");
+  });
+
+  it("returns classification: deductible for allowable expenses", () => {
+    const result = isCTDeductible("Monthly rent", "Rent");
+    expect(result.classification).toBe("deductible");
+  });
+
+  it("returns classification: capital for asset purchases", () => {
+    const result = isCTDeductible("New laptop", "Computer Equipment");
+    expect(result.classification).toBe("capital");
+    expect(result.legislation).toContain("s.284");
+  });
+
+  // ── Capital items ──
+  it("classifies machinery as capital", () => {
+    const result = isCTDeductible("JCB purchase", "Plant & Machinery");
+    expect(result.classification).toBe("capital");
+    expect(result.reason).toContain("12.5%");
+  });
+
+  it("classifies vehicle purchase as capital", () => {
+    const result = isCTDeductible("Purchased van for deliveries", "Motor Vehicle Purchase");
+    expect(result.classification).toBe("capital");
+  });
+
+  it("classifies furniture as capital", () => {
+    const result = isCTDeductible("Office desks", "Fixtures & Fittings");
+    expect(result.classification).toBe("capital");
+  });
+
+  // ── Special cases ──
+  it("allows charitable donations", () => {
+    const result = isCTDeductible("Donation to charity", "Charitable Donations");
+    expect(result.isDeductible).toBe(true);
+    expect(result.reason).toContain("Charitable");
+    expect(result.legislation).toContain("s.848A");
+  });
+
+  it("allows pre-trading expenses", () => {
+    const result = isCTDeductible("Company formation fees", "Pre-Trading Expenses");
+    expect(result.isDeductible).toBe(true);
+    expect(result.reason).toContain("Pre-trading");
+    expect(result.legislation).toContain("s.82");
+  });
+
+  it("allows staff Christmas party", () => {
+    const result = isCTDeductible("Staff Christmas party venue", "Entertainment");
+    expect(result.isDeductible).toBe(true);
+    expect(result.reason).toContain("Staff entertainment");
+  });
+
+  it("allows employee team event", () => {
+    const result = isCTDeductible("Employee team building event", "Meals & Entertainment");
+    expect(result.isDeductible).toBe(true);
+  });
+
+  // ── Deductible categories with legislation ──
+  it("allows wages with legislation ref", () => {
+    const result = isCTDeductible("January wages", "Wages & Salaries");
+    expect(result.isDeductible).toBe(true);
+    expect(result.legislation).toBe("s.81 TCA 1997");
+  });
+
+  it("allows rent", () => {
+    const result = isCTDeductible("Office rent Q1", "Rent");
+    expect(result.isDeductible).toBe(true);
+  });
+
+  it("allows professional fees", () => {
+    const result = isCTDeductible("Accountancy fees", "Professional Fees");
+    expect(result.isDeductible).toBe(true);
+  });
+
+  it("allows marketing", () => {
+    const result = isCTDeductible("Google Ads campaign", "Marketing & Advertising");
+    expect(result.isDeductible).toBe(true);
+  });
+
+  it("allows subcontractor costs", () => {
+    const result = isCTDeductible("Plumber subcontract work", "Subcontractor Costs");
+    expect(result.isDeductible).toBe(true);
+  });
+
+  it("allows employer PRSI", () => {
+    const result = isCTDeductible("Employer PRSI January", "Payroll");
+    expect(result.isDeductible).toBe(true);
+  });
+
+  // ── Non-deductible with legislation ──
+  it("blocks dividends with legislation ref", () => {
+    const result = isCTDeductible("Interim dividend", "Dividends");
+    expect(result.isDeductible).toBe(false);
+    expect(result.legislation).toContain("s.130");
+  });
+
+  it("blocks corporation tax payment", () => {
+    const result = isCTDeductible("CT payment to Revenue", "Corporation Tax");
+    expect(result.isDeductible).toBe(false);
+  });
+
+  it("blocks general bad debt provision", () => {
+    const result = isCTDeductible("Provision for doubtful debts", "Bad Debt Provision");
+    expect(result.isDeductible).toBe(false);
+    expect(result.reason).toContain("General bad debt");
+  });
+
+  // ── Specific bad debts ARE deductible ──
+  it("allows specific bad debts", () => {
+    const result = isCTDeductible("Invoice #123 write-off - customer insolvent", "Bad Debts");
+    expect(result.isDeductible).toBe(true);
+    expect(result.reason).toContain("bad debt");
+  });
+
+  // ── Description-level pattern matching ──
+  it("blocks Revenue Commissioners payment via description pattern", () => {
+    const result = isCTDeductible("Payment to Revenue Commissioners", "Admin");
+    expect(result.isDeductible).toBe(false);
+  });
+
+  it("blocks Collector General payment via description pattern", () => {
+    const result = isCTDeductible("DD Collector General CT", "Admin");
+    expect(result.isDeductible).toBe(false);
+  });
+
+  it("blocks speeding fine via description pattern", () => {
+    const result = isCTDeductible("Speeding fine M50", "Motor Expenses");
+    expect(result.isDeductible).toBe(false);
+  });
+
+  it("blocks late filing penalty via description pattern", () => {
+    const result = isCTDeductible("Late filing penalty ROS", "Admin");
+    expect(result.isDeductible).toBe(false);
+  });
+
+  it("detects capital purchase in description", () => {
+    const result = isCTDeductible("Purchased new laptop Dell XPS", "Office Expenses");
+    expect(result.classification).toBe("capital");
   });
 });
