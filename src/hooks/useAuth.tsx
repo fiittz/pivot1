@@ -351,8 +351,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     // Skip onboarding redirects for accountant routes — accountants don't need business onboarding
     if (isAccountantRoute) return;
 
-    // Never redirect accountants into client onboarding (guard against race conditions)
-    if (isAccountant) return;
+    // Accountants should never land on client routes — redirect to accountant dashboard
+    if (isAccountant) {
+      navigate("/accountant/dashboard");
+      return;
+    }
 
     // Redirect to business onboarding if not completed
     if (!isLoading && user && onboardingComplete === false && location.pathname !== "/onboarding") {
