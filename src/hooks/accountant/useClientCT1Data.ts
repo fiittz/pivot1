@@ -4,6 +4,8 @@
  * Read-only — no mutations.
  */
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useClientTransactions, useClientInvoices, useClientOnboardingSettings, useClientDirectorOnboarding } from "./useClientData";
 import { isCTDeductible } from "@/lib/vatDeductibility";
 import { calculateVehicleDepreciation } from "@/lib/vehicleDepreciation";
@@ -41,7 +43,29 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
   const { data: directorRows, isLoading: directorLoading } = useClientDirectorOnboarding(clientUserId);
   const { data: invoices, isLoading: invoicesLoading } = useClientInvoices(clientUserId);
 
-  const isLoading = incomeLoading || expenseLoading || onboardingLoading || directorLoading || invoicesLoading;
+  // Fetch CT1 questionnaire data from Supabase (client-entered values)
+  const { data: questionnaireData, isLoading: questionnaireLoading } = useQuery({
+    queryKey: ["questionnaire", "ct1", String(taxYear), clientUserId],
+    queryFn: async () => {
+      if (!clientUserId) return null;
+      const { data, error } = await supabase
+        .from("questionnaire_responses")
+        .select("response_data")
+        .eq("user_id", clientUserId)
+        .eq("questionnaire_type", "ct1")
+        .eq("period_key", String(taxYear))
+        .maybeSingle();
+      if (error) {
+        console.error("Error fetching CT1 questionnaire:", error);
+        return null;
+      }
+      return (data?.response_data as Record<string, unknown>) ?? null;
+    },
+    enabled: !!clientUserId,
+    staleTime: 30_000,
+  });
+
+  const isLoading = incomeLoading || expenseLoading || onboardingLoading || directorLoading || invoicesLoading || questionnaireLoading;
 
   return useMemo(() => {
     const NON_TAXABLE_CATEGORIES = ["Tax Refund"];
@@ -159,6 +183,27 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
     }
     rctPrepayment = Math.round(rctPrepayment * 100) / 100;
 
+    // ── Merge questionnaire data from Supabase ───────────────
+    const q = questionnaireData ?? {};
+    const num = (key: string) => Number(q[key]) || 0;
+
+    const capitalAllowancesPlant = num("capitalAllowancesPlant");
+    const capitalAllowancesMotorVehicles = num("capitalAllowancesMotorVehicles");
+    const addBackDepreciation = num("addBackDepreciation");
+    const addBackEntertainment = num("addBackEntertainment");
+    const addBackOther = num("addBackOther");
+    const closeCompanySurcharge = num("closeCompanySurcharge");
+    const lossesForward = num("lossesForward");
+    const preliminaryCTPaid = num("preliminaryCTPaid");
+    const prepayments = num("prepayments");
+    const accruals = num("accruals");
+    const accruedIncome = num("accruedIncome");
+    const deferredIncome = num("deferredIncome");
+    const fixedAssets = num("fixedAssets");
+    const currentAssets = num("currentAssets");
+    const liabilities = num("liabilities");
+    const shareCapital = num("shareCapital");
+
     return {
       detectedIncome,
       expenseByCategory,
@@ -179,6 +224,23 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
       isLoading,
       reEvaluationApplied: false,
       reEvaluationWarnings: [],
+      // Questionnaire-sourced values
+      capitalAllowancesPlant,
+      capitalAllowancesMotorVehicles,
+      addBackDepreciation,
+      addBackEntertainment,
+      addBackOther,
+      closeCompanySurcharge,
+      lossesForward,
+      preliminaryCTPaid,
+      prepayments,
+      accruals,
+      accruedIncome,
+      deferredIncome,
+      fixedAssets,
+      currentAssets,
+      liabilities,
+      shareCapital,
     };
-  }, [incomeTransactions, expenseTransactions, onboarding, directorRows, invoices, isLoading, startDate, endDate, taxYear]);
+  }, [incomeTransactions, expenseTransactions, onboarding, directorRows, invoices, isLoading, startDate, endDate, taxYear, questionnaireData]);
 }

@@ -21,6 +21,7 @@ import { generateCT1Pdf } from "@/lib/reports/pdf/ct1Pdf";
 import { generateForm11Pdf } from "@/lib/reports/pdf/form11Pdf";
 import { generateAbridgedAccountsPdf } from "@/lib/reports/pdf/abridgedAccountsPdf";
 import { assembleAbridgedAccountsData, type AbridgedAccountsInput } from "@/lib/reports/abridgedAccountsData";
+import { useQuestionnaire } from "@/hooks/useQuestionnaire";
 import { FileText, Download, Building2, User, Receipt, Landmark, FileDown } from "lucide-react";
 
 interface ClientReportsProps {
@@ -47,6 +48,9 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
       name: (data?.director_name as string) ?? `Director ${r.director_number}`,
     };
   });
+
+  // ── CT1 questionnaire data (for abridged accounts) ────────
+  const { data: ct1Questionnaire } = useQuestionnaire("ct1", String(taxYear), clientUserId ?? undefined);
 
   // ── VAT data from transactions ──────────────────────────────
   const { data: incomeTransactions } = useClientTransactions(clientUserId, {
@@ -252,33 +256,30 @@ const ClientReports = ({ clientUserId, taxView }: ClientReportsProps) => {
         retainedProfits: 0,
       };
 
-      // Try to populate from CT1 questionnaire data in localStorage
-      if (clientUserId) {
-        const raw = localStorage.getItem(`ct1_questionnaire_${clientUserId}_${taxYear}`);
-        if (raw) {
-          const q = JSON.parse(raw);
-          input.fixedAssetsTangible =
-            (q.fixedAssetsPlantMachinery ?? 0) +
-            (q.fixedAssetsMotorVehicles ?? 0) +
-            (q.fixedAssetsFixturesFittings ?? 0) +
-            (q.fixedAssetsLandBuildings ?? 0);
-          input.stock = q.currentAssetsStock ?? 0;
-          input.debtors = q.currentAssetsDebtors ?? q.tradeDebtorsTotal ?? 0;
-          input.cashAtBank = q.currentAssetsBankBalance ?? 0;
-          input.prepayments = q.prepaymentsAmount ?? 0;
-          input.accruedIncome = q.accruedIncomeAmount ?? 0;
-          input.creditors = q.liabilitiesCreditors ?? q.tradeCreditorsTotal ?? 0;
-          input.accruals = q.accrualsAmount ?? 0;
-          input.deferredIncome = q.deferredIncomeAmount ?? 0;
-          input.taxation = q.liabilitiesTaxation ?? 0;
-          input.bankLoans = q.liabilitiesBankLoans ?? 0;
-          input.directorsLoans = q.liabilitiesDirectorsLoans ?? 0;
-          input.shareCapital = q.shareCapital ?? 100;
-          // Derive retained profits as balancing figure
-          const totalAssets = input.fixedAssetsTangible + input.stock + input.debtors + input.cashAtBank + input.prepayments + input.accruedIncome;
-          const totalLiabilities = input.creditors + input.accruals + input.deferredIncome + input.taxation + input.bankLoans + input.directorsLoans;
-          input.retainedProfits = totalAssets - totalLiabilities - input.shareCapital;
-        }
+      // Populate from CT1 questionnaire data (fetched from Supabase)
+      if (ct1Questionnaire) {
+        const q = ct1Questionnaire as Record<string, number | undefined>;
+        input.fixedAssetsTangible =
+          (q.fixedAssetsPlantMachinery ?? 0) +
+          (q.fixedAssetsMotorVehicles ?? 0) +
+          (q.fixedAssetsFixturesFittings ?? 0) +
+          (q.fixedAssetsLandBuildings ?? 0);
+        input.stock = q.currentAssetsStock ?? 0;
+        input.debtors = q.currentAssetsDebtors ?? q.tradeDebtorsTotal ?? 0;
+        input.cashAtBank = q.currentAssetsBankBalance ?? 0;
+        input.prepayments = q.prepaymentsAmount ?? 0;
+        input.accruedIncome = q.accruedIncomeAmount ?? 0;
+        input.creditors = q.liabilitiesCreditors ?? q.tradeCreditorsTotal ?? 0;
+        input.accruals = q.accrualsAmount ?? 0;
+        input.deferredIncome = q.deferredIncomeAmount ?? 0;
+        input.taxation = q.liabilitiesTaxation ?? 0;
+        input.bankLoans = q.liabilitiesBankLoans ?? 0;
+        input.directorsLoans = q.liabilitiesDirectorsLoans ?? 0;
+        input.shareCapital = q.shareCapital ?? 100;
+        // Derive retained profits as balancing figure
+        const totalAssets = input.fixedAssetsTangible + input.stock + input.debtors + input.cashAtBank + input.prepayments + input.accruedIncome;
+        const totalLiabilities = input.creditors + input.accruals + input.deferredIncome + input.taxation + input.bankLoans + input.directorsLoans;
+        input.retainedProfits = totalAssets - totalLiabilities - input.shareCapital;
       }
 
       const reportData = assembleAbridgedAccountsData(input, meta);

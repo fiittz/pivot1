@@ -44,6 +44,23 @@ export interface CT1Data {
   reEvaluationApplied: boolean;
   reEvaluationWarnings: string[];
   originalExpenseSummary?: { allowable: number; disallowed: number };
+  // Questionnaire-sourced fields (optional — populated from questionnaire_responses)
+  capitalAllowancesPlant?: number;
+  capitalAllowancesMotorVehicles?: number;
+  addBackDepreciation?: number;
+  addBackEntertainment?: number;
+  addBackOther?: number;
+  closeCompanySurcharge?: number;
+  lossesForward?: number;
+  preliminaryCTPaid?: number;
+  prepayments?: number;
+  accruals?: number;
+  accruedIncome?: number;
+  deferredIncome?: number;
+  fixedAssets?: number;
+  currentAssets?: number;
+  liabilities?: number;
+  shareCapital?: number;
 }
 
 const CONSTRUCTION_TRADE_TYPES = [

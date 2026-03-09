@@ -8,6 +8,8 @@ import {
   Shield,
   Eye,
   EyeOff,
+  Download,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +38,8 @@ import {
   useDeactivateEmployee,
   type Employee,
 } from "@/hooks/accountant/usePayroll";
+import { generateMockRPN } from "@/lib/payroll/mockRPN";
+import { toast } from "sonner";
 
 interface EmployeeListProps {
   clientUserId: string;
@@ -109,6 +113,33 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [form, setForm] = useState<EmployeeFormState>(defaultForm);
   const [revealedPPSNs, setRevealedPPSNs] = useState<Set<string>>(new Set());
+  const [rpnFetched, setRpnFetched] = useState(false);
+  const [fetchingRPN, setFetchingRPN] = useState(false);
+
+  const handleFetchRPN = () => {
+    const ppsn = form.ppsn.trim();
+    if (!ppsn || ppsn.length < 7) {
+      toast.error("Enter a valid PPSN first (e.g. 1234567AB)");
+      return;
+    }
+    setFetchingRPN(true);
+    // Simulate network delay for realism
+    setTimeout(() => {
+      const rpn = generateMockRPN(ppsn);
+      setForm((prev) => ({
+        ...prev,
+        tax_credits_yearly: String(rpn.taxCreditsYearly),
+        standard_rate_cut_off_yearly: String(rpn.standardRateCutOffYearly),
+        usc_status: rpn.uscStatus,
+        prsi_class: rpn.prsiClass,
+      }));
+      setRpnFetched(true);
+      setFetchingRPN(false);
+      toast.success(`RPN fetched: ${rpn.rpnNumber}`, {
+        description: `Tax credits: \u20AC${rpn.taxCreditsYearly.toLocaleString()} | Cut-off: \u20AC${rpn.standardRateCutOffYearly.toLocaleString()} | USC: ${rpn.uscStatus} | PRSI: ${rpn.prsiClass}`,
+      });
+    }, 800);
+  };
 
   const togglePPSN = (id: string) => {
     setRevealedPPSNs((prev) => {
@@ -125,6 +156,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
   const resetForm = () => {
     setForm(defaultForm);
     setEditingEmployee(null);
+    setRpnFetched(false);
   };
 
   const openAdd = () => {
@@ -432,13 +464,39 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">PPSN</Label>
-                <Input
-                  value={form.ppsn}
-                  onChange={(e) => setForm({ ...form, ppsn: e.target.value })}
-                  placeholder="1234567AB"
-                  className="h-8 font-mono"
-                  disabled={!!editingEmployee}
-                />
+                <div className="flex gap-1.5">
+                  <Input
+                    value={form.ppsn}
+                    onChange={(e) => { setForm({ ...form, ppsn: e.target.value }); setRpnFetched(false); }}
+                    placeholder="1234567AB"
+                    className="h-8 font-mono flex-1"
+                    disabled={!!editingEmployee}
+                  />
+                  {!editingEmployee && (
+                    <Button
+                      type="button"
+                      variant={rpnFetched ? "outline" : "secondary"}
+                      size="sm"
+                      className={`h-8 px-2.5 gap-1 text-xs whitespace-nowrap ${rpnFetched ? "border-emerald-300 text-emerald-700 bg-emerald-50" : ""}`}
+                      onClick={handleFetchRPN}
+                      disabled={fetchingRPN || !form.ppsn.trim()}
+                    >
+                      {fetchingRPN ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : rpnFetched ? (
+                        <CheckCircle2 className="w-3 h-3" />
+                      ) : (
+                        <Download className="w-3 h-3" />
+                      )}
+                      {fetchingRPN ? "Fetching..." : rpnFetched ? "RPN OK" : "Fetch RPN"}
+                    </Button>
+                  )}
+                </div>
+                {!editingEmployee && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Fetch Revenue Payroll Notification to auto-fill tax details
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Email (optional)</Label>
@@ -479,8 +537,14 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
 
             {/* Pay & Tax Section */}
             <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 Pay &amp; Tax
+                {rpnFetched && (
+                  <Badge variant="secondary" className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200 font-normal normal-case">
+                    <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />
+                    Auto-filled from RPN
+                  </Badge>
+                )}
               </h4>
             </div>
 

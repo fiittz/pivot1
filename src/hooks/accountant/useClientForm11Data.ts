@@ -4,6 +4,8 @@
  * Read-only — no mutations. No localStorage questionnaire (uses DB data only).
  */
 import { useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useClientTransactions, useClientAccounts, useClientDirectorOnboarding } from "./useClientData";
 import { scanForReliefs } from "@/lib/reliefScanner";
 import { calculateForm11, calculateVehicleBIK, type Form11Input, type Form11Result } from "@/lib/form11Calculator";
@@ -46,6 +48,28 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
   // Fetch director onboarding data
   const { data: directorRows, isLoading: directorLoading } = useClientDirectorOnboarding(clientUserId);
 
+  // Fetch Form 11 questionnaire data from Supabase (client-entered values)
+  const { data: questionnaireData, isLoading: questionnaireLoading } = useQuery({
+    queryKey: ["questionnaire", "form11", String(directorNumber), clientUserId],
+    queryFn: async () => {
+      if (!clientUserId) return null;
+      const { data, error } = await supabase
+        .from("questionnaire_responses")
+        .select("response_data")
+        .eq("user_id", clientUserId)
+        .eq("questionnaire_type", "form11")
+        .eq("period_key", String(directorNumber))
+        .maybeSingle();
+      if (error) {
+        console.error("Error fetching Form11 questionnaire:", error);
+        return null;
+      }
+      return (data?.response_data as Record<string, unknown>) ?? null;
+    },
+    enabled: !!clientUserId,
+    staleTime: 30_000,
+  });
+
   const getDirector = useCallback(
     (num: number) => {
       const row = directorRows?.find((d: Record<string, unknown>) => (d as { director_number: number }).director_number === num);
@@ -55,7 +79,7 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
     [directorRows],
   );
 
-  const isLoading = incomeLoading || expenseLoading || reliefsLoading || directorLoading;
+  const isLoading = incomeLoading || expenseLoading || reliefsLoading || directorLoading || questionnaireLoading;
 
   const { input, result } = useMemo(() => {
     if (!clientUserId) return { input: null, result: null };
@@ -72,9 +96,21 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
     const maritalStatus = normalizeMaritalStatus(onboarding.marital_status as string | null | undefined);
     const assessmentBasis = normalizeAssessmentBasis(onboarding.assessment_basis as string | null | undefined);
 
-    // ── Salary / Dividends (from onboarding only — no localStorage questionnaire for accountant) ──
-    const salary = (onboarding.annual_salary as number) ?? 0;
-    const dividends = (onboarding.estimated_dividends as number) ?? 0;
+    // ── Questionnaire overrides (client-entered data from Supabase) ──
+    const q = questionnaireData ?? {};
+    const qNum = (key: string) => Number(q[key]) || 0;
+
+    // ── Salary / Dividends — questionnaire overrides onboarding defaults ──
+    const salary = q.salaryAmount != null ? qNum("salaryAmount") : ((onboarding.annual_salary as number) ?? 0);
+    const dividends = q.dividendsAmount != null ? qNum("dividendsAmount") : ((onboarding.estimated_dividends as number) ?? 0);
+
+    // ── Marital status — questionnaire can override ──
+    const finalMaritalStatus = q.maritalStatus
+      ? normalizeMaritalStatus(q.maritalStatus as string)
+      : maritalStatus;
+    const finalAssessmentBasis = q.assessmentBasis
+      ? normalizeAssessmentBasis(q.assessmentBasis as string)
+      : assessmentBasis;
 
     // ── BIK ──────────────────────────────────────────
     let bik = 0;
@@ -95,19 +131,22 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
       mileageAllowance = calculateAnnualCommuteMileage(onboarding.commute_distance_km as number);
     }
 
-    // ── Reliefs (auto-detected from transactions) ────
-    const pensionContributions = reliefs?.pension.total || 0;
-    const medicalExpenses = reliefs?.medical.total || 0;
-    const rentPaid = reliefs?.rent.total || 0;
-    const charitableDonations = reliefs?.charitable.total || 0;
+    // ── Reliefs — questionnaire overrides auto-detected values ────
+    const pensionContributions = q.pensionContributions != null ? qNum("pensionContributions") : (reliefs?.pension.total || 0);
+    const medicalExpenses = q.medicalExpenses != null ? qNum("medicalExpenses") : (reliefs?.medical.total || 0);
+    const rentPaid = q.rentRelief != null ? qNum("rentRelief") : (reliefs?.rent.total || 0);
+    const charitableDonations = q.charitableDonations != null ? qNum("charitableDonations") : (reliefs?.charitable.total || 0);
+
+    // ── Spouse income from questionnaire ──────────────
+    const spouseIncome = q.spouseHasIncome ? qNum("spouseIncomeAmount") : 0;
 
     // ── Build input ──────────────────────────────────
     const form11Input: Form11Input = {
       directorName: (onboarding.director_name as string) ?? `Director ${directorNumber}`,
       ppsNumber: (onboarding.pps_number as string) ?? "",
       dateOfBirth: (onboarding.date_of_birth as string) ?? "",
-      maritalStatus,
-      assessmentBasis,
+      maritalStatus: finalMaritalStatus,
+      assessmentBasis: finalAssessmentBasis,
 
       salary,
       dividends,
@@ -115,37 +154,37 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
 
       businessIncome,
       businessExpenses,
-      capitalAllowances: 0,
+      capitalAllowances: qNum("capitalAllowances"),
 
-      rentalIncome: 0,
-      rentalExpenses: 0,
-      foreignIncome: 0,
-      otherIncome: 0,
+      rentalIncome: qNum("rentalIncome"),
+      rentalExpenses: qNum("rentalExpenses"),
+      foreignIncome: qNum("foreignIncome"),
+      otherIncome: qNum("otherIncome"),
 
-      capitalGains: 0,
-      capitalLosses: 0,
+      capitalGains: qNum("capitalGains"),
+      capitalLosses: qNum("capitalLosses"),
 
       pensionContributions,
       medicalExpenses,
       rentPaid,
       charitableDonations,
-      remoteWorkingCosts: 0,
+      remoteWorkingCosts: qNum("remoteWorkingCosts"),
 
       mileageAllowance,
 
-      spouseIncome: 0,
+      spouseIncome,
 
       claimHomeCarer: (onboarding.home_carer_credit as boolean) ?? false,
-      claimSingleParent: false,
+      claimSingleParent: q.claimSingleParent ? !!(q.claimSingleParent) : false,
       hasPAYEIncome: ((onboarding.income_sources as string[]) ?? []).includes("paye_employment"),
 
-      preliminaryTaxPaid: 0,
+      preliminaryTaxPaid: q.preliminaryTaxPaid != null ? qNum("preliminaryTaxAmount") : 0,
     };
 
     const form11Result = calculateForm11(form11Input, taxYear);
 
     return { input: form11Input, result: form11Result };
-  }, [clientUserId, directorNumber, incomeTransactions, expenseTransactions, reliefs, getDirector, taxYear]);
+  }, [clientUserId, directorNumber, incomeTransactions, expenseTransactions, reliefs, getDirector, taxYear, questionnaireData]);
 
   return { input, result, isLoading, taxYear };
 }
