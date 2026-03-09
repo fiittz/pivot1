@@ -6,14 +6,6 @@ import {
   Settings,
   LogOut,
   ArrowLeft,
-  BarChart3,
-  Wallet,
-  Receipt,
-  FileText,
-  StickyNote,
-  ListTodo,
-  ShieldCheck,
-  MessageSquare,
   UserCog,
   Mail,
 } from "lucide-react";
@@ -31,16 +23,6 @@ interface NavItem {
   badge?: number;
 }
 
-const CLIENT_SUB_TABS: { tab: string; label: string; icon: React.ElementType }[] = [
-  { tab: "overview", label: "Overview", icon: BarChart3 },
-  { tab: "transactions", label: "Transactions", icon: Wallet },
-  { tab: "documents", label: "Documents", icon: Receipt },
-  { tab: "reports", label: "Reports", icon: FileText },
-  { tab: "notes", label: "Notes", icon: StickyNote },
-  { tab: "tasks", label: "Tasks", icon: ListTodo },
-  { tab: "filings", label: "Filings", icon: ShieldCheck },
-  { tab: "messages", label: "Messages", icon: MessageSquare },
-];
 
 const AccountantSidebar = () => {
   const navigate = useNavigate();
@@ -57,10 +39,6 @@ const AccountantSidebar = () => {
   const { data: accountantClient } = useAccountantClientByUserId(isClientDetail ? clientId : undefined);
   const { data: onboarding } = useClientOnboardingSettings(isClientDetail ? clientId : undefined);
   const clientName = onboarding?.company_name ?? accountantClient?.client_name ?? "Client";
-
-  // Parse current tab from URL search params
-  const searchParams = new URLSearchParams(location.search);
-  const currentTab = searchParams.get("tab") || "overview";
 
   const openTaskCount = (taskCounts?.todo ?? 0) + (taskCounts?.in_progress ?? 0);
 
@@ -101,36 +79,47 @@ const AccountantSidebar = () => {
             <button
               type="button"
               onClick={() => navigate("/accountant/clients")}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors mb-2"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors mb-3"
             >
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back to Clients
             </button>
 
             {/* Client name */}
-            <div className="px-3 py-1.5 mb-1">
+            <div className="px-3 py-2 mb-3 bg-secondary/30 rounded-lg">
               <p className="text-sm font-semibold text-foreground truncate">{clientName}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Client workspace</p>
             </div>
 
-            {/* Client sub-nav */}
-            {CLIENT_SUB_TABS.map((item) => {
-              const active = currentTab === item.tab;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.tab}
-                  type="button"
-                  onClick={() => navigate(`/accountant/clients/${clientId}?tab=${item.tab}`)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    active
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                  )}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+            {/* Main portal nav — still accessible from client view */}
+            <div className="border-t border-border pt-3 mt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1.5 px-3">
+                Practice
+              </p>
+              {navItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    onClick={() => navigate(item.path)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      active
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                    )}
+                  >
+                    {item.label}
+                    {item.badge ? (
+                      <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-semibold rounded-full bg-[#E8930C] text-white">
+                        {item.badge}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
           </>
         ) : (
           /* Standard nav */

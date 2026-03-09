@@ -1,10 +1,13 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useVATSummary } from "@/hooks/useVATData";
 import { useOnboardingSettings } from "@/hooks/useOnboardingSettings";
 import { useDirectorOnboarding } from "@/hooks/useDirectorOnboarding";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useInvoiceTripMatcher } from "@/hooks/useInvoiceTripMatcher";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { isCTDeductible } from "@/lib/vatDeductibility";
 import { calculateVehicleDepreciation, type VehicleDepreciation } from "@/lib/vehicleDepreciation";
 
@@ -65,6 +68,8 @@ function classifyPaymentType(description: string): string {
 }
 
 export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
+  const { user } = useAuth();
+
   // Determine tax year (Irish tax year = calendar year)
   const now = new Date();
   const taxYear = now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1;
@@ -106,6 +111,25 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
   // Trip matcher — travel/accommodation & director's loan
   const { invoiceTrips, isLoading: tripsLoading } = useInvoiceTripMatcher();
 
+  // RCT payment notifications — deductions at source (eRCT system)
+  const { data: rctNotifications, isLoading: rctLoading } = useQuery({
+    queryKey: ["rct-notifications-for-ct1", user?.id, taxYear],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      // Get RCT payment notifications via contracts owned by this user
+      const { data } = await supabase
+        .from("rct_payment_notifications")
+        .select("rct_amount, status, created_at, rct_contracts!inner(user_id)")
+        .eq("rct_contracts.user_id", user.id)
+        .gte("created_at", startDate)
+        .lte("created_at", `${endDate}T23:59:59`)
+        .neq("status", "rejected");
+      return (data ?? []) as { rct_amount: number; status: string; created_at: string }[];
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const hasVATSplit = !!options?.vatChangeDate;
   const isLoading =
     incomeLoading ||
@@ -115,7 +139,8 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
     onboardingLoading ||
     directorLoading ||
     invoicesLoading ||
-    tripsLoading;
+    tripsLoading ||
+    rctLoading;
 
   return useMemo(() => {
     // 1. Detected income — group by category name
@@ -300,8 +325,10 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
       };
     }
 
-    // 10. RCT prepayment — sum RCT deducted from invoices in the tax year
+    // 10. RCT prepayment — sum RCT deducted from invoices + eRCT payment notifications
     let rctPrepayment = 0;
+
+    // Source 1: Invoice notes (legacy/manual RCT tracking)
     for (const inv of invoices ?? []) {
       const invDate = (inv as Record<string, unknown>).invoice_date ?? "";
       if (invDate < startDate || invDate > endDate) continue;
@@ -315,6 +342,12 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
         /* not JSON */
       }
     }
+
+    // Source 2: eRCT payment notifications (Revenue eRCT system)
+    for (const notif of rctNotifications ?? []) {
+      rctPrepayment += Number(notif.rct_amount) || 0;
+    }
+
     rctPrepayment = Math.round(rctPrepayment * 100) / 100;
 
     // 11. Travel allowance & director's loan from trips
@@ -368,6 +401,7 @@ export function useCT1Data(options?: CT1ReEvalOptions): CT1Data {
     directorRows,
     invoices,
     invoiceTrips,
+    rctNotifications,
     isLoading,
     hasVATSplit,
     options,
