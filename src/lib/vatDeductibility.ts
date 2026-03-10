@@ -269,7 +269,8 @@ const NON_DEDUCTIBLE_KEYWORDS: { keywords: string[]; reason: string; legislation
   // Fines & Penalties
   { keywords: ["fine", "penalty", "penalties", "parking fine", "speeding", "late filing", "surcharge"], reason: "Fines & penalties — not allowable for CT", legislation: "Case law — not 'for the purposes of the trade'" },
   // Personal
-  { keywords: ["personal", "private", "non-business", "groceries", "clothing"], reason: "Personal / non-business expense — not allowable for CT", legislation: "s.81(2)(a) TCA 1997 — not wholly and exclusively" },
+  { keywords: ["personal", "private", "non-business", "groceries"], reason: "Personal / non-business expense — not allowable for CT", legislation: "s.81(2)(a) TCA 1997 — not wholly and exclusively" },
+  { keywords: ["benefit in kind", "benefit-in-kind", "bik"], reason: "Benefit in Kind — not a deductible expense for CT (taxable on employee)", legislation: "s.118 TCA 1997" },
   // Depreciation (use capital allowances instead)
   { keywords: ["depreciation", "amortisation", "amortization"], reason: "Depreciation — not deductible, claim capital allowances instead", legislation: "s.81(2)(f) TCA 1997" },
   // Dividends
