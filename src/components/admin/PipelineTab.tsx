@@ -35,6 +35,7 @@ export default function PipelineTab() {
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
+          (p.contact_name?.toLowerCase().includes(q)) ||
           (p.area?.toLowerCase().includes(q)) ||
           (p.email?.toLowerCase().includes(q)) ||
           (p.phone?.includes(q))
@@ -164,17 +165,17 @@ export default function PipelineTab() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">Priority</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead className="hidden md:table-cell">Area</TableHead>
-              <TableHead className="hidden lg:table-cell">Phone</TableHead>
-              <TableHead className="hidden lg:table-cell">Email</TableHead>
+              <TableHead>Practice</TableHead>
+              <TableHead className="hidden md:table-cell">Contact</TableHead>
+              <TableHead className="hidden lg:table-cell">Area</TableHead>
+              <TableHead className="hidden xl:table-cell">Phone</TableHead>
               <TableHead className="w-[160px]">Stage</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No prospects found
                 </TableCell>
               </TableRow>
@@ -187,9 +188,9 @@ export default function PipelineTab() {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{p.area}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground text-sm font-mono">{p.phone}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">{p.email}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{p.contact_name || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">{p.area}</TableCell>
+                  <TableCell className="hidden xl:table-cell text-muted-foreground text-sm font-mono">{p.phone}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

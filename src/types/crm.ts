@@ -14,6 +14,7 @@ export type CrmActivityType =
 export interface CrmProspect {
   id: string;
   name: string;
+  contact_name: string | null;
   area: string | null;
   phone: string | null;
   email: string | null;
