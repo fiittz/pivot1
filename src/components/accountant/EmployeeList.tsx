@@ -67,21 +67,49 @@ function maskPPSN(ppsn: string): string {
   return "***" + ppsn.slice(-4);
 }
 
+const IRISH_COUNTIES = [
+  "Carlow", "Cavan", "Clare", "Cork", "Donegal", "Dublin", "Galway",
+  "Kerry", "Kildare", "Kilkenny", "Laois", "Leitrim", "Limerick",
+  "Longford", "Louth", "Mayo", "Meath", "Monaghan", "Offaly",
+  "Roscommon", "Sligo", "Tipperary", "Waterford", "Westmeath",
+  "Wexford", "Wicklow",
+];
+
 type EmployeeFormState = {
+  // Personal
   first_name: string;
   last_name: string;
   ppsn: string;
   email: string;
+  phone: string;
+  date_of_birth: string;
+  gender: "" | "male" | "female" | "other";
+  job_title: string;
+  // Address
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  county: string;
+  eircode: string;
+  // Employment
   employment_start_date: string;
+  employment_id: string;
   is_director: boolean;
+  // Pay & Tax
   pay_frequency: "weekly" | "fortnightly" | "monthly";
   annual_salary: string;
+  tax_basis: "cumulative" | "week1_month1" | "emergency";
   tax_credits_yearly: string;
   standard_rate_cut_off_yearly: string;
   usc_status: "ordinary" | "reduced" | "exempt";
   prsi_class: string;
+  // Pension
   pension_employee_pct: string;
   pension_employer_pct: string;
+  // Bank
+  bank_iban: string;
+  bank_bic: string;
+  // Notes
   notes: string;
 };
 
@@ -90,16 +118,29 @@ const defaultForm: EmployeeFormState = {
   last_name: "",
   ppsn: "",
   email: "",
+  phone: "",
+  date_of_birth: "",
+  gender: "",
+  job_title: "",
+  address_line1: "",
+  address_line2: "",
+  city: "",
+  county: "",
+  eircode: "",
   employment_start_date: "",
+  employment_id: "",
   is_director: false,
   pay_frequency: "monthly",
   annual_salary: "",
+  tax_basis: "cumulative",
   tax_credits_yearly: "4000",
   standard_rate_cut_off_yearly: "44000",
   usc_status: "ordinary",
   prsi_class: "A1",
   pension_employee_pct: "0",
   pension_employer_pct: "0",
+  bank_iban: "",
+  bank_bic: "",
   notes: "",
 };
 
@@ -123,7 +164,6 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
       return;
     }
     setFetchingRPN(true);
-    // Simulate network delay for realism
     setTimeout(() => {
       const rpn = generateMockRPN(ppsn);
       setForm((prev) => ({
@@ -132,6 +172,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
         standard_rate_cut_off_yearly: String(rpn.standardRateCutOffYearly),
         usc_status: rpn.uscStatus,
         prsi_class: rpn.prsiClass,
+        tax_basis: "cumulative",
       }));
       setRpnFetched(true);
       setFetchingRPN(false);
@@ -144,11 +185,8 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
   const togglePPSN = (id: string) => {
     setRevealedPPSNs((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -171,42 +209,70 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
       last_name: emp.last_name,
       ppsn: emp.ppsn,
       email: emp.email ?? "",
+      phone: emp.phone ?? "",
+      date_of_birth: emp.date_of_birth ?? "",
+      gender: emp.gender ?? "",
+      job_title: emp.job_title ?? "",
+      address_line1: emp.address_line1 ?? "",
+      address_line2: emp.address_line2 ?? "",
+      city: emp.city ?? "",
+      county: emp.county ?? "",
+      eircode: emp.eircode ?? "",
       employment_start_date: emp.employment_start_date,
+      employment_id: emp.employment_id ?? "",
       is_director: emp.is_director,
       pay_frequency: emp.pay_frequency,
       annual_salary: emp.annual_salary != null ? String(emp.annual_salary) : "",
+      tax_basis: emp.tax_basis ?? "cumulative",
       tax_credits_yearly: String(emp.tax_credits_yearly),
       standard_rate_cut_off_yearly: String(emp.standard_rate_cut_off_yearly),
       usc_status: emp.usc_status,
       prsi_class: emp.prsi_class,
       pension_employee_pct: String(emp.pension_employee_pct),
       pension_employer_pct: String(emp.pension_employer_pct),
+      bank_iban: emp.bank_iban ?? "",
+      bank_bic: emp.bank_bic ?? "",
       notes: emp.notes ?? "",
     });
     setDialogOpen(true);
   };
 
   const handleSave = () => {
+    const commonFields = {
+      first_name: form.first_name,
+      last_name: form.last_name,
+      email: form.email || undefined,
+      phone: form.phone || undefined,
+      date_of_birth: form.date_of_birth || undefined,
+      gender: (form.gender || undefined) as "male" | "female" | "other" | undefined,
+      job_title: form.job_title || undefined,
+      address_line1: form.address_line1 || undefined,
+      address_line2: form.address_line2 || undefined,
+      city: form.city || undefined,
+      county: form.county || undefined,
+      eircode: form.eircode || undefined,
+      employment_id: form.employment_id || undefined,
+      is_director: form.is_director,
+      pay_frequency: form.pay_frequency,
+      annual_salary: form.annual_salary ? parseFloat(form.annual_salary) : undefined,
+      tax_basis: form.tax_basis,
+      tax_credits_yearly: parseFloat(form.tax_credits_yearly) || 4000,
+      standard_rate_cut_off_yearly: parseFloat(form.standard_rate_cut_off_yearly) || 44000,
+      usc_status: form.usc_status,
+      prsi_class: form.prsi_class,
+      pension_employee_pct: parseFloat(form.pension_employee_pct) || 0,
+      pension_employer_pct: parseFloat(form.pension_employer_pct) || 0,
+      bank_iban: form.bank_iban || undefined,
+      bank_bic: form.bank_bic || undefined,
+      notes: form.notes || undefined,
+    };
+
     if (editingEmployee) {
       updateEmployee.mutate(
         {
           id: editingEmployee.id,
           user_id: clientUserId,
-          updates: {
-            first_name: form.first_name,
-            last_name: form.last_name,
-            email: form.email || undefined,
-            is_director: form.is_director,
-            pay_frequency: form.pay_frequency,
-            annual_salary: form.annual_salary ? parseFloat(form.annual_salary) : undefined,
-            tax_credits_yearly: parseFloat(form.tax_credits_yearly) || 4000,
-            standard_rate_cut_off_yearly: parseFloat(form.standard_rate_cut_off_yearly) || 44000,
-            usc_status: form.usc_status,
-            prsi_class: form.prsi_class,
-            pension_employee_pct: parseFloat(form.pension_employee_pct) || 0,
-            pension_employer_pct: parseFloat(form.pension_employer_pct) || 0,
-            notes: form.notes || undefined,
-          },
+          updates: commonFields,
         },
         { onSuccess: () => { setDialogOpen(false); resetForm(); } },
       );
@@ -214,21 +280,9 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
       createEmployee.mutate(
         {
           user_id: clientUserId,
-          first_name: form.first_name,
-          last_name: form.last_name,
           ppsn: form.ppsn,
-          email: form.email || undefined,
           employment_start_date: form.employment_start_date,
-          is_director: form.is_director,
-          pay_frequency: form.pay_frequency,
-          annual_salary: form.annual_salary ? parseFloat(form.annual_salary) : undefined,
-          tax_credits_yearly: parseFloat(form.tax_credits_yearly) || 4000,
-          standard_rate_cut_off_yearly: parseFloat(form.standard_rate_cut_off_yearly) || 44000,
-          usc_status: form.usc_status,
-          prsi_class: form.prsi_class,
-          pension_employee_pct: parseFloat(form.pension_employee_pct) || 0,
-          pension_employer_pct: parseFloat(form.pension_employer_pct) || 0,
-          notes: form.notes || undefined,
+          ...commonFields,
         },
         { onSuccess: () => { setDialogOpen(false); resetForm(); } },
       );
@@ -295,6 +349,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                     <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">PPSN</th>
                     <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Start Date</th>
                     <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">PRSI Class</th>
+                    <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Tax Basis</th>
                     <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Salary</th>
                     <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Role</th>
                     <th className="text-center py-2 px-3 text-xs font-medium text-muted-foreground">Status</th>
@@ -316,13 +371,16 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                         }`}
                       >
                         <td className="py-2 px-3">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-col">
                             <span className="text-sm font-medium">
                               {emp.first_name} {emp.last_name}
                             </span>
+                            {emp.job_title && (
+                              <span className="text-[10px] text-muted-foreground">{emp.job_title}</span>
+                            )}
                             {hasPension && (
                               <span className="text-[10px] text-muted-foreground">
-                                (Pension: {emp.pension_employee_pct}%/{emp.pension_employer_pct}%)
+                                Pension: {emp.pension_employee_pct}%/{emp.pension_employer_pct}%
                               </span>
                             )}
                           </div>
@@ -353,6 +411,20 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                         <td className="py-2 px-3">
                           <Badge variant="outline" className="text-[10px]">
                             {emp.prsi_class}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-3">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] ${
+                              emp.tax_basis === "emergency"
+                                ? "border-red-200 text-red-600"
+                                : emp.tax_basis === "week1_month1"
+                                  ? "border-amber-200 text-amber-600"
+                                  : ""
+                            }`}
+                          >
+                            {emp.tax_basis === "week1_month1" ? "Wk1/Mth1" : emp.tax_basis === "emergency" ? "Emergency" : "Cumulative"}
                           </Badge>
                         </td>
                         <td className="py-2 px-3 text-right font-mono tabular-nums text-sm">
@@ -431,17 +503,17 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {/* Personal Details Section */}
+
+            {/* ── Personal Details ── */}
             <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Personal Details
               </h4>
             </div>
 
-            {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">First Name</Label>
+                <Label className="text-xs">First Name *</Label>
                 <Input
                   value={form.first_name}
                   onChange={(e) => setForm({ ...form, first_name: e.target.value })}
@@ -450,7 +522,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Last Name</Label>
+                <Label className="text-xs">Last Name *</Label>
                 <Input
                   value={form.last_name}
                   onChange={(e) => setForm({ ...form, last_name: e.target.value })}
@@ -460,10 +532,9 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
               </div>
             </div>
 
-            {/* PPSN + Email */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">PPSN</Label>
+                <Label className="text-xs">PPSN *</Label>
                 <div className="flex gap-1.5">
                   <Input
                     value={form.ppsn}
@@ -499,7 +570,35 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Email (optional)</Label>
+                <Label className="text-xs">Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={form.date_of_birth}
+                  onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
+                  className="h-8"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Gender</Label>
+                <Select
+                  value={form.gender}
+                  onValueChange={(v) => setForm({ ...form, gender: v as "male" | "female" | "other" })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Email</Label>
                 <Input
                   type="email"
                   value={form.email}
@@ -508,12 +607,90 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                   className="h-8"
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Phone</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="087 123 4567"
+                  className="h-8"
+                />
+              </div>
             </div>
 
-            {/* Start date + Director */}
+            {/* ── Address ── */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Address
+              </h4>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Employment Start Date</Label>
+                <Label className="text-xs">Address Line 1</Label>
+                <Input
+                  value={form.address_line1}
+                  onChange={(e) => setForm({ ...form, address_line1: e.target.value })}
+                  placeholder="12 Main Street"
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Address Line 2</Label>
+                <Input
+                  value={form.address_line2}
+                  onChange={(e) => setForm({ ...form, address_line2: e.target.value })}
+                  placeholder="Apt 4"
+                  className="h-8"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">City / Town</Label>
+                <Input
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  placeholder="Dublin"
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">County</Label>
+                <Select value={form.county} onValueChange={(v) => setForm({ ...form, county: v })}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select county" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IRISH_COUNTIES.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Eircode</Label>
+                <Input
+                  value={form.eircode}
+                  onChange={(e) => setForm({ ...form, eircode: e.target.value.toUpperCase() })}
+                  placeholder="D02 XY45"
+                  className="h-8 font-mono"
+                  maxLength={8}
+                />
+              </div>
+            </div>
+
+            {/* ── Employment ── */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Employment
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Start Date *</Label>
                 <Input
                   type="date"
                   value={form.employment_start_date}
@@ -522,20 +699,39 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                   disabled={!!editingEmployee}
                 />
               </div>
-              <div className="flex items-end pb-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    checked={form.is_director}
-                    onCheckedChange={(checked) =>
-                      setForm({ ...form, is_director: checked === true })
-                    }
-                  />
-                  <span className="text-sm">Is Director</span>
-                </label>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Job Title</Label>
+                <Input
+                  value={form.job_title}
+                  onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+                  placeholder="Carpenter"
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Revenue Employment ID</Label>
+                <Input
+                  value={form.employment_id}
+                  onChange={(e) => setForm({ ...form, employment_id: e.target.value })}
+                  placeholder="e.g. 1"
+                  className="h-8 font-mono"
+                />
               </div>
             </div>
 
-            {/* Pay & Tax Section */}
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={form.is_director}
+                  onCheckedChange={(checked) =>
+                    setForm({ ...form, is_director: checked === true })
+                  }
+                />
+                <span className="text-sm">Is Director</span>
+              </label>
+            </div>
+
+            {/* ── Pay & Tax ── */}
             <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 Pay &amp; Tax
@@ -548,8 +744,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
               </h4>
             </div>
 
-            {/* Pay frequency + salary */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Pay Frequency</Label>
                 <Select
@@ -569,7 +764,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Annual Salary (optional)</Label>
+                <Label className="text-xs">Annual Salary</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -579,9 +774,26 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                   className="h-8"
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Tax Basis</Label>
+                <Select
+                  value={form.tax_basis}
+                  onValueChange={(v) =>
+                    setForm({ ...form, tax_basis: v as "cumulative" | "week1_month1" | "emergency" })
+                  }
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cumulative">Cumulative</SelectItem>
+                    <SelectItem value="week1_month1">Week 1 / Month 1</SelectItem>
+                    <SelectItem value="emergency">Emergency</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {/* Tax credits + standard rate cutoff */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Tax Credits (yearly)</Label>
@@ -607,7 +819,6 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
               </div>
             </div>
 
-            {/* USC + PRSI */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">USC Status</Label>
@@ -637,17 +848,21 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A1">A1</SelectItem>
+                    <SelectItem value="A1">A1 (most PAYE employees)</SelectItem>
+                    <SelectItem value="A2">A2</SelectItem>
                     <SelectItem value="A8">A8</SelectItem>
-                    <SelectItem value="S">S (Self-employed)</SelectItem>
-                    <SelectItem value="J1">J1</SelectItem>
-                    <SelectItem value="M">M (No contribution)</SelectItem>
+                    <SelectItem value="B">B (civil servants pre-1995)</SelectItem>
+                    <SelectItem value="C">C (officers of state)</SelectItem>
+                    <SelectItem value="D">D (permanent defence forces)</SelectItem>
+                    <SelectItem value="S">S (self-employed)</SelectItem>
+                    <SelectItem value="J1">J1 (subsidiary employment)</SelectItem>
+                    <SelectItem value="K">K (public office holders)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Pension Section */}
+            {/* ── Pension ── */}
             <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Pension
@@ -656,7 +871,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Pension Employee %</Label>
+                <Label className="text-xs">Employee Contribution %</Label>
                 <Input
                   type="number"
                   step="0.5"
@@ -667,7 +882,7 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Pension Employer %</Label>
+                <Label className="text-xs">Employer Contribution %</Label>
                 <Input
                   type="number"
                   step="0.5"
@@ -679,7 +894,36 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
               </div>
             </div>
 
-            {/* Notes */}
+            {/* ── Bank Details ── */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Bank Details
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">IBAN</Label>
+                <Input
+                  value={form.bank_iban}
+                  onChange={(e) => setForm({ ...form, bank_iban: e.target.value.toUpperCase().replace(/\s/g, "") })}
+                  placeholder="IE29AIBK93115212345678"
+                  className="h-8 font-mono text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">BIC</Label>
+                <Input
+                  value={form.bank_bic}
+                  onChange={(e) => setForm({ ...form, bank_bic: e.target.value.toUpperCase() })}
+                  placeholder="AIBKIE2D"
+                  className="h-8 font-mono"
+                  maxLength={11}
+                />
+              </div>
+            </div>
+
+            {/* ── Notes ── */}
             <div className="space-y-1.5">
               <Label className="text-xs">Notes (optional)</Label>
               <textarea

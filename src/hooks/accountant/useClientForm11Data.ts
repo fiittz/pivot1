@@ -100,9 +100,29 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
     const q = questionnaireData ?? {};
     const qNum = (key: string) => Number(q[key]) || 0;
 
-    // ── Salary / Dividends — questionnaire overrides onboarding defaults ──
-    const salary = q.salaryAmount != null ? qNum("salaryAmount") : ((onboarding.annual_salary as number) ?? 0);
-    const dividends = q.dividendsAmount != null ? qNum("dividendsAmount") : ((onboarding.estimated_dividends as number) ?? 0);
+    // ── Salary / Dividends — match client-side logic exactly ──
+    // Client supports: salaryCorrect flag, pre/post split-year, dividendsReceived flag
+    const changeEffectiveDate = q.changeEffectiveDate
+      ? typeof q.changeEffectiveDate === "string"
+        ? (q.changeEffectiveDate as string).slice(0, 10)
+        : new Date(q.changeEffectiveDate as string | number).toISOString().slice(0, 10)
+      : undefined;
+
+    const hasEmploymentSplit =
+      (q.changes as Record<string, boolean> | undefined)?.employmentStatus &&
+      changeEffectiveDate &&
+      (q.preSalaryAmount || q.postSalaryAmount);
+
+    const salary = hasEmploymentSplit
+      ? (qNum("preSalaryAmount") + qNum("postSalaryAmount"))
+      : q.salaryCorrect
+        ? ((onboarding.annual_salary as number) ?? 0)
+        : (q.salaryAmount != null ? qNum("salaryAmount") : ((onboarding.annual_salary as number) ?? 0));
+
+    // Only include dividends if client said they received them
+    const dividends = q.dividendsReceived
+      ? (q.dividendsAmount != null ? qNum("dividendsAmount") : ((onboarding.estimated_dividends as number) ?? 0))
+      : 0;
 
     // ── Marital status — questionnaire can override ──
     const finalMaritalStatus = q.maritalStatus
@@ -132,10 +152,11 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
     }
 
     // ── Reliefs — questionnaire overrides auto-detected values ────
-    const pensionContributions = q.pensionContributions != null ? qNum("pensionContributions") : (reliefs?.pension.total || 0);
-    const medicalExpenses = q.medicalExpenses != null ? qNum("medicalExpenses") : (reliefs?.medical.total || 0);
-    const rentPaid = q.rentRelief != null ? qNum("rentRelief") : (reliefs?.rent.total || 0);
-    const charitableDonations = q.charitableDonations != null ? qNum("charitableDonations") : (reliefs?.charitable.total || 0);
+    // Client saves: pensionContributionsAmount, medicalExpensesAmount, rentReliefAmount, charitableDonationsAmount
+    const pensionContributions = q.pensionContributionsAmount != null ? qNum("pensionContributionsAmount") : (reliefs?.pension.total || 0);
+    const medicalExpenses = q.medicalExpensesAmount != null ? qNum("medicalExpensesAmount") : (reliefs?.medical.total || 0);
+    const rentPaid = q.rentReliefAmount != null ? qNum("rentReliefAmount") : (reliefs?.rent.total || 0);
+    const charitableDonations = q.charitableDonationsAmount != null ? qNum("charitableDonationsAmount") : (reliefs?.charitable.total || 0);
 
     // ── Spouse income from questionnaire ──────────────
     const spouseIncome = q.spouseHasIncome ? qNum("spouseIncomeAmount") : 0;

@@ -24,19 +24,37 @@ export interface Employee {
   first_name: string;
   last_name: string;
   email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  gender: "male" | "female" | "other" | null;
+  job_title: string | null;
+  // Address
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  county: string | null;
+  eircode: string | null;
+  // Employment
   employment_start_date: string;
   employment_end_date: string | null;
+  employment_id: string | null;
   is_director: boolean;
   pay_frequency: "weekly" | "fortnightly" | "monthly";
   annual_salary: number | null;
+  // Tax details (from RPN or manual entry)
+  tax_basis: "cumulative" | "week1_month1" | "emergency";
   tax_credits_yearly: number;
   standard_rate_cut_off_yearly: number;
   usc_status: "ordinary" | "reduced" | "exempt";
   prsi_class: string;
   rpn_number: string | null;
   rpn_effective_date: string | null;
+  // Pension
   pension_employee_pct: number;
   pension_employer_pct: number;
+  // Bank
+  bank_iban: string | null;
+  bank_bic: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;
@@ -146,10 +164,21 @@ export function useCreateEmployee() {
       first_name: string;
       last_name: string;
       email?: string;
+      phone?: string;
+      date_of_birth?: string;
+      gender?: "male" | "female" | "other";
+      job_title?: string;
+      address_line1?: string;
+      address_line2?: string;
+      city?: string;
+      county?: string;
+      eircode?: string;
       employment_start_date: string;
+      employment_id?: string;
       is_director?: boolean;
       pay_frequency?: "weekly" | "fortnightly" | "monthly";
       annual_salary?: number;
+      tax_basis?: "cumulative" | "week1_month1" | "emergency";
       tax_credits_yearly?: number;
       standard_rate_cut_off_yearly?: number;
       usc_status?: "ordinary" | "reduced" | "exempt";
@@ -158,6 +187,8 @@ export function useCreateEmployee() {
       rpn_effective_date?: string;
       pension_employee_pct?: number;
       pension_employer_pct?: number;
+      bank_iban?: string;
+      bank_bic?: string;
       notes?: string;
     }) => {
       const { data, error } = await supabase
@@ -195,9 +226,20 @@ export function useUpdateEmployee() {
           | "first_name"
           | "last_name"
           | "email"
+          | "phone"
+          | "date_of_birth"
+          | "gender"
+          | "job_title"
+          | "address_line1"
+          | "address_line2"
+          | "city"
+          | "county"
+          | "eircode"
+          | "employment_id"
           | "is_director"
           | "pay_frequency"
           | "annual_salary"
+          | "tax_basis"
           | "tax_credits_yearly"
           | "standard_rate_cut_off_yearly"
           | "usc_status"
@@ -206,6 +248,8 @@ export function useUpdateEmployee() {
           | "rpn_effective_date"
           | "pension_employee_pct"
           | "pension_employer_pct"
+          | "bank_iban"
+          | "bank_bic"
           | "notes"
         >
       >;
