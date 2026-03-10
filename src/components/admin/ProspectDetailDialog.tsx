@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Mail, Globe, MapPin, MessageSquare, PhoneCall, Send, Calendar, CheckCircle, ArrowRight, Bell, Bot, Loader2, ExternalLink } from "lucide-react";
+import { Phone, Mail, Globe, MapPin, MessageSquare, PhoneCall, Send, Calendar, CheckCircle, ArrowRight, Bell, Bot, Loader2, ExternalLink, Pencil } from "lucide-react";
 import { useProspectActivity, useAddActivity } from "@/hooks/admin/useCrmActivity";
 import { useUpdateProspect, useUpdateProspectStage } from "@/hooks/admin/useCrmProspects";
 import { useProspectDemoBookings } from "@/hooks/admin/useDemoBookings";
@@ -103,12 +103,35 @@ export default function ProspectDetailDialog({ prospect, open, onOpenChange }: P
             }}
           />
         ) : (
-          <span
-            className="cursor-pointer hover:underline text-muted-foreground"
-            onClick={() => setEditing({ [field]: true })}
-          >
-            {value || `Add ${label}...`}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {field === "website" && value ? (
+              <a
+                href={value.startsWith("http") ? value : `https://${value}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {value}
+              </a>
+            ) : (
+              <span
+                className="cursor-pointer hover:underline text-muted-foreground"
+                onClick={() => setEditing({ [field]: true })}
+              >
+                {value || `Add ${label}...`}
+              </span>
+            )}
+            {field === "website" && value && (
+              <button
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setEditing({ [field]: true })}
+                title="Edit"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         )}
       </div>
     );
