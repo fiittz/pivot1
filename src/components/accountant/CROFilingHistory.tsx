@@ -14,7 +14,7 @@ import { useCROFilings, useCROCompany, useCROAnnualAccounts } from "@/hooks/acco
 import { assembleAbridgedAccountsData, type AbridgedAccountsInput } from "@/lib/reports/abridgedAccountsData";
 import { generateAbridgedAccountsPdf } from "@/lib/reports/pdf/abridgedAccountsPdf";
 import type { ReportMeta } from "@/lib/reports/types";
-import type { AuditSnapshot } from "@/lib/cro/assembleAuditSnapshot";
+import type { AuditTrailSnapshot as AuditSnapshot } from "@/lib/cro/assembleAuditSnapshot";
 import { toast } from "sonner";
 
 interface CROFilingHistoryProps {
@@ -71,17 +71,34 @@ export function CROFilingHistory({ croCompanyId, clientUserId }: CROFilingHistor
       return;
     }
 
-    const snapshot = accounts.notes as unknown as AuditSnapshot | null;
-    const directorNames: string[] = snapshot?.directors_report?.directors ?? [];
+    const notes = accounts.notes;
+    const directorNames: string[] = [];
+
+    // CROAccountNotes shape: notes.directors is Array<{name}>
+    if (notes?.directors && Array.isArray(notes.directors)) {
+      for (const d of notes.directors) {
+        if (d.name) directorNames.push(d.name);
+      }
+    }
+
+    // Fallback: AuditTrailSnapshot shape (when data_source is balnce_auto)
     if (directorNames.length === 0) {
-      const noteDirectors = (accounts.notes as Record<string, unknown>)?.directors;
-      if (Array.isArray(noteDirectors)) {
-        for (const d of noteDirectors) {
-          if (typeof d === "object" && d && "name" in d) directorNames.push((d as { name: string }).name);
+      const snapshot = notes as unknown as AuditSnapshot | null;
+      const drs = snapshot?.abridged_accounts?.directors_report?.directors_and_secretary;
+      if (Array.isArray(drs)) {
+        for (const d of drs) if (d.name) directorNames.push(d.name);
+      }
+      if (directorNames.length === 0 && Array.isArray(snapshot?.directors)) {
+        for (const d of snapshot!.directors) {
+          if (d.director_name) directorNames.push(d.director_name);
         }
       }
-      if (directorNames.length === 0) directorNames.push("Director");
     }
+
+    if (directorNames.length === 0) directorNames.push("Director");
+
+    const secretaryName = notes?.secretary?.name
+      ?? (notes as unknown as AuditSnapshot | null)?.abridged_accounts?.directors_report?.directors_and_secretary?.find((d) => d.role === "Secretary")?.name;
 
     const companyName = croCompany?.company_name ?? "Company";
     const croNumber = croCompany?.company_num ?? "";
@@ -98,7 +115,7 @@ export function CROFilingHistory({ croCompanyId, clientUserId }: CROFilingHistor
       registeredAddress: address,
       accountingYearEnd: dateLabel,
       directorNames,
-      companySecretaryName: snapshot?.directors_report?.secretary,
+      companySecretaryName: secretaryName,
       fixedAssetsTangible: accounts.fixed_assets_tangible ?? 0,
       stock: accounts.current_assets_stock ?? 0,
       wip: 0,
@@ -119,12 +136,17 @@ export function CROFilingHistory({ croCompanyId, clientUserId }: CROFilingHistor
     const meta: ReportMeta = {
       companyName,
       taxYear,
-      generatedDate: new Date().toISOString(),
-      preparedBy: "Balnce",
+      generatedDate: new Date(),
+      preparer: "Balnce",
     };
 
-    generateAbridgedAccountsPdf(assembleAbridgedAccountsData(abInput, meta));
-    toast.success("Filing PDF downloaded");
+    try {
+      generateAbridgedAccountsPdf(assembleAbridgedAccountsData(abInput, meta));
+      toast.success("Filing PDF downloaded");
+    } catch (err) {
+      console.error("Filing PDF export failed:", err);
+      toast.error(`Failed to generate PDF: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
   };
 
   return (
