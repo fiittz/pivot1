@@ -96,13 +96,21 @@ type EmployeeFormState = {
   employment_id: string;
   is_director: boolean;
   // Pay & Tax
+  pay_type: "salaried" | "hourly";
   pay_frequency: "weekly" | "fortnightly" | "monthly";
   annual_salary: string;
+  hourly_rate: string;
+  normal_hours_per_week: string;
   tax_basis: "cumulative" | "week1_month1" | "emergency";
   tax_credits_yearly: string;
   standard_rate_cut_off_yearly: string;
   usc_status: "ordinary" | "reduced" | "exempt";
   prsi_class: string;
+  // Previous employment (P45 for mid-year starters)
+  prev_employment_gross: string;
+  prev_employment_tax: string;
+  prev_employment_usc: string;
+  prev_employment_prsi: string;
   // Pension
   pension_employee_pct: string;
   pension_employer_pct: string;
@@ -130,13 +138,20 @@ const defaultForm: EmployeeFormState = {
   employment_start_date: "",
   employment_id: "",
   is_director: false,
+  pay_type: "salaried",
   pay_frequency: "monthly",
   annual_salary: "",
+  hourly_rate: "",
+  normal_hours_per_week: "",
   tax_basis: "cumulative",
   tax_credits_yearly: "4000",
   standard_rate_cut_off_yearly: "44000",
   usc_status: "ordinary",
   prsi_class: "A1",
+  prev_employment_gross: "0",
+  prev_employment_tax: "0",
+  prev_employment_usc: "0",
+  prev_employment_prsi: "0",
   pension_employee_pct: "0",
   pension_employer_pct: "0",
   bank_iban: "",
@@ -221,13 +236,20 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
       employment_start_date: emp.employment_start_date,
       employment_id: emp.employment_id ?? "",
       is_director: emp.is_director,
+      pay_type: emp.pay_type ?? "salaried",
       pay_frequency: emp.pay_frequency,
       annual_salary: emp.annual_salary != null ? String(emp.annual_salary) : "",
+      hourly_rate: emp.hourly_rate != null ? String(emp.hourly_rate) : "",
+      normal_hours_per_week: emp.normal_hours_per_week != null ? String(emp.normal_hours_per_week) : "",
       tax_basis: emp.tax_basis ?? "cumulative",
       tax_credits_yearly: String(emp.tax_credits_yearly),
       standard_rate_cut_off_yearly: String(emp.standard_rate_cut_off_yearly),
       usc_status: emp.usc_status,
       prsi_class: emp.prsi_class,
+      prev_employment_gross: String(emp.prev_employment_gross ?? 0),
+      prev_employment_tax: String(emp.prev_employment_tax ?? 0),
+      prev_employment_usc: String(emp.prev_employment_usc ?? 0),
+      prev_employment_prsi: String(emp.prev_employment_prsi ?? 0),
       pension_employee_pct: String(emp.pension_employee_pct),
       pension_employer_pct: String(emp.pension_employer_pct),
       bank_iban: emp.bank_iban ?? "",

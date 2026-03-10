@@ -43,6 +43,24 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
   const { data: directorRows, isLoading: directorLoading } = useClientDirectorOnboarding(clientUserId);
   const { data: invoices, isLoading: invoicesLoading } = useClientInvoices(clientUserId);
 
+  // RCT payment notifications — eRCT deductions at source (matches client-side useCT1Data)
+  const { data: rctNotifications, isLoading: rctLoading } = useQuery({
+    queryKey: ["rct-notifications-for-ct1", clientUserId, taxYear],
+    queryFn: async () => {
+      if (!clientUserId) return [];
+      const { data } = await supabase
+        .from("rct_payment_notifications")
+        .select("rct_amount, status, created_at, rct_contracts!inner(user_id)")
+        .eq("rct_contracts.user_id", clientUserId)
+        .gte("created_at", startDate)
+        .lte("created_at", `${endDate}T23:59:59`)
+        .neq("status", "rejected");
+      return (data ?? []) as { rct_amount: number; status: string; created_at: string }[];
+    },
+    enabled: !!clientUserId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch CT1 questionnaire data from Supabase (client-entered values)
   const { data: questionnaireData, isLoading: questionnaireLoading } = useQuery({
     queryKey: ["questionnaire", "ct1", String(taxYear), clientUserId],
@@ -65,7 +83,7 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
     staleTime: 30_000,
   });
 
-  const isLoading = incomeLoading || expenseLoading || onboardingLoading || directorLoading || invoicesLoading || questionnaireLoading;
+  const isLoading = incomeLoading || expenseLoading || onboardingLoading || directorLoading || invoicesLoading || rctLoading || questionnaireLoading;
 
   return useMemo(() => {
     const NON_TAXABLE_CATEGORIES = ["Tax Refund"];
@@ -88,12 +106,20 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
     let allowable = 0;
     let disallowed = 0;
     let totalDLADebits = 0;
+    let totalMovedFromPersonal = 0;
     const disallowedByCategoryMap = new Map<string, number>();
     const expenseByCategoryMap = new Map<string, number>();
 
     for (const t of expenseTransactions ?? []) {
       const amt = Math.abs(Number(t.amount) || 0);
       const catName = (t.category as { id: string; name: string } | null)?.name ?? null;
+
+      // Track business expenses paid from director's personal pocket
+      const txNotes = (t as Record<string, unknown>).notes as string | null;
+      if (txNotes?.includes("[MOVED_FROM_PERSONAL]")) {
+        totalMovedFromPersonal += amt;
+      }
+
       if (isDLA(catName)) { totalDLADebits += amt; continue; }
 
       const result = isCTDeductible(t.description ?? "", catName);
@@ -171,6 +197,7 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
       };
     }
 
+    // RCT prepayment — Source 1: Invoice notes (legacy) + Source 2: eRCT notifications
     let rctPrepayment = 0;
     for (const inv of invoices ?? []) {
       const invRecord = inv as Record<string, unknown>;
@@ -181,7 +208,14 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
         if (notes?.rct_enabled && notes?.rct_amount > 0) rctPrepayment += Number(notes.rct_amount) || 0;
       } catch { /* not JSON */ }
     }
+    // Source 2: eRCT payment notifications (Revenue eRCT system)
+    for (const notif of rctNotifications ?? []) {
+      rctPrepayment += Number(notif.rct_amount) || 0;
+    }
     rctPrepayment = Math.round(rctPrepayment * 100) / 100;
+
+    // Business expenses paid from director's personal pocket — company owes director
+    const movedFromPersonalCredits = Math.round(totalMovedFromPersonal * 100) / 100;
 
     // ── Merge questionnaire data from Supabase ───────────────
     const q = questionnaireData ?? {};
@@ -195,10 +229,11 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
     const closeCompanySurcharge = num("closeCompanySurcharge");
     const lossesForward = num("lossesForward");
     const preliminaryCTPaid = num("preliminaryCTPaid");
-    const prepayments = num("prepayments");
-    const accruals = num("accruals");
-    const accruedIncome = num("accruedIncome");
-    const deferredIncome = num("deferredIncome");
+    // Client saves: prepaymentsAmount, accrualsAmount, accruedIncomeAmount, deferredIncomeAmount
+    const prepayments = num("prepaymentsAmount");
+    const accruals = num("accrualsAmount");
+    const accruedIncome = num("accruedIncomeAmount");
+    const deferredIncome = num("deferredIncomeAmount");
     const fixedAssets = num("fixedAssets");
     const currentAssets = num("currentAssets");
     const liabilities = num("liabilities");
@@ -217,8 +252,9 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
       rctPrepayment,
       travelAllowance: 0, // Requires trip matching — deferred to full review
       directorsLoanTravel: 0,
+      movedFromPersonalCredits,
       directorsLoanDebits: Math.round(totalDLADebits * 100) / 100,
-      netDirectorsLoan: -Math.round(totalDLADebits * 100) / 100,
+      netDirectorsLoan: Math.round((movedFromPersonalCredits - totalDLADebits) * 100) / 100,
       isConstructionTrade,
       isCloseCompany: true,
       isLoading,

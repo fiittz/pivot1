@@ -125,16 +125,23 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
       : 0;
 
     // ── Marital status — questionnaire can override ──
-    const finalMaritalStatus = q.maritalStatus
-      ? normalizeMaritalStatus(q.maritalStatus as string)
+    const finalMaritalStatus = (q.changes as Record<string, boolean> | undefined)?.assessmentStatus
+      ? normalizeMaritalStatus(q.maritalStatus as string ?? maritalStatus)
       : maritalStatus;
     const finalAssessmentBasis = q.assessmentBasis
       ? normalizeAssessmentBasis(q.assessmentBasis as string)
       : assessmentBasis;
 
-    // ── BIK ──────────────────────────────────────────
-    let bik = 0;
+    // Pre-change assessment basis (if assessment status changed mid-year)
+    const preChangeAssessmentBasis =
+      (q.changes as Record<string, boolean> | undefined)?.assessmentStatus && changeEffectiveDate
+        ? normalizeAssessmentBasis(onboarding.assessment_basis as string | null | undefined)
+        : undefined;
+
+    // ── BIK — questionnaire override, then onboarding fallback ──
+    let bik = qNum("bikEstimatedValue");
     if (
+      bik === 0 &&
       onboarding.has_bik &&
       (onboarding.bik_types as string[] | undefined)?.includes("company_vehicle") &&
       onboarding.company_vehicle_value
@@ -189,7 +196,7 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
       medicalExpenses,
       rentPaid,
       charitableDonations,
-      remoteWorkingCosts: qNum("remoteWorkingCosts"),
+      remoteWorkingCosts: q.remoteWorkingDays ? qNum("remoteWorkingDays") * 3.2 : 0,
 
       mileageAllowance,
 
@@ -199,7 +206,12 @@ export function useClientForm11Data(clientUserId: string | null | undefined, dir
       claimSingleParent: q.claimSingleParent ? !!(q.claimSingleParent) : false,
       hasPAYEIncome: ((onboarding.income_sources as string[]) ?? []).includes("paye_employment"),
 
-      preliminaryTaxPaid: q.preliminaryTaxPaid != null ? qNum("preliminaryTaxAmount") : 0,
+      preliminaryTaxPaid: q.preliminaryTaxPaid === "yes"
+        ? parseFloat(String(q.preliminaryTaxAmount ?? "0").replace(/[^0-9.]/g, "") || "0")
+        : 0,
+
+      changeEffectiveDate,
+      preChangeAssessmentBasis,
     };
 
     const form11Result = calculateForm11(form11Input, taxYear);

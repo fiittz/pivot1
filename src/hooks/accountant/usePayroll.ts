@@ -49,12 +49,21 @@ export interface Employee {
   prsi_class: string;
   rpn_number: string | null;
   rpn_effective_date: string | null;
+  // Pay type
+  pay_type: "salaried" | "hourly";
+  hourly_rate: number | null;
+  normal_hours_per_week: number | null;
   // Pension
   pension_employee_pct: number;
   pension_employer_pct: number;
   // Bank
   bank_iban: string | null;
   bank_bic: string | null;
+  // Previous employment (P45 values for mid-year starters)
+  prev_employment_gross: number;
+  prev_employment_tax: number;
+  prev_employment_usc: number;
+  prev_employment_prsi: number;
   notes: string | null;
   is_active: boolean;
   created_at: string;
@@ -185,10 +194,17 @@ export function useCreateEmployee() {
       prsi_class?: string;
       rpn_number?: string;
       rpn_effective_date?: string;
+      pay_type?: "salaried" | "hourly";
+      hourly_rate?: number;
+      normal_hours_per_week?: number;
       pension_employee_pct?: number;
       pension_employer_pct?: number;
       bank_iban?: string;
       bank_bic?: string;
+      prev_employment_gross?: number;
+      prev_employment_tax?: number;
+      prev_employment_usc?: number;
+      prev_employment_prsi?: number;
       notes?: string;
     }) => {
       const { data, error } = await supabase
@@ -246,10 +262,17 @@ export function useUpdateEmployee() {
           | "prsi_class"
           | "rpn_number"
           | "rpn_effective_date"
+          | "pay_type"
+          | "hourly_rate"
+          | "normal_hours_per_week"
           | "pension_employee_pct"
           | "pension_employer_pct"
           | "bank_iban"
           | "bank_bic"
+          | "prev_employment_gross"
+          | "prev_employment_tax"
+          | "prev_employment_usc"
+          | "prev_employment_prsi"
           | "notes"
         >
       >;
@@ -470,6 +493,7 @@ export function useCalculatePayrollRun() {
 
         if (prevError) throw prevError;
 
+        // Fall back to P45 / previous employment figures for mid-year starters
         const prev = (prevLines && prevLines.length > 0)
           ? prevLines[0] as unknown as {
               cumulative_gross: number;
@@ -477,12 +501,25 @@ export function useCalculatePayrollRun() {
               cumulative_usc: number;
               cumulative_prsi: number;
             }
-          : { cumulative_gross: 0, cumulative_tax: 0, cumulative_usc: 0, cumulative_prsi: 0 };
+          : {
+              cumulative_gross: Number(emp.prev_employment_gross) || 0,
+              cumulative_tax: Number(emp.prev_employment_tax) || 0,
+              cumulative_usc: Number(emp.prev_employment_usc) || 0,
+              cumulative_prsi: Number(emp.prev_employment_prsi) || 0,
+            };
 
         const overridesForEmp = input.overrides?.[emp.id] ?? {};
 
-        // Calculate period gross from annual salary
-        const periodGross = overridesForEmp.grossPay ?? (emp.annual_salary ? Number(emp.annual_salary) / periodsPerYear : 0);
+        // Calculate period gross: hourly employees use hours × rate, salaried use annual ÷ periods
+        let periodGross: number;
+        if (overridesForEmp.grossPay != null) {
+          periodGross = overridesForEmp.grossPay;
+        } else if (emp.pay_type === "hourly" && emp.hourly_rate && emp.normal_hours_per_week) {
+          const weeksPerPeriod = input.payFrequency === "weekly" ? 1 : input.payFrequency === "fortnightly" ? 2 : 52 / 12;
+          periodGross = Number(emp.hourly_rate) * Number(emp.normal_hours_per_week) * weeksPerPeriod;
+        } else {
+          periodGross = emp.annual_salary ? Number(emp.annual_salary) / periodsPerYear : 0;
+        }
 
         const payrollInput: PayrollInput = {
           grossPay: Math.round(periodGross * 100) / 100,
