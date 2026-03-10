@@ -39,6 +39,23 @@ export function useTodaysDemos() {
   });
 }
 
+export function usePastDemos() {
+  return useQuery<DemoBooking[]>({
+    queryKey: ["demo_bookings_past"],
+    queryFn: async () => {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const { data, error } = await supabase
+        .from("demo_bookings")
+        .select("*")
+        .lt("scheduled_at", startOfDay)
+        .order("scheduled_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as DemoBooking[];
+    },
+  });
+}
+
 export function useProspectDemoBookings(email: string | null | undefined) {
   return useQuery<DemoBooking[]>({
     queryKey: ["demo_bookings_prospect", email],

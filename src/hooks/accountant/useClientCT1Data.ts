@@ -278,5 +278,5 @@ export function useClientCT1Data(clientUserId: string | null | undefined): CT1Da
       liabilities,
       shareCapital,
     };
-  }, [incomeTransactions, expenseTransactions, onboarding, directorRows, invoices, isLoading, startDate, endDate, taxYear, questionnaireData]);
+  }, [incomeTransactions, expenseTransactions, onboarding, directorRows, invoices, rctNotifications, isLoading, startDate, endDate, taxYear, questionnaireData]);
 }

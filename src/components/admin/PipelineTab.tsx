@@ -92,7 +92,10 @@ export default function PipelineTab() {
     <div className="space-y-4">
       {/* Summary Cards */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
-        <Card>
+        <Card
+          className={`cursor-pointer transition-colors hover:border-primary ${filterStage === "all" ? "border-primary bg-primary/5" : ""}`}
+          onClick={() => setFilterStage("all")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4">
             <CardTitle className="text-xs font-medium text-muted-foreground">Total</CardTitle>
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
@@ -102,7 +105,11 @@ export default function PipelineTab() {
           </CardContent>
         </Card>
         {(["new_lead", "contacted", "demo_booked", "pilot", "closed_won"] as CrmStage[]).map((s) => (
-          <Card key={s}>
+          <Card
+            key={s}
+            className={`cursor-pointer transition-colors hover:border-primary ${filterStage === s ? "border-primary bg-primary/5" : ""}`}
+            onClick={() => setFilterStage(filterStage === s ? "all" : s)}
+          >
             <CardHeader className="space-y-0 pb-1 pt-3 px-4">
               <CardTitle className="text-xs font-medium text-muted-foreground">{STAGE_LABELS[s]}</CardTitle>
             </CardHeader>

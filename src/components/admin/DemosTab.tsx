@@ -2,22 +2,30 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, CheckCircle, ExternalLink, Loader2, Clock, Users } from "lucide-react";
-import { useTodaysDemos, useDemoBookings } from "@/hooks/admin/useDemoBookings";
+import { Input } from "@/components/ui/input";
+import { Calendar, CheckCircle, ExternalLink, Loader2, Clock, Users, History, MessageSquare, Send } from "lucide-react";
+import { useTodaysDemos, useDemoBookings, usePastDemos } from "@/hooks/admin/useDemoBookings";
+import { useAddActivity } from "@/hooks/admin/useCrmActivity";
 import { useProspects } from "@/hooks/admin/useCrmProspects";
 import type { DemoBooking } from "@/types/crm";
 import type { CrmProspect } from "@/types/crm";
 import ProspectDetailDialog from "./ProspectDetailDialog";
+import { toast } from "sonner";
 
 function DemoRow({
   demo,
   prospect,
   onProspectClick,
+  addActivity,
 }: {
   demo: DemoBooking;
   prospect: CrmProspect | undefined;
   onProspectClick: (p: CrmProspect) => void;
+  addActivity: ReturnType<typeof useAddActivity>;
 }) {
+  const [note, setNote] = useState("");
+  const [showNote, setShowNote] = useState(false);
+
   const time = new Date(demo.scheduled_at).toLocaleTimeString("en-IE", {
     hour: "2-digit",
     minute: "2-digit",
@@ -28,42 +36,97 @@ function DemoRow({
     month: "short",
   });
 
+  const handleSubmitNote = () => {
+    if (!note.trim() || !prospect) return;
+    const demoDate = new Date(demo.scheduled_at).toLocaleDateString("en-IE", {
+      day: "numeric", month: "short", year: "numeric",
+    });
+    addActivity.mutate(
+      {
+        prospectId: prospect.id,
+        activityType: "demo_done",
+        title: `Demo note — ${demoDate}`,
+        content: note.trim(),
+      },
+      {
+        onSuccess: () => {
+          setNote("");
+          setShowNote(false);
+          toast.success("Note saved to prospect");
+        },
+      }
+    );
+  };
+
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/50">
-      <div className="flex items-center gap-3">
-        <div className="text-center min-w-[50px]">
-          <div className="text-sm font-bold">{time}</div>
-          <div className="text-xs text-muted-foreground">{date}</div>
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">{demo.invitee_name}</span>
-            {demo.confirmed && (
-              <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
-                <CheckCircle className="h-3 w-3 mr-1" /> Confirmed
-              </Badge>
-            )}
+    <div className="py-2 px-3 rounded-md hover:bg-muted/50">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="text-center min-w-[50px]">
+            <div className="text-sm font-bold">{time}</div>
+            <div className="text-xs text-muted-foreground">{date}</div>
           </div>
-          <div className="text-xs text-muted-foreground">{demo.invitee_email}</div>
-          {prospect && (
-            <button
-              className="text-xs text-blue-500 hover:underline mt-0.5"
-              onClick={() => onProspectClick(prospect)}
-            >
-              View in Pipeline
-            </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm">{demo.invitee_name}</span>
+              {demo.confirmed && (
+                <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1" /> Confirmed
+                </Badge>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">{demo.invitee_email}</div>
+            <div className="flex items-center gap-2 mt-0.5">
+              {prospect && (
+                <button
+                  className="text-xs text-blue-500 hover:underline"
+                  onClick={() => onProspectClick(prospect)}
+                >
+                  View in Pipeline
+                </button>
+              )}
+              {prospect && (
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  onClick={() => setShowNote(!showNote)}
+                >
+                  <MessageSquare className="h-3 w-3" /> Note
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {demo.meeting_url && (
+            <a href={demo.meeting_url} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                <ExternalLink className="h-3 w-3 mr-1" /> Join
+              </Button>
+            </a>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        {demo.meeting_url && (
-          <a href={demo.meeting_url} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="h-7 text-xs">
-              <ExternalLink className="h-3 w-3 mr-1" /> Join
-            </Button>
-          </a>
-        )}
-      </div>
+      {showNote && prospect && (
+        <div className="flex gap-2 mt-2 ml-[62px]">
+          <Input
+            placeholder="Leave a note about this demo..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="h-8 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmitNote();
+            }}
+          />
+          <Button
+            size="sm"
+            className="h-8"
+            onClick={handleSubmitNote}
+            disabled={addActivity.isPending || !note.trim()}
+          >
+            {addActivity.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -71,9 +134,12 @@ function DemoRow({
 export default function DemosTab() {
   const { data: todaysDemos, isLoading: todayLoading } = useTodaysDemos();
   const { data: upcomingDemos, isLoading: upcomingLoading } = useDemoBookings();
+  const { data: pastDemos, isLoading: pastLoading } = usePastDemos();
   const { data: prospects } = useProspects();
+  const addActivity = useAddActivity();
   const [selectedProspect, setSelectedProspect] = useState<CrmProspect | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [showPast, setShowPast] = useState(false);
 
   const findProspect = (email: string) =>
     prospects?.find((p) => p.email?.toLowerCase() === email.toLowerCase());
@@ -90,7 +156,7 @@ export default function DemosTab() {
     return demoDate !== today;
   });
 
-  const isLoading = todayLoading || upcomingLoading;
+  const isLoading = todayLoading || upcomingLoading || pastLoading;
 
   if (isLoading) {
     return (
@@ -165,6 +231,7 @@ export default function DemosTab() {
                   demo={d}
                   prospect={findProspect(d.invitee_email)}
                   onProspectClick={handleProspectClick}
+                  addActivity={addActivity}
                 />
               ))}
             </div>
@@ -190,11 +257,49 @@ export default function DemosTab() {
                   demo={d}
                   prospect={findProspect(d.invitee_email)}
                   onProspectClick={handleProspectClick}
+                  addActivity={addActivity}
                 />
               ))}
             </div>
           )}
         </CardContent>
+      </Card>
+
+      {/* Previous Demos */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <History className="h-4 w-4" /> Previous Demos
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setShowPast(!showPast)}
+            >
+              {showPast ? "Hide" : `Show (${pastDemos?.length ?? 0})`}
+            </Button>
+          </div>
+        </CardHeader>
+        {showPast && (
+          <CardContent className="px-4 pb-3">
+            {!pastDemos || pastDemos.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No previous demos</p>
+            ) : (
+              <div className="divide-y">
+                {pastDemos.map((d) => (
+                  <DemoRow
+                    key={d.id}
+                    demo={d}
+                    prospect={findProspect(d.invitee_email)}
+                    onProspectClick={handleProspectClick}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       <ProspectDetailDialog

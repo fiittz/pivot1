@@ -236,7 +236,12 @@ function parseTitanICal(icalText: string, now: Date, maxDate: Date): TitanParsed
       const startDate = new Date(startStr);
       if (startDate < now || startDate > maxDate) continue;
 
-      // Only include events with external attendees (actual demos)
+      // Only include events that look like demo bookings
+      const lowerSummary = (summary || "").toLowerCase();
+      const isDemoEvent = lowerSummary.includes("demo") || lowerSummary.includes("balnce");
+      if (!isDemoEvent) continue;
+
+      // Only include events with external attendees
       const externalAttendees = attendees.filter(
         (a) => !OWN_EMAILS.has(a.email.toLowerCase()),
       );
