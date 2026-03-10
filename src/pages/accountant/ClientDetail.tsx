@@ -28,6 +28,7 @@ import { ClientReadinessBar } from "@/components/accountant/ClientReadinessBar";
 import { FixedAssetRegister } from "@/components/accountant/FixedAssetRegister";
 import { BankReconciliationView } from "@/components/accountant/BankReconciliationView";
 import { OnboardingChecklist } from "@/components/accountant/OnboardingChecklist";
+import { ClientOnboardingData } from "@/components/accountant/ClientOnboardingData";
 import { VATReturnsView } from "@/components/accountant/VATReturnsView";
 import { PayrollTab } from "@/components/accountant/PayrollTab";
 import { CapTableView } from "@/components/accountant/CapTableView";
@@ -489,11 +490,12 @@ const ClientDetail = () => {
 
             {/* Onboarding */}
             {activeTab === "onboarding" && (
-              accountantClientId ? (
-                <OnboardingChecklist accountantClientId={accountantClientId} />
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">Loading...</div>
-              )
+              <div className="space-y-6">
+                <ClientOnboardingData clientUserId={clientId} />
+                {accountantClientId && (
+                  <OnboardingChecklist accountantClientId={accountantClientId} />
+                )}
+              </div>
             )}
 
             {/* Cap Table */}
