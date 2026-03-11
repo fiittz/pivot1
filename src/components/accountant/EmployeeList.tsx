@@ -457,7 +457,15 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                           </Badge>
                         </td>
                         <td className="py-2 px-3 text-right font-mono tabular-nums text-sm">
-                          {emp.annual_salary ? eur(Number(emp.annual_salary)) : "\u2014"}
+                          {emp.pay_type === "hourly" && emp.hourly_rate ? (
+                            <span title={`${emp.normal_hours_per_week ?? "?"}hrs/wk`}>
+                              {eur(Number(emp.hourly_rate))}/hr
+                            </span>
+                          ) : emp.annual_salary ? (
+                            eur(Number(emp.annual_salary))
+                          ) : (
+                            "\u2014"
+                          )}
                         </td>
                         <td className="py-2 px-3 text-center">
                           {emp.is_director ? (
@@ -773,7 +781,22 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
               </h4>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Pay Type</Label>
+                <Select
+                  value={form.pay_type}
+                  onValueChange={(v) => setForm({ ...form, pay_type: v as "salaried" | "hourly" })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="salaried">Salaried</SelectItem>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Pay Frequency</Label>
                 <Select
@@ -793,17 +816,6 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Annual Salary</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.annual_salary}
-                  onChange={(e) => setForm({ ...form, annual_salary: e.target.value })}
-                  placeholder="60000.00"
-                  className="h-8"
-                />
-              </div>
-              <div className="space-y-1.5">
                 <Label className="text-xs">Tax Basis</Label>
                 <Select
                   value={form.tax_basis}
@@ -821,7 +833,59 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                   </SelectContent>
                 </Select>
               </div>
+              {form.pay_type === "salaried" ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Annual Salary</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.annual_salary}
+                    onChange={(e) => setForm({ ...form, annual_salary: e.target.value })}
+                    placeholder="60000.00"
+                    className="h-8"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Hourly Rate</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.hourly_rate}
+                    onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
+                    placeholder="18.50"
+                    className="h-8"
+                  />
+                </div>
+              )}
             </div>
+
+            {form.pay_type === "hourly" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Normal Hours / Week</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={form.normal_hours_per_week}
+                    onChange={(e) => setForm({ ...form, normal_hours_per_week: e.target.value })}
+                    placeholder="39"
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Annual Salary (optional override)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.annual_salary}
+                    onChange={(e) => setForm({ ...form, annual_salary: e.target.value })}
+                    placeholder="Calculated from hours"
+                    className="h-8"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -888,6 +952,64 @@ export function EmployeeList({ clientUserId }: EmployeeListProps) {
                     <SelectItem value="K">K (public office holders)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* ── Previous Employment (P45) ── */}
+            <div className="px-4 py-3 bg-muted/30 border-b -mx-6">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Previous Employment (P45 / Mid-Year Starter)
+              </h4>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground -mt-2">
+              Enter cumulative figures from previous employer if starting mid-year. Leave as 0 if new to workforce or starting 1 January.
+            </p>
+
+            <div className="grid grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prev. Gross Pay</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.prev_employment_gross}
+                  onChange={(e) => setForm({ ...form, prev_employment_gross: e.target.value })}
+                  placeholder="0"
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prev. PAYE Tax</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.prev_employment_tax}
+                  onChange={(e) => setForm({ ...form, prev_employment_tax: e.target.value })}
+                  placeholder="0"
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prev. USC</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.prev_employment_usc}
+                  onChange={(e) => setForm({ ...form, prev_employment_usc: e.target.value })}
+                  placeholder="0"
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prev. PRSI</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.prev_employment_prsi}
+                  onChange={(e) => setForm({ ...form, prev_employment_prsi: e.target.value })}
+                  placeholder="0"
+                  className="h-8"
+                />
               </div>
             </div>
 
