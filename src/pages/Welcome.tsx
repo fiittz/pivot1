@@ -1,569 +1,208 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
-const INDUSTRY_OPTIONS = [
-  "Trades & Construction",
-  "Construction Support & Property",
-  "Transport & Logistics",
-  "Retail & Wholesale",
-  "Professional Services",
-  "Digital & Creative",
-  "Food & Hospitality",
-  "Agriculture & Environmental",
-  "Domestic & Local Services",
-  "Education & Training",
-  "Manufacturing & Production",
-  "Mixed / Other",
-];
-
-const ALLOWED_EMAILS = [
-  "jamie@oakmont.ie",
-  "thomasvonteichman@nomadai.ie",
-  "fitzgerald7071jamie@gmail.com",
-  "kevin@workstuff.ai",
-  "markafmoore+balnce@gmail.com",
-  "brendan@coso.ai",
-  "harshhc5@proton.me",
-  "jamie@balnce.ie",
-];
-
-const isEmailAllowed = (email: string) => ALLOWED_EMAILS.some((e) => e.toLowerCase() === email.trim().toLowerCase());
-
-type Screen = "welcome" | "login" | "signup" | "business-type" | "forgot-password";
+const ROTATING_WORDS = ["business", "team", "clients"];
 
 const Welcome = () => {
-  const [screen, setScreen] = useState<Screen>("welcome");
-  const [industryType, setIndustryType] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { user, isLoading: authLoading, isAccountant } = useAuth();
+  const [wordIndex, setWordIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  // Form state
-  const [businessName, setBusinessName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  // Redirect if already logged in — wait for role check to complete
   useEffect(() => {
-    if (!authLoading && user && isAccountant !== null) {
-      if (isAccountant) {
-        navigate("/accountant/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
-    }
-  }, [user, authLoading, isAccountant, navigate]);
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      toast.error("Please enter your email and password");
-      return;
-    }
-
-    if (!isEmailAllowed(email)) {
-      toast.error("Access is restricted. Contact hello@balnce.ie for access.");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      toast.success("Welcome back!");
-
-      // Check if user has accountant role and redirect accordingly
-      if (data.session) {
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id)
-          .eq("role", "accountant");
-
-        if (roleData && roleData.length > 0) {
-          window.location.href = "/accountant/dashboard";
-        } else {
-          window.location.href = "/dashboard";
-        }
-        return;
-      }
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      toast.error(errMsg || "Failed to sign in");
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignup = async () => {
-    if (!industryType.trim()) {
-      toast.error("Please enter your industry");
-      return;
-    }
-
-    if (!email || !password || !businessName) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
-    if (!isEmailAllowed(email)) {
-      toast.error("Access is restricted. Contact hello@balnce.ie for access.");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-          data: {
-            business_name: businessName,
-            business_type: industryType.trim(),
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      // If user was created and auto-confirmed
-      if (data.user && data.session) {
-        toast.success("Account created successfully!");
-
-        // Update profile in background
-        (async () => {
-          try {
-            await supabase
-              .from("profiles")
-              .update({
-                business_name: businessName,
-                business_type: industryType.trim(),
-              })
-              .eq("id", data.user!.id);
-            console.log("Profile updated");
-          } catch (e) {
-            console.error("Profile update error:", e);
-          }
-        })();
-
-        // Auth state change will trigger the useEffect redirect
-      } else if (data.user && !data.session) {
-        // No session means either email confirmation is required or
-        // the email is already registered (Supabase hides this for security).
-        // Since confirmations are disabled, this likely means existing account.
-        toast.error("This email may already be registered. Try logging in instead.");
-        setIsLoading(false);
-      }
-    } catch (error: unknown) {
-      console.error("Signup error:", error);
-      const errMsg = error instanceof Error ? error.message : String(error);
-      if (errMsg?.includes("already registered")) {
-        toast.error("This email is already registered. Please log in instead.");
-      } else {
-        toast.error(errMsg || "Failed to create account");
-      }
-      setIsLoading(false);
-    }
-  };
-
-  const handleContinue = () => {
-    if (screen === "signup") {
-      if (!email || !password || !businessName) {
-        toast.error("Please fill in all fields");
-        return;
-      }
-      if (!isEmailAllowed(email)) {
-        toast.error("Access is restricted. Contact hello@balnce.ie for access.");
-        return;
-      }
-      setScreen("business-type");
-    } else if (screen === "business-type" && industryType.trim()) {
-      handleSignup();
-    }
-  };
-
-  // Shared style constants
-  const inputClass =
-    "h-14 bg-transparent border border-black/20 font-['IBM_Plex_Mono'] text-sm text-foreground placeholder:text-black/30 rounded-none";
-  const labelClass = "text-foreground font-medium font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest";
-  const primaryBtnClass =
-    "w-full h-14 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white rounded-none mt-6 shadow-none";
+    const interval = setInterval(() => {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+        setIsAnimating(false);
+      }, 300);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Grid background — 60px spacing */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
-      {/* Orange glow */}
-      <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none"
-        style={{
-          width: "800px",
-          height: "600px",
-          background: "radial-gradient(ellipse at center, rgba(232,147,12,0.06) 0%, transparent 70%)",
-        }}
-      />
-
-      {screen === "welcome" && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 animate-fade-in relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <img
-              src="/enhance-penguin-transparent.png"
-              alt="Balnce"
-              className="object-contain"
-              style={{ height: "clamp(4rem, 12vw, 7rem)", width: "auto" }}
-            />
-            <div className="inline-flex gap-[0.08em] items-center">
-              {"BALNCE".split("").map((char, i) => (
-                <div
-                  key={i}
-                  className="relative overflow-hidden flex items-center justify-center"
-                  style={{
-                    fontFamily: "'Bebas Neue', sans-serif",
-                    fontSize: "clamp(3rem, 10vw, 6rem)",
-                    width: "0.65em",
-                    height: "1.05em",
-                    backgroundColor: "#000",
-                    color: "#fff",
-                  }}
-                >
-                  {char}
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="text-muted-foreground text-base mb-12 font-['IBM_Plex_Sans']">Your AI accountant</p>
-
-          <div className="w-full max-w-sm space-y-4">
-            <Button
-              onClick={() => setScreen("signup")}
-              className="w-full h-14 border border-[#E8930C] bg-[#E8930C]/10 font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:bg-[#E8930C] hover:text-white rounded-none shadow-none"
-            >
-              Sign Up
-            </Button>
-            <Button
-              onClick={() => setScreen("login")}
-              variant="outline"
-              className="w-full h-14 border border-black/20 bg-transparent font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-foreground hover:bg-black/5 rounded-none shadow-none"
-            >
-              Log In
-            </Button>
-            <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm pt-2">
-              Are you an accountant?{" "}
-              <button
-                onClick={() => navigate("/accountant")}
-                className="font-semibold text-foreground underline"
+    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 md:px-12 py-6">
+        <div className="flex items-center gap-2">
+          <img
+            src="/enhance-penguin-transparent.png"
+            alt="Balnce"
+            className="w-8 h-8 object-contain"
+          />
+          <div className="inline-flex gap-[0.04em] items-center">
+            {"BALNCE".split("").map((char, i) => (
+              <div
+                key={i}
+                className="relative overflow-hidden flex items-center justify-center"
+                style={{
+                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontSize: "1.4rem",
+                  width: "0.65em",
+                  height: "1.05em",
+                  backgroundColor: "#000",
+                  color: "#fff",
+                }}
               >
-                Accountant login
-              </button>
-            </p>
+                {char}
+              </div>
+            ))}
           </div>
         </div>
-      )}
-
-      {screen === "login" && (
-        <div className="flex-1 flex flex-col px-6 py-8 animate-fade-in relative z-10">
-          <button
-            onClick={() => setScreen("welcome")}
-            className="text-muted-foreground hover:text-foreground mb-8 self-start font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest transition-colors"
+        <div className="flex items-center gap-4">
+          <a
+            href="/demo"
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors"
           >
-            ← Back
-          </button>
+            Book a Demo
+          </a>
+          <a
+            href="https://app.balnce.ie"
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border border-black px-5 py-2.5 text-black hover:bg-black hover:text-white transition-colors"
+          >
+            Launch App
+          </a>
+        </div>
+      </nav>
 
-          <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/enhance-penguin-transparent.png" alt="Balnce" className="w-10 h-10 object-contain" />
-              <h1 className="text-3xl font-semibold text-foreground font-['IBM_Plex_Mono'] tracking-wide">
-                Welcome back
-              </h1>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleLogin();
-              }}
-              className="space-y-5"
+      {/* Hero */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
+        <div className="max-w-4xl text-center">
+          <h1
+            className="font-['IBM_Plex_Sans'] font-bold tracking-tight leading-[1.1] mb-6"
+            style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
+          >
+            <span className="text-black">Your </span>
+            <span
+              className={`inline-block transition-all duration-300 ${
+                isAnimating
+                  ? "opacity-0 translate-y-2"
+                  : "opacity-100 translate-y-0"
+              }`}
+              style={{ color: "#E8930C", minWidth: "3ch" }}
             >
-              <div className="space-y-2">
-                <Label htmlFor="email" className={labelClass}>
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className={labelClass}>
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClass}
-                  autoComplete="current-password"
-                />
-              </div>
+              {ROTATING_WORDS[wordIndex]}
+            </span>
+            <span className="text-black"> deserve</span>
+            <br />
+            <span className="text-black">better tools.</span>
+          </h1>
 
-              <Button type="submit" disabled={isLoading} className={primaryBtnClass}>
-                {isLoading ? "Signing in..." : "Log In"}
-              </Button>
+          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            Irish tax filing, simplified. ROS returns, CRO filings, and practice
+            management — all in one platform built for Irish accountants.
+          </p>
 
-              <p className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setScreen("forgot-password")}
-                  className="text-muted-foreground hover:text-foreground font-['IBM_Plex_Sans'] text-sm underline transition-colors"
-                >
-                  Forgot password?
-                </button>
-              </p>
-
-              <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm">
-                Don't have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => setScreen("signup")}
-                  className="font-semibold text-foreground underline"
-                >
-                  Sign up
-                </button>
-              </p>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {screen === "signup" && (
-        <div className="flex-1 flex flex-col px-6 py-8 animate-fade-in relative z-10">
-          <button
-            onClick={() => setScreen("welcome")}
-            className="text-muted-foreground hover:text-foreground mb-8 self-start font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest transition-colors"
-          >
-            ← Back
-          </button>
-
-          <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/enhance-penguin-transparent.png" alt="Balnce" className="w-10 h-10 object-contain" />
-              <h1 className="text-3xl font-semibold text-foreground font-['IBM_Plex_Mono'] tracking-wide">
-                Create account
-              </h1>
-            </div>
-
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="business" className={labelClass}>
-                  Business Name
-                </Label>
-                <Input
-                  id="business"
-                  type="text"
-                  placeholder="Your business name"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-email" className={labelClass}>
-                  Email
-                </Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-password" className={labelClass}>
-                  Password
-                </Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-
-              <Button onClick={handleContinue} className={primaryBtnClass}>
-                Continue
-              </Button>
-
-              <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm">
-                Already have an account?{" "}
-                <button onClick={() => setScreen("login")} className="font-semibold text-foreground underline">
-                  Log in
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {screen === "forgot-password" && (
-        <div className="flex-1 flex flex-col px-6 py-8 animate-fade-in relative z-10">
-          <button
-            onClick={() => setScreen("login")}
-            className="text-muted-foreground hover:text-foreground mb-8 self-start font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest transition-colors"
-          >
-            ← Back
-          </button>
-
-          <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/enhance-penguin-transparent.png" alt="Balnce" className="w-10 h-10 object-contain" />
-              <h1 className="text-3xl font-semibold text-foreground font-['IBM_Plex_Mono'] tracking-wide">
-                Reset password
-              </h1>
-            </div>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!email) {
-                  toast.error("Please enter your email");
-                  return;
-                }
-                setIsLoading(true);
-                try {
-                  await supabase.functions.invoke("send-password-reset", {
-                    body: { email, origin: window.location.origin },
-                  });
-                } catch {
-                  // Silently catch — always show success
-                }
-                setIsLoading(false);
-                toast.success("If that email is registered, you'll receive a reset link shortly.");
-              }}
-              className="space-y-5"
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://app.balnce.ie"
+              className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border-2 border-[#E8930C] bg-[#E8930C] px-8 py-4 text-white hover:bg-[#E8930C]/90 transition-colors"
             >
-              <div className="space-y-2">
-                <Label htmlFor="reset-email" className={labelClass}>
-                  Email
-                </Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                  autoComplete="email"
-                />
+              Get Started
+            </a>
+            <a
+              href="/demo"
+              className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border border-black/20 px-8 py-4 text-black hover:bg-black/5 transition-colors"
+            >
+              Book a Demo
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Who it's for */}
+      <section className="px-6 md:px-12 py-24 border-t border-black/10">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-4">
+            Built for accounting practices.
+          </h2>
+          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg mb-16 max-w-2xl">
+            Managing dozens of clients across CT1s, Form 11s, VAT returns, and CRO
+            filings shouldn't mean dozens of spreadsheets. Balnce brings it all
+            into one place.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div>
+              <div className="w-10 h-10 border border-[#E8930C] flex items-center justify-center mb-4">
+                <span className="text-[#E8930C] font-['IBM_Plex_Mono'] text-sm font-bold">01</span>
               </div>
-
-              <Button type="submit" disabled={isLoading} className={primaryBtnClass}>
-                {isLoading ? "Sending..." : "Send Reset Link"}
-              </Button>
-
-              <p className="text-center text-muted-foreground font-['IBM_Plex_Sans'] text-sm">
-                Remember your password?{" "}
-                <button
-                  type="button"
-                  onClick={() => setScreen("login")}
-                  className="font-semibold text-foreground underline"
-                >
-                  Log in
-                </button>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                All your clients, one dashboard
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed">
+                See every client's filing status at a glance. Know what's drafted,
+                what's awaiting signature, and what's overdue — without digging
+                through folders.
               </p>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {screen === "business-type" && (
-        <div className="flex-1 flex flex-col px-6 py-8 animate-fade-in relative z-10">
-          <button
-            onClick={() => setScreen("signup")}
-            className="text-muted-foreground hover:text-foreground mb-6 self-start font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest transition-colors"
-          >
-            ← Back
-          </button>
-
-          <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
-            <div className="flex items-center gap-3 mb-8">
-              <img src="/enhance-penguin-transparent.png" alt="Balnce" className="w-10 h-10 object-contain" />
-              <h1 className="text-3xl font-semibold text-foreground font-['IBM_Plex_Mono'] tracking-wide">
-                Your industry
-              </h1>
             </div>
 
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="industry" className={labelClass}>
-                  What type of business do you run?
-                </Label>
-                <Select value={industryType} onValueChange={setIndustryType}>
-                  <SelectTrigger className={`${inputClass} w-full`}>
-                    <SelectValue placeholder="Select your industry..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INDUSTRY_OPTIONS.map((industry) => (
-                      <SelectItem key={industry} value={industry}>
-                        {industry}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-muted-foreground text-sm font-['IBM_Plex_Sans']">
-                  This helps us tailor your experience
-                </p>
+            <div>
+              <div className="w-10 h-10 border border-[#E8930C] flex items-center justify-center mb-4">
+                <span className="text-[#E8930C] font-['IBM_Plex_Mono'] text-sm font-bold">02</span>
               </div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                Every Irish tax return covered
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed">
+                CT1, Form 11, VAT3, RCT, DWT, VIES, Form 46G, iXBRL — 20 ROS
+                filing types plus full CRO coverage. One platform for everything
+                Revenue and the CRO need from you.
+              </p>
+            </div>
 
-              <Button
-                onClick={handleContinue}
-                disabled={!industryType.trim() || isLoading}
-                className={`${primaryBtnClass} disabled:opacity-50`}
-              >
-                {isLoading ? "Creating account..." : "Get Started"}
-              </Button>
+            <div>
+              <div className="w-10 h-10 border border-[#E8930C] flex items-center justify-center mb-4">
+                <span className="text-[#E8930C] font-['IBM_Plex_Mono'] text-sm font-bold">03</span>
+              </div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                Your team, your rules
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed">
+                Partners, managers, accountants, bookkeepers — everyone gets the
+                right level of access. Only senior roles can finalise and file.
+                Every change is tracked.
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* CTA */}
+      <section className="px-6 md:px-12 py-24 border-t border-black/10">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-4">
+            Stop juggling spreadsheets.
+          </h2>
+          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg mb-10">
+            Join practices already filing smarter with Balnce.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://app.balnce.ie"
+              className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border-2 border-[#E8930C] bg-[#E8930C] px-8 py-4 text-white hover:bg-[#E8930C]/90 transition-colors"
+            >
+              Get Started
+            </a>
+            <a
+              href="/demo"
+              className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border border-black/20 px-8 py-4 text-black hover:bg-black/5 transition-colors"
+            >
+              Book a Demo
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <div className="text-center py-4 text-[10px] text-muted-foreground">
-        <a href="/privacy" className="hover:underline">Privacy Policy</a>
-      </div>
+      <footer className="text-center py-6 px-6 flex items-center justify-between border-t border-black/10">
+        <span className="text-black/30 font-['IBM_Plex_Sans'] text-xs">
+          Balnce {new Date().getFullYear()}
+        </span>
+        <a
+          href="/privacy"
+          className="text-black/30 hover:text-black/60 font-['IBM_Plex_Sans'] text-xs transition-colors"
+        >
+          Privacy Policy
+        </a>
+      </footer>
     </div>
   );
 };
