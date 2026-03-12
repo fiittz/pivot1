@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Check } from "lucide-react";
 
-const ROTATING_WORDS = ["CT1s", "Form 11s", "VAT3s", "CRO filings"];
+const ROTATING_WORDS = ["business", "team", "clients"];
 
 const PLANS = [
   {
@@ -135,19 +135,20 @@ const Welcome = () => {
             className="font-['IBM_Plex_Sans'] font-bold tracking-tight leading-[1.1] mb-6"
             style={{ fontSize: "clamp(2.5rem, 7vw, 5rem)" }}
           >
-            <span className="text-black">File </span>
+            <span className="text-black">Your </span>
             <span
               className={`inline-block transition-all duration-300 ${
                 isAnimating
                   ? "opacity-0 translate-y-2"
                   : "opacity-100 translate-y-0"
               }`}
-              style={{ color: "#E8930C", minWidth: "5ch" }}
+              style={{ color: "#E8930C", minWidth: "3ch" }}
             >
               {ROTATING_WORDS[wordIndex]}
             </span>
+            <span className="text-black"> deserve</span>
             <br />
-            <span className="text-black">in minutes, not hours.</span>
+            <span className="text-black">better tools.</span>
           </h1>
 
           <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -173,51 +174,69 @@ const Welcome = () => {
         </div>
       </div>
 
-      {/* How it works */}
+      {/* Features */}
       <section className="px-6 md:px-12 py-24 border-t border-black/10">
         <div className="max-w-5xl mx-auto">
-          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-4">
-            From TAIN to filed — in four steps.
-          </h2>
-          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg mb-16 max-w-2xl">
-            No more downloading CSVs from ROS, copying figures into spreadsheets,
-            and manually building XML. Balnce automates the entire workflow.
+          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4">
+            03 / Features
           </p>
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-16">
+            Built for accounting practices.
+          </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
             {[
               {
                 num: "01",
-                title: "Connect your TAIN",
-                desc: "Upload your .p12 certificate. We auto-pull your full client list from ROS — employment details, tax credits, preliminary tax, P30s, LPT, the lot.",
+                tag: "CLIENTS",
+                title: "CLIENT MANAGEMENT",
+                desc: "All your clients in one dashboard. See filing status at a glance — what's drafted, what's awaiting signature, what's overdue. No more digging through folders.",
               },
               {
                 num: "02",
-                title: "Import trial balance",
-                desc: "CSV, Xero, Sage, QuickBooks — drag and drop. Accounts auto-map to the right CT1 or Form 11 sections based on the filing type.",
+                tag: "FILING",
+                title: "EVERY IRISH FILING TYPE",
+                desc: "CT1, Form 11, VAT3, RCT, CRO B1, Abridged Accounts — 20+ filing types covered. One platform for everything Revenue and the CRO need from you.",
               },
               {
                 num: "03",
-                title: "Build your working papers",
-                desc: "Interactive workspace with a working tree. Add deductions, credits, adjustments. Every change is tracked with a full audit trail.",
+                tag: "TEAM",
+                title: "TEAM ACCESS",
+                desc: "Partners, managers, accountants, bookkeepers — everyone gets the right level of access. Only senior roles can finalise and file. Every change is tracked.",
               },
               {
                 num: "04",
-                title: "Generate & file",
-                desc: "One click generates valid ROS XML (CT1, Form 11, VAT3) or CRO PDF (B1, Abridged Accounts). Client signs in the portal, you file.",
+                tag: "IMPORT",
+                title: "TRIAL BALANCE IMPORT",
+                desc: "Drag and drop from Xero, Sage, QuickBooks, or CSV. Accounts auto-map to the right CT1 or Form 11 sections based on the filing type.",
               },
-            ].map((step) => (
-              <div key={step.num}>
-                <div className="w-10 h-10 border border-[#E8930C] flex items-center justify-center mb-4">
-                  <span className="text-[#E8930C] font-['IBM_Plex_Mono'] text-sm font-bold">
-                    {step.num}
-                  </span>
-                </div>
-                <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
-                  {step.title}
+              {
+                num: "05",
+                tag: "PORTAL",
+                title: "CLIENT PORTAL",
+                desc: "Your client reviews the summary, signs on screen, and you file. No printing, no scanning, no chasing. E-signatures built in.",
+              },
+              {
+                num: "06",
+                tag: "AUDIT",
+                title: "AUDIT TRAIL",
+                desc: "Every change to every figure is tracked. Who changed it, when, and why. Full compliance reporting when you need it.",
+              },
+            ].map((feature, i) => (
+              <div
+                key={feature.num}
+                className={`p-8 md:p-10 border-b border-black/10 ${
+                  i % 2 === 0 ? "md:border-r" : ""
+                }`}
+              >
+                <p className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-3">
+                  {feature.num} / {feature.tag}
+                </p>
+                <h3 className="font-['IBM_Plex_Sans'] font-bold text-black text-lg mb-3">
+                  {feature.title}
                 </h3>
                 <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed">
-                  {step.desc}
+                  {feature.desc}
                 </p>
               </div>
             ))}
@@ -225,43 +244,40 @@ const Welcome = () => {
         </div>
       </section>
 
-      {/* Filing types */}
+      {/* How it works */}
       <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-4">
-            Every Irish filing type, covered.
+        <div className="max-w-3xl mx-auto">
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-16">
+            How it works.
           </h2>
-          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg mb-12 max-w-2xl">
-            One platform for everything Revenue and the CRO need from you.
-          </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { name: "CT1", label: "Corporation Tax" },
-              { name: "Form 11", label: "Income Tax (Individual)" },
-              { name: "Form 12", label: "Income Tax (PAYE)" },
-              { name: "VAT3", label: "VAT Return" },
-              { name: "RCT", label: "Relevant Contracts Tax" },
-              { name: "P30", label: "Monthly Payroll" },
-              { name: "P35", label: "Annual Payroll" },
-              { name: "Form 46G", label: "Third Party Returns" },
-              { name: "CRO B1", label: "Annual Return" },
-              { name: "CRO Abridged", label: "Abridged Accounts" },
-              { name: "LPT", label: "Local Property Tax" },
-              { name: "IT38 (CAT)", label: "Capital Acquisitions" },
-            ].map((filing) => (
-              <div
-                key={filing.name}
-                className="border border-black/10 p-4 hover:border-[#E8930C]/40 transition-colors"
-              >
-                <span className="font-['IBM_Plex_Mono'] text-xs font-bold text-[#E8930C] block mb-1">
-                  {filing.name}
-                </span>
-                <span className="font-['IBM_Plex_Sans'] text-black/50 text-xs">
-                  {filing.label}
-                </span>
-              </div>
-            ))}
+          <div className="space-y-10">
+            <div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                01 — Connect & invite your team
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
+                Upload your TAIN cert. Invite your team and assign roles.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                02 — Work the filing
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
+                Import a trial balance. Build working papers, track every change.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                03 — File
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
+                Generate ROS or CRO reports. Client signs in the portal. File to Revenue.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -349,28 +365,23 @@ const Welcome = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-white">
+      <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-black">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-4">
-            Stop juggling spreadsheets and ROS logins.
-          </h2>
-          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg mb-10">
-            Join practices already filing smarter with Balnce.
+          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-6">
+            Ready to automate?
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={scrollToPricing}
-              className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border-2 border-[#E8930C] bg-[#E8930C] px-8 py-4 text-white hover:bg-[#E8930C]/90 transition-colors"
-            >
-              View Plans
-            </button>
-            <a
-              href="/demo"
-              className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border border-black/20 px-8 py-4 text-black hover:bg-black/5 transition-colors"
-            >
-              Book a Demo
-            </a>
-          </div>
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-white text-3xl md:text-5xl leading-tight mb-6">
+            Generate & file tax reports<br />in minutes.
+          </h2>
+          <p className="font-['IBM_Plex_Sans'] text-white/50 text-lg mb-10">
+            Create your account and start filing today.
+          </p>
+          <a
+            href="https://app.balnce.ie"
+            className="inline-block font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border-2 border-[#E8930C] bg-[#E8930C] px-10 py-4 text-white hover:bg-[#E8930C]/90 transition-colors"
+          >
+            Create Account
+          </a>
         </div>
       </section>
 
