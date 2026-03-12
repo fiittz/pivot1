@@ -73,8 +73,8 @@ const Welcome = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const scrollToPricing = () => {
-    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -108,22 +108,28 @@ const Welcome = () => {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={scrollToPricing}
-            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors"
+            onClick={() => scrollTo("for-you")}
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors hidden sm:block"
+          >
+            For You
+          </button>
+          <button
+            onClick={() => scrollTo("features")}
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors hidden sm:block"
+          >
+            Features
+          </button>
+          <button
+            onClick={() => scrollTo("pricing")}
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors hidden sm:block"
           >
             Pricing
           </button>
           <a
-            href="/demo"
-            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors"
-          >
-            Book a Demo
-          </a>
-          <a
             href="https://app.balnce.ie"
             className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border border-black px-5 py-2.5 text-black hover:bg-black hover:text-white transition-colors"
           >
-            Sign In
+            Get Started
           </a>
         </div>
       </nav>
@@ -152,14 +158,13 @@ const Welcome = () => {
           </h1>
 
           <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Connect your TAIN cert, pull client data from ROS automatically, build your
-            working papers, generate XML &amp; PDF — and file. All from one platform
-            built for Irish accountants.
+            Irish tax filing, simplified. ROS returns, CRO filings, and practice
+            management — all in one platform built for Irish accountants.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={scrollToPricing}
+              onClick={() => scrollTo("pricing")}
               className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest border-2 border-[#E8930C] bg-[#E8930C] px-8 py-4 text-white hover:bg-[#E8930C]/90 transition-colors"
             >
               Get Started
@@ -174,14 +179,107 @@ const Welcome = () => {
         </div>
       </div>
 
-      {/* Features */}
-      <section className="px-6 md:px-12 py-24 border-t border-black/10">
+      {/* 01 / For You */}
+      <section id="for-you" className="px-6 md:px-12 py-24 border-t border-black/10">
+        <div className="max-w-5xl mx-auto">
+          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4">
+            01 / For You
+          </p>
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-16">
+            Who it's for.
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+            {[
+              {
+                num: "01",
+                title: "Accountants",
+                desc: "Built for Irish accounting practices managing multiple clients. Automate CT1, Form 11, VAT3, and CRO filings across your entire book of business.",
+              },
+              {
+                num: "02",
+                title: "Irish Limited Companies",
+                desc: "Perfect for single-director and small multi-director limited companies looking to simplify compliance and reduce filing costs.",
+              },
+              {
+                num: "03",
+                title: "Sole Traders",
+                desc: "Simplified Form 11 preparation for sole traders. Track income, expenses, and generate tax returns ready for your accountant to review.",
+              },
+            ].map((item, i) => (
+              <div
+                key={item.num}
+                className={`p-8 md:p-10 ${
+                  i < 2 ? "md:border-r border-black/10" : ""
+                }`}
+              >
+                <p className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-2">
+                  No. {item.num}
+                </p>
+                <p className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+                  Who It's For
+                </p>
+                <h3 className="font-['IBM_Plex_Sans'] font-bold text-black text-xl mb-3">
+                  {item.title}
+                </h3>
+                <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 02 / How it works */}
+      <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4">
+            02 / How It Works
+          </p>
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-16">
+            Three steps.
+          </h2>
+
+          <div className="max-w-3xl space-y-10">
+            <div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                01 — Connect & invite your team
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
+                Upload your TAIN cert. Invite your team and assign roles.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                02 — Work the filing
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
+                Import a trial balance. Build working papers, track every change.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
+                03 — File
+              </h3>
+              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
+                Generate ROS or CRO reports. Client signs in the portal. File to Revenue.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 03 / Features */}
+      <section id="features" className="px-6 md:px-12 py-24 border-t border-black/10">
         <div className="max-w-5xl mx-auto">
           <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4">
             03 / Features
           </p>
           <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-16">
-            Built for accounting practices.
+            Everything you need to file.
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
@@ -244,54 +342,19 @@ const Welcome = () => {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-white">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-16">
-            How it works.
-          </h2>
-
-          <div className="space-y-10">
-            <div>
-              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
-                01 — Connect & invite your team
-              </h3>
-              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
-                Upload your TAIN cert. Invite your team and assign roles.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
-                02 — Work the filing
-              </h3>
-              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
-                Import a trial balance. Build working papers, track every change.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-['IBM_Plex_Sans'] font-semibold text-black text-lg mb-2">
-                03 — File
-              </h3>
-              <p className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed pl-10">
-                Generate ROS or CRO reports. Client signs in the portal. File to Revenue.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="px-6 md:px-12 py-24 border-t border-black/10">
+      {/* 04 / Pricing */}
+      <section id="pricing" className="px-6 md:px-12 py-24 border-t border-black/10 bg-white">
         <div className="max-w-5xl mx-auto">
+          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4">
+            04 / Pricing
+          </p>
           <div className="text-center mb-16">
             <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-4">
               Simple pricing. No per-filing fees.
             </h2>
             <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg max-w-2xl mx-auto">
               Pick a plan based on how many clients you manage. Every plan includes
-              unlimited filings — CT1, Form 11, VAT3, CRO, the lot.
+              unlimited filings and unlimited team members.
             </p>
           </div>
 
@@ -364,7 +427,7 @@ const Welcome = () => {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* 05 / CTA */}
       <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-black">
         <div className="max-w-3xl mx-auto text-center">
           <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-6">
@@ -385,17 +448,124 @@ const Welcome = () => {
         </div>
       </section>
 
+      {/* 06 / Location */}
+      <section className="px-6 md:px-12 py-24 border-t border-black/10">
+        <div className="max-w-5xl mx-auto">
+          <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4">
+            06 / Location
+          </p>
+          <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-2xl mb-6">
+            BALNCE
+          </h2>
+          <div className="font-['IBM_Plex_Sans'] text-black/50 text-sm leading-relaxed space-y-1">
+            <p>3rd Floor, 61 Thomas St</p>
+            <p>The Liberties, Dublin 8</p>
+            <p>D08 W250, Ireland</p>
+            <p className="pt-2">
+              <a
+                href="mailto:hello@balnce.ie"
+                className="text-black/60 hover:text-black transition-colors"
+              >
+                hello@balnce.ie
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="text-center py-6 px-6 flex items-center justify-between border-t border-black/10">
-        <span className="text-black/30 font-['IBM_Plex_Sans'] text-xs">
-          Balnce {new Date().getFullYear()}
-        </span>
-        <a
-          href="/privacy"
-          className="text-black/30 hover:text-black/60 font-['IBM_Plex_Sans'] text-xs transition-colors"
-        >
-          Privacy Policy
-        </a>
+      <footer className="px-6 md:px-12 py-12 border-t border-black/10">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <img
+                  src="/enhance-penguin-transparent.png"
+                  alt="Balnce"
+                  className="w-6 h-6 object-contain"
+                />
+                <span className="font-['IBM_Plex_Sans'] font-bold text-black text-sm">
+                  BALNCE
+                </span>
+              </div>
+              <p className="font-['IBM_Plex_Sans'] text-black/40 text-xs">
+                Irish tax filing, simplified.
+              </p>
+            </div>
+
+            {/* Navigate */}
+            <div>
+              <h4 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+                Navigate
+              </h4>
+              <div className="space-y-2">
+                <button
+                  onClick={() => scrollTo("for-you")}
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                >
+                  For You
+                </button>
+                <button
+                  onClick={() => scrollTo("features")}
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => scrollTo("pricing")}
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                >
+                  Pricing
+                </button>
+              </div>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+                Legal
+              </h4>
+              <div className="space-y-2">
+                <a
+                  href="/privacy"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </div>
+            </div>
+
+            {/* Connect */}
+            <div>
+              <h4 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+                Connect
+              </h4>
+              <div className="space-y-2">
+                <a
+                  href="mailto:hello@balnce.ie"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                >
+                  hello@balnce.ie
+                </a>
+                <a
+                  href="https://linkedin.com/company/balnce"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                >
+                  LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-black/10 pt-6">
+            <p className="font-['IBM_Plex_Sans'] text-black/30 text-xs">
+              &copy; {new Date().getFullYear()} Balnce. All rights reserved.
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );
