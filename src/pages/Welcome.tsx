@@ -87,7 +87,7 @@ const Welcome = () => {
             alt="Balnce"
             className="w-8 h-8 object-contain"
           />
-          <span className="text-2xl font-bold tracking-tight text-black" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
+          <span className="text-2xl font-bold tracking-[0.15em] text-black" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
             BALNCE
           </span>
         </div>
