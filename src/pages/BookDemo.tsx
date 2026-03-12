@@ -156,24 +156,9 @@ const BookDemo = () => {
             className="object-contain"
             style={{ height: "clamp(3rem, 8vw, 5rem)", width: "auto" }}
           />
-          <div className="inline-flex gap-[0.08em] items-center">
-            {"BALNCE".split("").map((char, i) => (
-              <div
-                key={i}
-                className="relative overflow-hidden flex items-center justify-center"
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: "clamp(2rem, 6vw, 4rem)",
-                  width: "0.65em",
-                  height: "1.05em",
-                  backgroundColor: "#000",
-                  color: "#fff",
-                }}
-              >
-                {char}
-              </div>
-            ))}
-          </div>
+          <span className="font-bold tracking-tight text-black" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2rem, 6vw, 4rem)" }}>
+            BALNCE
+          </span>
         </div>
         <p className="text-muted-foreground text-base mb-8 font-['IBM_Plex_Sans']">
           Book a demo

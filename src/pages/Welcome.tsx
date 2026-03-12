@@ -87,24 +87,9 @@ const Welcome = () => {
             alt="Balnce"
             className="w-8 h-8 object-contain"
           />
-          <div className="inline-flex gap-[0.04em] items-center">
-            {"BALNCE".split("").map((char, i) => (
-              <div
-                key={i}
-                className="relative overflow-hidden flex items-center justify-center"
-                style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: "1.4rem",
-                  width: "0.65em",
-                  height: "1.05em",
-                  backgroundColor: "#000",
-                  color: "#fff",
-                }}
-              >
-                {char}
-              </div>
-            ))}
-          </div>
+          <span className="text-2xl font-bold tracking-tight text-black" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
+            BALNCE
+          </span>
         </div>
         <div className="flex items-center gap-4">
           <button
