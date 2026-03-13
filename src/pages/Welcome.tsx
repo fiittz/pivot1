@@ -965,27 +965,9 @@ const Welcome = () => {
                     hello@balnce.ie
                   </a>
                 </p>
-                <p className="pt-3">
-                  <a
-                    href="https://calendly.com/jamie-balnce/30min"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#E8930C] hover:text-[#d4840b] font-medium underline decoration-[#E8930C]/40 transition-colors"
-                  >
-                    Book an in-person meeting →
-                  </a>
-                </p>
               </div>
             </div>
             <div>
-              <a
-                href="https://calendly.com/jamie-balnce/30min"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-['IBM_Plex_Sans'] text-sm text-[#E8930C] hover:text-[#d4840b] font-medium underline decoration-[#E8930C]/40 transition-colors inline-block mb-3"
-              >
-                Book an in-person meeting ↓
-              </a>
               <div className="rounded-lg overflow-hidden border border-black/10" style={{ height: 220 }}>
                 <iframe
                   title="Balnce Location"
