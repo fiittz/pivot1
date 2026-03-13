@@ -101,7 +101,7 @@ const LaptopShell = ({ url, activeSidebar, children }: { url: string; activeSide
         <div style={laptopStyles.avatar}>SR</div>
       </div>
       <div style={laptopStyles.contentArea}>
-        <div style={laptopStyles.sidebar} className="hidden md:flex flex-col">
+        <div style={laptopStyles.sidebar} className="hidden lg:flex flex-col">
           {["Dashboard", "Clients", "Filings", "Settings", "Team"].map((item) => (
             <div key={item} style={item === activeSidebar ? laptopStyles.sidebarActive : laptopStyles.sidebarItem}>
               <div style={laptopStyles.sidebarIcon} />
