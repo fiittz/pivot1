@@ -16,6 +16,7 @@ import PostHogTracker from "@/components/PostHogTracker";
 
 // Eagerly loaded — landing/login page (first thing users see)
 import Welcome from "./pages/Welcome";
+import WelcomeBrutalist from "./pages/WelcomeBrutalist";
 import NotFound from "./pages/NotFound";
 
 // ---------------------------------------------------------------------------
@@ -130,6 +131,7 @@ const PeriodEndQuestionnaire = lazyWithRetry(() => import("./pages/PeriodEndQues
 const BudgetPage = lazyWithRetry(() => import("./pages/BudgetPage"));
 const ReconciliationPage = lazyWithRetry(() => import("./pages/ReconciliationPage"));
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -157,7 +159,9 @@ const App = () => (
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-pulse text-xl font-semibold">Loading...</div></div>}>
                     <Routes>
                       <Route path="/" element={<Welcome />} />
+                      <Route path="/v2" element={<WelcomeBrutalist />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/demo" element={<BookDemo />} />
                       <Route
