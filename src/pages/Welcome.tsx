@@ -98,7 +98,7 @@ const LaptopShell = ({ url, activeSidebar, children }: { url: string; activeSide
           <img src="/enhance-penguin-transparent.png" alt="Balnce" style={{ width: 22, height: 22, objectFit: "contain" }} />
           <div style={laptopStyles.brand}>BALNCE</div>
         </div>
-        <div style={laptopStyles.avatar}>SR</div>
+        <div style={laptopStyles.avatar}>AF</div>
       </div>
       <div style={laptopStyles.contentArea}>
         <div style={laptopStyles.main}>{children}</div>
@@ -156,7 +156,7 @@ const ScreenClients = () => (
 const ScreenDashboard = () => (
   <LaptopShell url="app.balnce.ie" activeSidebar="Dashboard">
     <div style={laptopStyles.mainTitle}>Dashboard</div>
-    <div style={laptopStyles.mainSub}>Welcome back, Jamie</div>
+    <div style={laptopStyles.mainSub}>Welcome back, Adam</div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
       {[
         { label: "Active Clients", value: "5", color: "#E8930C" },
@@ -360,12 +360,12 @@ const ScreenAuditTrail = () => (
     </div>
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
       {[
-        { user: "SR", name: "Siobhán R.", action: "Approved filing for submission", node: "", time: "Today, 14:32", color: "#16a34a" },
-        { user: "SR", name: "Siobhán R.", action: "Applied Start-Up Relief (s486C)", node: "€5,000 credit added", time: "Today, 14:18", color: "#E8930C" },
+        { user: "AF", name: "Adam F.", action: "Approved filing for submission", node: "", time: "Today, 14:32", color: "#16a34a" },
+        { user: "AF", name: "Adam F.", action: "Applied Start-Up Relief (s486C)", node: "€5,000 credit added", time: "Today, 14:18", color: "#E8930C" },
         { user: "DK", name: "Darragh K.", action: "Added comment on Employment Credit", node: "\"Verify headcount with payroll\"", time: "Today, 11:05", color: "#3b82f6" },
         { user: "DK", name: "Darragh K.", action: "Changed Cost of Sales", node: "€108,900 → €112,300", time: "Yesterday, 16:42", color: "#E8930C" },
         { user: "DK", name: "Darragh K.", action: "Imported trial balance from Xero", node: "48 accounts mapped", time: "Yesterday, 09:15", color: "#8b5cf6" },
-        { user: "SR", name: "Siobhán R.", action: "Created workspace", node: "CT1 · Tax Year 2025", time: "12 Mar, 10:00", color: "#6b7280" },
+        { user: "AF", name: "Adam F.", action: "Created workspace", node: "CT1 · Tax Year 2025", time: "12 Mar, 10:00", color: "#6b7280" },
       ].map((row, i) => (
         <div key={i} style={{ display: "flex", gap: 10, padding: "8px 12px", borderBottom: i < 5 ? "1px solid #f4f4f5" : "none", alignItems: "flex-start" }}>
           <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#e4e4e7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 600, color: "#52525b", flexShrink: 0, marginTop: 1 }}>{row.user}</div>
