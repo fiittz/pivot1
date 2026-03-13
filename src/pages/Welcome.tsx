@@ -501,6 +501,7 @@ const Welcome = () => {
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
       {/* Nav */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 bg-black text-white px-4 py-2">Skip to content</a>
       <nav className="flex items-center justify-between px-6 md:px-12 py-6">
         <div className="flex items-center gap-2">
           <img
@@ -515,19 +516,19 @@ const Welcome = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => scrollTo("for-you")}
-            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors hidden sm:block"
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/70 hover:text-black transition-colors hidden sm:block"
           >
             For You
           </button>
           <button
             onClick={() => scrollTo("features")}
-            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors hidden sm:block"
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/70 hover:text-black transition-colors hidden sm:block"
           >
             Features
           </button>
           <button
             onClick={() => scrollTo("pricing")}
-            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/60 hover:text-black transition-colors hidden sm:block"
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/70 hover:text-black transition-colors hidden sm:block"
           >
             Pricing
           </button>
@@ -535,7 +536,7 @@ const Welcome = () => {
             href="https://calendly.com/jamie-balnce/30min"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:text-[#d4840b] transition-colors hidden sm:block"
+            className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] hover:text-[#d4840b] underline decoration-[#E8930C]/40 hover:decoration-[#d4840b] transition-colors hidden sm:block"
           >
             Book a Demo
           </a>
@@ -548,6 +549,7 @@ const Welcome = () => {
         </div>
       </nav>
 
+      <main id="main-content">
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
         <div className="max-w-4xl text-center">
@@ -571,7 +573,7 @@ const Welcome = () => {
             <span className="text-black">better tools.</span>
           </h1>
 
-          <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="font-['IBM_Plex_Sans'] text-black/70 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
             Irish tax filing, simplified. ROS, CRO, and practice
             management — one platform built for Irish accountants.
           </p>
@@ -958,7 +960,7 @@ const Welcome = () => {
                 <p className="pt-2">
                   <a
                     href="mailto:hello@balnce.ie"
-                    className="text-black/60 hover:text-black transition-colors"
+                    className="text-black/70 hover:text-black transition-colors"
                   >
                     hello@balnce.ie
                   </a>
@@ -968,7 +970,7 @@ const Welcome = () => {
                     href="https://calendly.com/jamie-balnce/30min"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#E8930C] hover:text-[#d4840b] font-medium transition-colors"
+                    className="text-[#E8930C] hover:text-[#d4840b] font-medium underline decoration-[#E8930C]/40 transition-colors"
                   >
                     Book an in-person meeting →
                   </a>
@@ -980,7 +982,7 @@ const Welcome = () => {
                 href="https://calendly.com/jamie-balnce/30min"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-['IBM_Plex_Sans'] text-sm text-[#E8930C] hover:text-[#d4840b] font-medium transition-colors inline-block mb-3"
+                className="font-['IBM_Plex_Sans'] text-sm text-[#E8930C] hover:text-[#d4840b] font-medium underline decoration-[#E8930C]/40 transition-colors inline-block mb-3"
               >
                 Book an in-person meeting ↓
               </a>
@@ -1002,6 +1004,8 @@ const Welcome = () => {
       </section>
 
       {/* Footer */}
+      </main>
+
       <footer className="px-6 md:px-12 py-12 border-t border-black/10">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
@@ -1024,25 +1028,25 @@ const Welcome = () => {
 
             {/* Navigate */}
             <div>
-              <h4 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+              <h3 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
                 Navigate
-              </h4>
+              </h3>
               <div className="space-y-2">
                 <button
                   onClick={() => scrollTo("for-you")}
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   For You
                 </button>
                 <button
                   onClick={() => scrollTo("features")}
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   Features
                 </button>
                 <button
                   onClick={() => scrollTo("pricing")}
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   Pricing
                 </button>
@@ -1051,19 +1055,19 @@ const Welcome = () => {
 
             {/* Legal */}
             <div>
-              <h4 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+              <h3 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
                 Legal
-              </h4>
+              </h3>
               <div className="space-y-2">
                 <a
                   href="/privacy"
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   Privacy Policy
                 </a>
                 <a
                   href="/terms"
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   Terms of Service
                 </a>
@@ -1072,13 +1076,13 @@ const Welcome = () => {
 
             {/* Connect */}
             <div>
-              <h4 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
+              <h3 className="font-['IBM_Plex_Mono'] text-[11px] uppercase tracking-widest text-black/30 mb-4">
                 Connect
-              </h4>
+              </h3>
               <div className="space-y-2">
                 <a
                   href="mailto:hello@balnce.ie"
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   hello@balnce.ie
                 </a>
@@ -1086,7 +1090,7 @@ const Welcome = () => {
                   href="https://linkedin.com/company/balnce"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block font-['IBM_Plex_Sans'] text-sm text-black/60 hover:text-black transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-black/70 hover:text-black transition-colors"
                 >
                   LinkedIn
                 </a>
@@ -1094,7 +1098,7 @@ const Welcome = () => {
                   href="https://calendly.com/jamie-balnce/30min"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block font-['IBM_Plex_Sans'] text-sm text-[#E8930C] hover:text-[#d4840b] font-medium transition-colors"
+                  className="block font-['IBM_Plex_Sans'] text-sm text-[#E8930C] hover:text-[#d4840b] font-medium underline decoration-[#E8930C]/40 transition-colors"
                 >
                   Book a Demo
                 </a>
