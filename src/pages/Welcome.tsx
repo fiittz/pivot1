@@ -144,6 +144,7 @@ const ScreenClients = () => (
             ["O'Brien Consulting", "Sole Trader", "7654321W", "BN789012", "31 Dec"],
             ["Kavanagh Dental", "Ltd", "9876543A", "321654", "30 Sep"],
             ["Doyle Architects", "LLP", "3456789E", "654321", "31 Mar"],
+            ["Walsh & Partners", "Sole Trader", "2345678K", "BN654321", "31 Dec"],
           ].map(([name, type, tax, cro, ye], i) => (
             <tr key={i}>
               <td style={laptopStyles.tdName}>{name}</td>
@@ -181,8 +182,8 @@ const ScreenDashboard = () => (
     <div style={{ fontSize: 12, fontWeight: 600, color: "#09090b", marginBottom: 8 }}>Recent Activity</div>
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
       {[
-        { action: "CT1 filed", client: "Oakmont Carpentry & Joinery Ltd", time: "2h ago", status: "Filed" },
-        { action: "Signature received", client: "Kavanagh Dental", time: "4h ago", status: "Signed" },
+        { action: "CT1 filed", client: "Kavanagh Dental", time: "2h ago", status: "Filed" },
+        { action: "Signature received", client: "Doyle Architects", time: "4h ago", status: "Signed" },
         { action: "Form 11 draft", client: "O'Brien Consulting", time: "1d ago", status: "Draft" },
       ].map((row, i) => (
         <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderBottom: i < 2 ? "1px solid #f4f4f5" : "none" }}>
@@ -225,12 +226,12 @@ const ScreenWorkspace = () => (
         <tbody>
           {[
             ["Adjusted Trading Profit", "€157,000", "Xero", "subtotal"],
-            ["Corporation Tax @ 12.5%", "€19,625", "Calculated", "figure"],
-            ["Start-Up Relief (s486C)", "€(5,000)", "Auto", "credit"],
-            ["Employment Credit", "€(3,200)", "Auto", "credit"],
-            ["Capital Allowances", "€(8,400)", "Xero", "credit"],
+            ["Capital Allowances", "€(8,400)", "Workbook", "credit"],
             ["Excess CA Carry Forward", "€(1,050)", "Prior Year", "credit"],
-            ["Net CT Payable", "€1,975", "Calculated", "subtotal"],
+            ["Corporation Tax @ 12.5%", "€18,444", "Workbook", "figure"],
+            ["Employment Credit", "€(3,200)", "ROS", "credit"],
+            ["Start-Up Relief (s486C)", "€(5,000)", "Workbook", "credit"],
+            ["Net CT Payable", "€10,244", "Workbook", "subtotal"],
           ].map(([label, amount, source, type], i) => (
             <tr key={i} style={type === "subtotal" ? { background: "#f9fafb" } : {}}>
               <td style={{ ...laptopStyles.tdName, fontWeight: type === "subtotal" ? 700 : 600 }}>{label}</td>
@@ -274,9 +275,9 @@ const ScreenForm11 = () => (
             ["Allowable Expenses", "€(31,400)", "Sage", "deduction"],
             ["Capital Allowances", "€(4,200)", "Manual", "deduction"],
             ["Pension Contribution", "€(8,000)", "Manual", "credit"],
-            ["Net Income", "€69,200", "Calculated", "subtotal"],
-            ["Tax Credits", "€(5,550)", "ROS", "credit"],
-            ["Tax Payable", "€21,340", "Calculated", "subtotal"],
+            ["Net Income", "€69,200", "Workbook", "subtotal"],
+            ["Tax Credits", "€(4,000)", "ROS", "credit"],
+            ["Tax Payable", "€19,339", "Workbook", "subtotal"],
           ].map(([label, amount, source, type], i) => (
             <tr key={i} style={type === "subtotal" ? { background: "#f9fafb" } : {}}>
               <td style={{ ...laptopStyles.tdName, fontWeight: type === "subtotal" ? 700 : 600 }}>{label}</td>
@@ -325,10 +326,10 @@ const ScreenAbridged = () => (
       <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
         <div style={{ ...laptopStyles.th, fontSize: 11, fontWeight: 600, color: "#09090b" }}>Liabilities</div>
         {[
-          ["Creditors < 1 year", "€(22,975)", false],
+          ["Creditors < 1 year", "€(31,244)", false],
           ["Creditors > 1 year", "€(15,000)", false],
-          ["Total Liabilities", "€(37,975)", true],
-          ["Net Assets", "€117,725", true],
+          ["Total Liabilities", "€(46,244)", true],
+          ["Net Assets", "€109,456", true],
         ].map(([label, amount, bold], i) => (
           <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid #f4f4f5", background: bold ? "#f9fafb" : "#fff" }}>
             <span style={{ fontSize: 11, color: "#09090b", fontWeight: bold ? 700 : 400 }}>{label as string}</span>
@@ -342,8 +343,8 @@ const ScreenAbridged = () => (
       <div style={{ ...laptopStyles.th, fontSize: 11, fontWeight: 600, color: "#09090b" }}>Capital & Reserves</div>
       {[
         ["Called Up Share Capital", "€100"],
-        ["Profit & Loss Account", "€117,625"],
-        ["Shareholders' Funds", "€117,725"],
+        ["Profit & Loss Account", "€109,356"],
+        ["Shareholders' Funds", "€109,456"],
       ].map(([label, amount], i) => (
         <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid #f4f4f5", background: i === 2 ? "#f9fafb" : "#fff" }}>
           <span style={{ fontSize: 11, color: "#09090b", fontWeight: i === 2 ? 700 : 400 }}>{label}</span>
@@ -369,7 +370,7 @@ const ScreenAuditTrail = () => (
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>
       {[
         { user: "SR", name: "Siobhán R.", action: "Approved filing for submission", node: "", time: "Today, 14:32", color: "#16a34a" },
-        { user: "SR", name: "Siobhán R.", action: "Applied Start-Up Relief (s486C)", node: "€5,000 credit auto-calculated", time: "Today, 14:18", color: "#E8930C" },
+        { user: "SR", name: "Siobhán R.", action: "Applied Start-Up Relief (s486C)", node: "€5,000 credit added", time: "Today, 14:18", color: "#E8930C" },
         { user: "DK", name: "Darragh K.", action: "Added comment on Employment Credit", node: "\"Verify headcount with payroll\"", time: "Today, 11:05", color: "#3b82f6" },
         { user: "DK", name: "Darragh K.", action: "Changed Cost of Sales", node: "€108,900 → €112,300", time: "Yesterday, 16:42", color: "#E8930C" },
         { user: "DK", name: "Darragh K.", action: "Imported trial balance from Xero", node: "48 accounts mapped", time: "Yesterday, 09:15", color: "#8b5cf6" },
@@ -599,7 +600,7 @@ const Welcome = () => {
       <section className="px-6 md:px-12 py-16 border-t border-black/10 bg-white">
         <div className="max-w-md mx-auto text-center">
           <blockquote className="font-['IBM_Plex_Sans'] text-black/60 text-lg leading-relaxed mb-4 italic">
-            "Balnce cut our filing time from days to minutes."
+            "Balnce cut our filing time from hours to minutes."
           </blockquote>
           <p className="font-['IBM_Plex_Sans'] font-semibold text-black text-sm">
             Siobhán
@@ -607,6 +608,42 @@ const Welcome = () => {
           <p className="font-['IBM_Plex_Mono'] text-[11px] text-black/40 uppercase tracking-widest">
             Managing Partner
           </p>
+        </div>
+      </section>
+
+      {/* Integrations ticker */}
+      <section className="py-14 border-t border-black/10 bg-white overflow-hidden">
+        <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-black/30 text-center mb-10">
+          Integrates with
+        </p>
+        <div className="max-w-3xl mx-auto relative overflow-hidden">
+          <div className="flex animate-[scroll_30s_linear_infinite] gap-24 w-max" style={{ paddingLeft: "calc(50% - 120px)" }}>
+            {[...Array(3)].map((_, dupeIdx) => (
+              <div key={dupeIdx} className="flex gap-24 items-center">
+                {[
+                  { name: "Xero", img: "/logos/xero.png" },
+                  { name: "Sage", img: "/logos/sage.jpg" },
+                  { name: "QuickBooks", img: "/logos/quickbooks.png" },
+                  { name: "Revenue.ie", img: "/logos/revenue.jpg" },
+                  { name: "CRO", img: "/logos/cro.gif" },
+                  { name: "Excel", img: "/logos/excel.png" },
+                ].map((int) => (
+                  <div key={int.name} className="flex flex-col items-center gap-3 shrink-0" style={{ width: 140 }}>
+                    {int.img ? (
+                      <img src={int.img} alt={int.name} className={`${int.name === "Revenue.ie" ? "h-32 md:h-40" : "h-16 md:h-20"} w-auto object-contain`} style={{ maxWidth: int.name === "Revenue.ie" ? 280 : 140 }} />
+                    ) : (
+                      <div className="h-16 md:h-20 flex items-center justify-center px-4 rounded-lg border border-black/10 bg-white">
+                        <span className="font-['IBM_Plex_Sans'] font-bold text-xl md:text-2xl text-black/50">{int.name}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          {/* Fade edges */}
+          <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white to-transparent pointer-events-none" />
         </div>
       </section>
 
@@ -869,7 +906,8 @@ const Welcome = () => {
           </div>
 
           <p className="text-center font-['IBM_Plex_Sans'] text-black/30 text-sm mt-8">
-            All prices exclude VAT. Cancel anytime.
+            All prices exclude VAT.{" "}
+            <a href="https://calendly.com/jamie-balnce/30min" target="_blank" rel="noopener noreferrer" className="text-[#E8930C] hover:underline font-medium">Book a demo</a> anytime.
           </p>
         </div>
       </section>

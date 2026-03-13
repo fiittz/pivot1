@@ -6,6 +6,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 @layer base {
   :root {
     /* Light grey theme — clean monochrome with gold accent */
