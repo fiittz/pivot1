@@ -293,7 +293,6 @@ const ScreenAbridged = () => (
         <div style={laptopStyles.mainSub}>Year End 31 Dec 2025 · Ready to File</div>
       </div>
       <div style={{ display: "flex", gap: 6 }}>
-        <div style={{ ...laptopStyles.btn, background: "#fff", color: "#1e293b", border: "1px solid #e5e7eb" }}>Download PDF</div>
         <div style={{ ...laptopStyles.btn, background: "#fff", color: "#E8930C", border: "1px solid #E8930C" }}>Send for Signature</div>
         <div style={laptopStyles.btn}>File to CRO</div>
       </div>
