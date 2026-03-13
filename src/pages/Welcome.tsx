@@ -979,7 +979,7 @@ const Welcome = () => {
               <div className="rounded-lg overflow-hidden border border-black/10" style={{ height: 220 }}>
                 <iframe
                   title="Balnce Location"
-                  src="https://maps.google.com/maps?q=61+Thomas+St,+The+Liberties,+Dublin+8,+Ireland&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                  src="https://www.google.com/maps?q=61+Thomas+St,+The+Liberties,+Dublin+8,+Ireland&z=16&output=embed"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
