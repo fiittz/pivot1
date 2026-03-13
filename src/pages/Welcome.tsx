@@ -217,19 +217,19 @@ const ScreenWorkspace = () => (
         </thead>
         <tbody>
           {[
-            ["Adjusted Trading Profit", "€157,000", "Xero", "subtotal"],
-            ["Capital Allowances", "€(8,400)", "Workbook", "credit"],
-            ["Excess CA Carry Forward", "€(1,050)", "Prior Year", "credit"],
-            ["Corporation Tax @ 12.5%", "€18,444", "Workbook", "figure"],
-            ["Employment Credit", "€(3,200)", "ROS", "credit"],
-            ["Start-Up Relief (s486C)", "€(5,000)", "Workbook", "credit"],
-            ["Net CT Payable", "€10,244", "Workbook", "subtotal"],
+            ["Adjusted Trading Profit", "€157,000", "Xero", "income"],
+            ["Capital Allowances", "€(8,400)", "Workbook", "deduction"],
+            ["Excess CA Carry Forward", "€(1,050)", "Prior Year", "deduction"],
+            ["Corporation Tax @ 12.5%", "€18,444", "Workbook", "tax"],
+            ["Employment Credit", "€(3,200)", "ROS", "relief"],
+            ["Start-Up Relief (s486C)", "€(5,000)", "Workbook", "relief"],
+            ["Net CT Payable", "€10,244", "Workbook", "total"],
           ].map(([label, amount, source, type], i) => (
-            <tr key={i} style={type === "subtotal" ? { background: "#f9fafb" } : {}}>
-              <td style={{ ...laptopStyles.tdName, fontWeight: type === "subtotal" ? 700 : 600 }}>{label}</td>
-              <td style={{ ...laptopStyles.td, color: type === "credit" ? "#16a34a" : "#52525b", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{amount}</td>
+            <tr key={i} style={type === "total" || type === "income" ? { background: "#f9fafb" } : {}}>
+              <td style={{ ...laptopStyles.tdName, fontWeight: type === "total" || type === "income" ? 700 : 600 }}>{label}</td>
+              <td style={{ ...laptopStyles.td, color: type === "deduction" || type === "relief" ? "#16a34a" : "#52525b", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{amount}</td>
               <td style={laptopStyles.td}><span style={laptopStyles.badge}>{source}</span></td>
-              <td style={laptopStyles.td}><span style={{ ...laptopStyles.badge, background: type === "credit" ? "#dbeafe" : type === "subtotal" ? "#fef3c7" : "#f1f5f9", color: type === "credit" ? "#1e40af" : type === "subtotal" ? "#92400e" : "#475569" }}>{type}</span></td>
+              <td style={laptopStyles.td}><span style={{ ...laptopStyles.badge, background: type === "relief" ? "#dbeafe" : type === "deduction" ? "#dcfce7" : type === "total" ? "#fef3c7" : type === "income" ? "#fef3c7" : "#f1f5f9", color: type === "relief" ? "#1e40af" : type === "deduction" ? "#166534" : type === "total" || type === "income" ? "#92400e" : "#475569" }}>{type}</span></td>
             </tr>
           ))}
         </tbody>
@@ -262,20 +262,20 @@ const ScreenForm11 = () => (
         </thead>
         <tbody>
           {[
-            ["Self-Employment Income", "€94,200", "Sage", "figure"],
-            ["Rental Income", "€18,600", "Manual", "figure"],
+            ["Self-Employment Income", "€94,200", "Sage", "income"],
+            ["Rental Income", "€18,600", "Manual", "income"],
             ["Allowable Expenses", "€(31,400)", "Sage", "deduction"],
             ["Capital Allowances", "€(4,200)", "Manual", "deduction"],
-            ["Pension Contribution", "€(8,000)", "Manual", "credit"],
-            ["Net Income", "€69,200", "Workbook", "subtotal"],
-            ["Tax Credits", "€(4,000)", "ROS", "credit"],
-            ["Tax Payable", "€19,339", "Workbook", "subtotal"],
+            ["Pension Contribution", "€(8,000)", "Manual", "relief"],
+            ["Net Income", "€69,200", "Workbook", "total"],
+            ["Tax Credits", "€(4,000)", "ROS", "relief"],
+            ["Tax Payable", "€19,339", "Workbook", "total"],
           ].map(([label, amount, source, type], i) => (
-            <tr key={i} style={type === "subtotal" ? { background: "#f9fafb" } : {}}>
-              <td style={{ ...laptopStyles.tdName, fontWeight: type === "subtotal" ? 700 : 600 }}>{label}</td>
-              <td style={{ ...laptopStyles.td, color: type === "deduction" || type === "credit" ? "#16a34a" : "#52525b", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{amount}</td>
+            <tr key={i} style={type === "total" ? { background: "#f9fafb" } : {}}>
+              <td style={{ ...laptopStyles.tdName, fontWeight: type === "total" ? 700 : 600 }}>{label}</td>
+              <td style={{ ...laptopStyles.td, color: type === "deduction" || type === "relief" ? "#16a34a" : "#52525b", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{amount}</td>
               <td style={laptopStyles.td}><span style={laptopStyles.badge}>{source}</span></td>
-              <td style={laptopStyles.td}><span style={{ ...laptopStyles.badge, background: type === "credit" ? "#dbeafe" : type === "deduction" ? "#dcfce7" : type === "subtotal" ? "#fef3c7" : "#f1f5f9", color: type === "credit" ? "#1e40af" : type === "deduction" ? "#166534" : type === "subtotal" ? "#92400e" : "#475569" }}>{type}</span></td>
+              <td style={laptopStyles.td}><span style={{ ...laptopStyles.badge, background: type === "relief" ? "#dbeafe" : type === "deduction" ? "#dcfce7" : type === "total" ? "#fef3c7" : type === "income" ? "#fef3c7" : "#f1f5f9", color: type === "relief" ? "#1e40af" : type === "deduction" ? "#166534" : type === "total" || type === "income" ? "#92400e" : "#475569" }}>{type}</span></td>
             </tr>
           ))}
         </tbody>
