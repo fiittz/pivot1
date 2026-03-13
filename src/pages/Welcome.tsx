@@ -927,7 +927,7 @@ const Welcome = () => {
             Generate & file tax reports<br />in minutes.
           </h2>
           <p className="font-['IBM_Plex_Sans'] text-black/50 text-lg mb-10">
-            Join Irish practices already saving hours on every return.
+            Join Irish practices saving hours on every return.
           </p>
           <a
             href="https://app.balnce.ie"

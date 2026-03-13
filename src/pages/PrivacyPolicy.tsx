@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
             <p>
               <strong>Data Controller:</strong> Balance Your Accounting Limited (t/a Balnce)<br />
               <strong>Address:</strong> 3rd Floor, 61 Thomas St, The Liberties, Dublin 8, D08 W250, Ireland<br />
-              <strong>Contact:</strong> jamie@balnce.ie
+              <strong>Contact:</strong> hello@balnce.ie
             </p>
           </section>
 
@@ -162,7 +162,7 @@ export default function PrivacyPolicy() {
               <li><strong>Withdraw consent:</strong> Where processing is based on consent</li>
             </ul>
             <p className="mt-2">
-              To exercise these rights, contact us at <strong>jamie@balnce.ie</strong>.
+              To exercise these rights, contact us at <strong>hello@balnce.ie</strong>.
               We will respond within 30 days as required by GDPR.
             </p>
           </section>
@@ -190,7 +190,7 @@ export default function PrivacyPolicy() {
         </div>
 
         <div className="border-t mt-12 pt-6 text-center text-xs text-muted-foreground">
-          Balance Your Accounting Limited (t/a Balnce) &middot; 3rd Floor, 61 Thomas St, The Liberties, Dublin 8, D08 W250 &middot; jamie@balnce.ie
+          Balance Your Accounting Limited (t/a Balnce) &middot; 3rd Floor, 61 Thomas St, The Liberties, Dublin 8, D08 W250 &middot; hello@balnce.ie
         </div>
       </div>
     </div>

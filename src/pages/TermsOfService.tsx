@@ -198,13 +198,13 @@ export default function TermsOfService() {
             <p className="mt-1">
               Balance Your Accounting Limited (t/a Balnce)<br />
               3rd Floor, 61 Thomas St, The Liberties, Dublin 8, D08 W250<br />
-              Email: <a href="mailto:jamie@balnce.ie" className="text-primary hover:underline">jamie@balnce.ie</a>
+              Email: <a href="mailto:hello@balnce.ie" className="text-primary hover:underline">hello@balnce.ie</a>
             </p>
           </section>
         </div>
 
         <div className="border-t mt-12 pt-6 text-center text-xs text-muted-foreground">
-          Balance Your Accounting Limited (t/a Balnce) &middot; Ireland &middot; jamie@balnce.ie
+          Balance Your Accounting Limited (t/a Balnce) &middot; Ireland &middot; hello@balnce.ie
         </div>
       </div>
     </div>
