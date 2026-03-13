@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 
-const ROTATING_WORDS = ["business", "team", "practice"];
+const ROTATING_WORDS = ["practice", "clients", "team"];
 
 const PLANS = [
   {
@@ -60,7 +60,7 @@ const laptopStyles: Record<string, React.CSSProperties> = {
   bezel: { background: "#18181b", borderRadius: "12px 12px 0 0", padding: "8px 12px", display: "flex", alignItems: "center", gap: 6 },
   dot: { width: 10, height: 10, borderRadius: "50%" },
   url: { flex: 1, marginLeft: 12, background: "#27272a", borderRadius: 4, padding: "4px 10px", color: "#71717a", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" },
-  screen: { background: "#fff", borderLeft: "3px solid #18181b", borderRight: "3px solid #18181b", display: "flex", flexDirection: "column", height: 380, overflow: "hidden" },
+  screen: { background: "#fff", borderLeft: "3px solid #18181b", borderRight: "3px solid #18181b", display: "flex", flexDirection: "column", overflow: "hidden" },
   topbar: { height: 40, borderBottom: "1px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 },
   topbarLeft: { display: "flex", alignItems: "center", gap: 6 },
   brand: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, fontWeight: 700, color: "#09090b", letterSpacing: 0.5 },
@@ -92,7 +92,7 @@ const LaptopShell = ({ url, activeSidebar, children }: { url: string; activeSide
       <div style={{ ...laptopStyles.dot, background: "#22c55e" }} />
       <div style={laptopStyles.url}>{url}</div>
     </div>
-    <div style={laptopStyles.screen}>
+    <div style={laptopStyles.screen} className="h-[280px] md:h-[380px]">
       <div style={laptopStyles.topbar}>
         <div style={laptopStyles.topbarLeft}>
           <img src="/enhance-penguin-transparent.png" alt="Balnce" style={{ width: 22, height: 22, objectFit: "contain" }} />
@@ -424,15 +424,15 @@ function LaptopCarousel() {
   const Screen = CAROUSEL_SCREENS[active].component;
 
   return (
-    <section className="px-6 md:px-12 py-24 border-t border-black/10 bg-[#f5f5f5]">
+    <section className="px-4 md:px-12 py-16 md:py-24 border-t border-black/10 bg-[#f5f5f5]">
       <div className="max-w-4xl mx-auto">
         <p className="font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest text-[#E8930C] mb-4 text-center">
           See It In Action
         </p>
-        <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-3xl md:text-4xl mb-12 text-center">
+        <h2 className="font-['IBM_Plex_Sans'] font-bold text-black text-2xl md:text-4xl mb-8 md:mb-12 text-center">
           Built for how you work.
         </h2>
-        <p className="font-['IBM_Plex_Sans'] text-black/40 text-sm text-center mb-12">
+        <p className="font-['IBM_Plex_Sans'] text-black/40 text-sm text-center mb-8 md:mb-12">
           See it for yourself —{" "}
           <a href="https://calendly.com/jamie-balnce/30min" target="_blank" rel="noopener noreferrer" className="text-[#E8930C] hover:underline font-medium">
             book a 30-minute demo
@@ -440,7 +440,7 @@ function LaptopCarousel() {
         </p>
 
         {/* Laptop */}
-        <div className="relative">
+        <div className="relative" onClick={() => { if (window.innerWidth < 1024) { next(); clearInterval(intervalRef.current); intervalRef.current = setInterval(next, 5000); } }}>
           <div style={{ transition: "opacity 0.3s ease" }}>
             <Screen />
           </div>
@@ -460,8 +460,20 @@ function LaptopCarousel() {
           </button>
         </div>
 
-        {/* Dots + labels */}
-        <div className="flex items-center justify-center gap-6 mt-8">
+        {/* Dots (mobile) + Labels (desktop) */}
+        <div className="flex items-center justify-center gap-3 mt-8 md:hidden">
+          {CAROUSEL_SCREENS.map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => goTo(i)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                i === active ? "bg-[#E8930C]" : "bg-black/20"
+              }`}
+              aria-label={s.label}
+            />
+          ))}
+        </div>
+        <div className="hidden md:flex items-center justify-center gap-6 mt-8">
           {CAROUSEL_SCREENS.map((s, i) => (
             <button
               key={s.id}
