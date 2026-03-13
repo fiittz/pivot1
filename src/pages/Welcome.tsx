@@ -294,7 +294,7 @@ const ScreenAbridged = () => (
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         <div style={{ ...laptopStyles.btn, background: "#fff", color: "#E8930C", border: "1px solid #E8930C" }}>Send for Signature</div>
-        <div style={laptopStyles.btn}>File to CRO</div>
+        <div style={laptopStyles.btn}>Generate PDF</div>
       </div>
     </div>
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
